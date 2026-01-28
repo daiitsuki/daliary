@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BookHeart, Settings, Map } from "lucide-react";
+import { Home, Settings, Map } from "lucide-react";
 
 export default function BottomNav() {
   const navigate = useNavigate();
@@ -26,18 +26,6 @@ export default function BottomNav() {
       >
         <Home size={24} strokeWidth={isActive("/") || isActive("/home") ? 2.5 : 2} />
         <span className="text-[10px] mt-1 font-bold">홈</span>
-      </button>
-
-      <button
-        onClick={() => navigate("/timeline")}
-        className={`flex flex-col items-center p-2 transition-all hover:scale-110 ${
-          isActive("/timeline")
-            ? "text-rose-500"
-            : "text-gray-300 hover:text-gray-500"
-        }`}
-      >
-        <BookHeart size={24} strokeWidth={isActive("/timeline") ? 2.5 : 2} />
-        <span className="text-[10px] mt-1 font-bold">타임라인</span>
       </button>
 
       <button

@@ -2,27 +2,22 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, CalendarCheck2, Loader2 } from "lucide-react";
 import { useAttendance } from "../../hooks/useAttendance";
-import { useCouplePoints } from "../../hooks/useCouplePoints";
 
 const AttendanceButton = () => {
   const { hasCheckedIn, loading, checkIn } = useAttendance();
-  const { refresh: refreshPoints } = useCouplePoints();
   const [actionLoading, setActionLoading] = useState(false);
 
   const handleCheckIn = async () => {
     if (hasCheckedIn || actionLoading) return;
     setActionLoading(true);
     const success = await checkIn();
-    if (success) {
-      // 포인트 데이터 즉시 갱신
-      await refreshPoints();
-    } else {
+    if (!success) {
       alert("출석체크 실패");
     }
     setActionLoading(false);
   };
 
-  if (loading) return null;
+  if (loading || hasCheckedIn) return null;
 
   return (
     <div className="px-6 mb-8">
@@ -40,13 +35,13 @@ const AttendanceButton = () => {
           <Loader2 className="animate-spin" size={20} />
         ) : hasCheckedIn ? (
           <>
-            <CheckCircle2 size={20} />
-            <span className="text-sm font-bold">오늘의 출석 완료 (+50 PT)</span>
+            <CheckCircle2 size={20} className="text-rose-300" />
+            <span className="text-sm font-bold text-gray-400">내일 또 만나요!</span>
           </>
         ) : (
           <>
             <CalendarCheck2 size={20} />
-            <span className="text-sm font-black">오늘의 출석체크하고 50 PT 받기</span>
+            <span className="text-sm font-black">오늘의 출석체크 (+50 PT)</span>
           </>
         )}
       </motion.button>

@@ -9,7 +9,7 @@ import HomeHeader from "../components/home/HomeHeader";
 import HeartGauge from "../components/home/HeartGauge";
 import AttendanceButton from "../components/home/AttendanceButton";
 import DailyQuestionSection from "../components/home/DailyQuestionSection";
-import RecentDiarySection from "../components/home/RecentDiarySection";
+import QuickLinksSection from "../components/home/QuickLinksSection";
 
 export default function Home() {
   const {
@@ -17,7 +17,6 @@ export default function Home() {
     currentUserId,
     loading,
     dDay,
-    recentDiary,
     todayQuestion,
     partnerProfile,
     myProfile,
@@ -30,8 +29,9 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAnswerSubmit = async () => {
-    if (!inputAnswer.trim() || !couple || !currentUserId || !todayQuestion) return;
-    
+    if (!inputAnswer.trim() || !couple || !currentUserId || !todayQuestion)
+      return;
+
     setIsSubmitting(true);
     try {
       const { error } = await supabase.from("answers").insert({
@@ -72,12 +72,16 @@ export default function Home() {
 
   const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" },
+    },
   };
 
   return (
-    <div className="flex-1 bg-[#F9F9FB] text-gray-800 pb-24 overflow-y-auto custom-scrollbar relative">
-      <HomeHeader 
+    <div className="flex-1 bg-white text-gray-800 pb-24 overflow-y-auto custom-scrollbar relative">
+      <HomeHeader
         currentUserId={currentUserId}
         myProfile={myProfile}
         partnerProfile={partnerProfile}
@@ -85,7 +89,7 @@ export default function Home() {
         couple={couple}
       />
 
-      <motion.div 
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -107,21 +111,33 @@ export default function Home() {
                 <div className="absolute -right-4 -top-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-700">
                   <Sparkles size={100} className="text-rose-400" />
                 </div>
-                <h3 className="text-gray-800 text-lg font-black mb-1">우리만의 공간을 완성하세요</h3>
-                <p className="text-gray-400 text-[11px] font-bold mb-6 uppercase tracking-widest">Share this code with your partner</p>
+                <h3 className="text-gray-800 text-lg font-black mb-1">
+                  초대 코드를 공유해보세요!
+                </h3>
+                <p className="text-gray-400 text-[11px] font-bold mb-6 uppercase tracking-widest"></p>
                 <button
                   onClick={copyInviteCode}
                   className="bg-gray-50 rounded-2xl px-6 py-4 flex items-center justify-center space-x-3 mx-auto hover:bg-rose-50 transition-all w-full group border border-gray-100"
                 >
-                  <span className="text-xl font-mono font-black text-rose-400 tracking-[0.2em]">{couple.invite_code}</span>
-                  <Copy size={16} className="text-gray-300 group-hover:text-rose-300 transition-colors" />
+                  <span className="text-xl font-mono font-black text-rose-400 tracking-[0.2em]">
+                    {couple.invite_code}
+                  </span>
+                  <Copy
+                    size={16}
+                    className="text-gray-300 group-hover:text-rose-300 transition-colors"
+                  />
                 </button>
               </div>
             </motion.div>
           )}
 
+          {/* Quick Links Section */}
           <motion.div variants={itemVariants}>
-            <DailyQuestionSection 
+            <QuickLinksSection />
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <DailyQuestionSection
               todayQuestion={todayQuestion}
               myAnswer={myAnswer}
               partnerAnswer={partnerAnswer}
@@ -130,10 +146,6 @@ export default function Home() {
               isSubmitting={isSubmitting}
               onSubmit={handleAnswerSubmit}
             />
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            <RecentDiarySection recentDiary={recentDiary} />
           </motion.div>
         </main>
       </motion.div>

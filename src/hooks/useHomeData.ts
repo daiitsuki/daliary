@@ -2,12 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCouple } from './useCouple';
 
-interface DiaryPreview {
-  content: string;
-  mood: string;
-  created_at: string;
-}
-
 interface Answer {
   id: string;
   content: string;
@@ -32,7 +26,6 @@ export const useHomeData = () => {
   const [dataLoading, setDataLoading] = useState(true);
   
   const [dDay, setDDay] = useState(0);
-  const [recentDiary, setRecentDiary] = useState<DiaryPreview | null>(null);
   const [todayQuestion, setTodayQuestion] = useState<Question | null>(null);
   const [partnerProfile, setPartnerProfile] = useState<ProfileData | null>(null);
   const [myProfile, setMyProfile] = useState<ProfileData | null>(null);
@@ -54,25 +47,15 @@ export const useHomeData = () => {
     }
   }, [couple]);
 
-  const fetchData = useCallback(async () => {
+  const fetchProfiles = useCallback(async () => {
     if (!couple?.id || !currentUserId) return;
-
     try {
-      const today = new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'Asia/Seoul',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).format(new Date()).replace(/\. /g, '-').replace(/\./g, '');
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, nickname, avatar_url')
+        .eq('couple_id', couple.id);
 
-      const [profilesRes, diaryRes, questionRes] = await Promise.allSettled([
-        supabase.from('profiles').select('id, nickname, avatar_url').eq('couple_id', couple.id),
-        supabase.from('diaries').select('content, mood, created_at').eq('couple_id', couple.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('questions').select('*').eq('publish_date', today).maybeSingle()
-      ]);
-
-      if (profilesRes.status === 'fulfilled' && profilesRes.value.data) {
-        const profiles = profilesRes.value.data;
+      if (profiles) {
         let me = profiles.find(p => p.id === currentUserId) || null;
         const partner = profiles.find(p => p.id !== currentUserId) || null;
 
@@ -85,24 +68,38 @@ export const useHomeData = () => {
             supabase.from('profiles').update({ avatar_url: googleAvatar }).eq('id', currentUserId).then();
           }
         }
-
         setMyProfile(me);
         setPartnerProfile(partner);
       }
+    } catch (err) {
+      console.error('Error fetching profiles:', err);
+    }
+  }, [couple?.id, currentUserId]);
 
-      if (diaryRes.status === 'fulfilled' && diaryRes.value.data) {
-        setRecentDiary(diaryRes.value.data as DiaryPreview);
-      }
+  const fetchDailyData = useCallback(async () => {
+    if (!couple?.id || !currentUserId) return;
 
-      if (questionRes.status === 'fulfilled' && questionRes.value.data) {
-        const q = questionRes.value.data as Question;
-        setTodayQuestion(q);
+    try {
+      const today = new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(new Date()).replace(/\. /g, '-').replace(/\./g, '');
 
+      const { data: question } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('publish_date', today)
+        .maybeSingle();
+
+      if (question) {
+        setTodayQuestion(question as Question);
         const { data: answers } = await supabase
           .from('answers')
           .select('*')
           .eq('couple_id', couple.id)
-          .eq('question_id', q.id);
+          .eq('question_id', question.id);
 
         if (answers) {
           setMyAnswer(answers.find(a => a.writer_id === currentUserId) || null);
@@ -112,38 +109,41 @@ export const useHomeData = () => {
         setTodayQuestion({ id: 'dummy-q', content: '아직 오늘의 질문이 준비되지 않았어요. 새로운 질문을 기다려주세요!' });
       }
     } catch (err) {
-      console.error('Error fetching home data:', err);
+      console.error('Error fetching daily data:', err);
     } finally {
       setDataLoading(false);
     }
   }, [couple?.id, currentUserId]);
 
   useEffect(() => {
-    fetchData();
+    if (couple?.id && currentUserId) {
+      fetchProfiles();
+      fetchDailyData();
+    }
+  }, [fetchProfiles, fetchDailyData, couple?.id, currentUserId]);
 
+  useEffect(() => {
     if (!couple?.id) return;
 
     const channel = supabase
       .channel('home-realtime-v4')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'diaries', filter: `couple_id=eq.${couple.id}` }, fetchData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'answers', filter: `couple_id=eq.${couple.id}` }, fetchData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `couple_id=eq.${couple.id}` }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'answers', filter: `couple_id=eq.${couple.id}` }, fetchDailyData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `couple_id=eq.${couple.id}` }, fetchProfiles)
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [couple?.id, currentUserId, fetchData]);
+  }, [couple?.id, fetchDailyData, fetchProfiles]);
 
   return {
     couple,
     currentUserId,
     loading: coupleLoading || dataLoading,
     dDay,
-    recentDiary,
     todayQuestion,
     partnerProfile,
     myProfile,
     myAnswer,
     partnerAnswer,
-    refresh: fetchData
+    refresh: fetchDailyData
   };
 };

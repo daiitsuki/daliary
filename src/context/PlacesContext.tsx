@@ -12,15 +12,6 @@ export interface VisitWithPlace {
   places: { name: string; address: string; } | null;
 }
 
-export interface DiaryWithRegion {
-  id: string;
-  content: string;
-  mood: string | null;
-  image_url: string | null;
-  created_at: string;
-  region: string;
-}
-
 export interface Place {
   id: string;
   name: string;
@@ -32,7 +23,6 @@ export interface Place {
 
 interface PlacesContextType {
   visits: VisitWithPlace[];
-  diaries: DiaryWithRegion[];
   wishlist: Place[];
   stats: Record<string, number>;
   loading: boolean;
@@ -47,7 +37,6 @@ const PlacesContext = createContext<PlacesContextType | undefined>(undefined);
 export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { couple } = useCouple();
   const [visits, setVisits] = useState<VisitWithPlace[]>([]);
-  const [diaries, setDiaries] = useState<DiaryWithRegion[]>([]);
   const [wishlist, setWishlist] = useState<Place[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -60,9 +49,8 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const counts: Record<string, number> = {};
       KOREA_REGIONS.forEach(r => counts[r] = 0);
       
-      const [visitsRes, diariesRes, wishlistRes] = await Promise.allSettled([
+      const [visitsRes, wishlistRes] = await Promise.allSettled([
         supabase.from('visits').select('*, places!inner(name, address, couple_id)').eq('places.couple_id', couple.id).order('visited_at', { ascending: false }),
-        supabase.from('diaries').select('*').eq('couple_id', couple.id).not('region', 'is', null).order('created_at', { ascending: false }),
         supabase.from('places').select('*').eq('couple_id', couple.id).eq('status', 'wishlist').order('created_at', { ascending: false })
       ]);
 
@@ -72,7 +60,6 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           if (v.region && counts.hasOwnProperty(v.region)) counts[v.region]++;
         });
       }
-      if (diariesRes.status === 'fulfilled' && diariesRes.value.data) setDiaries(diariesRes.value.data);
       if (wishlistRes.status === 'fulfilled' && wishlistRes.value.data) setWishlist(wishlistRes.value.data);
 
       setStats(counts);
@@ -133,7 +120,7 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   return (
     <PlacesContext.Provider value={{ 
-      visits, diaries, wishlist, stats, loading, 
+      visits, wishlist, stats, loading, 
       refresh: fetchData, deleteWishlistPlace, updateVisit, deleteVisit 
     }}>
       {children}

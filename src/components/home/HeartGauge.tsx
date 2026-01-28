@@ -2,9 +2,11 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, X, Sparkles, PlusCircle } from "lucide-react";
 import { useCouplePoints } from "../../hooks/useCouplePoints";
+import { useAttendance } from "../../hooks/useAttendance";
 
 const HeartGauge = () => {
   const { totalPoints, history, levelInfo, loading } = useCouplePoints();
+  const { hasCheckedIn } = useAttendance(); // Correct destructuring
   const [showHistory, setShowHistory] = useState(false);
 
   if (loading || !levelInfo) return null;
@@ -22,8 +24,10 @@ const HeartGauge = () => {
               <Sparkles size={18} className="text-rose-400" />
             </div>
             <div>
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Level {levelInfo.level}</p>
-              <h3 className="text-sm font-black text-gray-800 tracking-tight">우리의 기록이 쌓이는 중</h3>
+              <p className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1.5 ${hasCheckedIn ? 'text-rose-400' : 'text-gray-300'}`}>
+                {hasCheckedIn ? '● 오늘 출석 완료' : '○ 오늘 미출석'}
+              </p>
+              <h3 className="text-sm font-black text-gray-800 tracking-tight">Level {levelInfo.level}</h3>
             </div>
           </div>
           <div className="text-right">
