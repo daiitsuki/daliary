@@ -1,9 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { Couple } from '../types';
+import { Couple, Profile } from '../types';
 
 interface CoupleContextType {
   couple: Couple | null;
+  profile: Profile | null;
   loading: boolean;
   error: string | null;
   fetchCoupleInfo: () => Promise<void>;
@@ -16,6 +17,7 @@ const CoupleContext = createContext<CoupleContextType | undefined>(undefined);
 
 export function CoupleProvider({ children }: { children: ReactNode }) {
   const [couple, setCouple] = useState<Couple | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,30 +29,35 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setCouple(null);
+        setProfile(null);
         setLoading(false);
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('couple_id')
+        .select('*')
         .eq('id', user.id)
         .single();
 
       if (profileError) {
         // 프로필이 없는 경우 (회원가입 직후 등) 무시
         setCouple(null);
-      } else if (profile?.couple_id) {
-        const { data: coupleData, error: coupleError } = await supabase
-          .from('couples')
-          .select('*')
-          .eq('id', profile.couple_id)
-          .single();
-
-        if (coupleError) throw coupleError;
-        setCouple(coupleData);
+        setProfile(null);
       } else {
-        setCouple(null);
+        setProfile(profileData);
+        if (profileData?.couple_id) {
+          const { data: coupleData, error: coupleError } = await supabase
+            .from('couples')
+            .select('*')
+            .eq('id', profileData.couple_id)
+            .single();
+
+          if (coupleError) throw coupleError;
+          setCouple(coupleData);
+        } else {
+          setCouple(null);
+        }
       }
     } catch (err: any) {
       console.error('Error fetching couple info:', err);
@@ -143,10 +150,11 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setCouple(null);
+    setProfile(null);
   };
 
   return (
-    <CoupleContext.Provider value={{ couple, loading, error, fetchCoupleInfo, generateInviteCode, joinCouple, signOut }}>
+    <CoupleContext.Provider value={{ couple, profile, loading, error, fetchCoupleInfo, generateInviteCode, joinCouple, signOut }}>
       {children}
     </CoupleContext.Provider>
   );

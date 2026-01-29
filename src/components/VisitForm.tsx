@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useVisitVerification, KOREA_REGIONS } from '../hooks/useVisitVerification';
-import { Camera, X, Calendar, MapPin } from 'lucide-react';
+import { Camera, X, Calendar, MapPin, Check } from 'lucide-react';
 
 interface VisitFormProps {
   placeId: string;
@@ -13,7 +13,6 @@ const VisitForm = ({ placeId, placeName, onClose, onSuccess }: VisitFormProps) =
   const { verifyVisit, isSubmitting, error } = useVisitVerification();
   
   const [region, setRegion] = useState('');
-  const [comment, setComment] = useState('');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]); // Default today
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -36,7 +35,6 @@ const VisitForm = ({ placeId, placeName, onClose, onSuccess }: VisitFormProps) =
       placeId,
       date: new Date(date),
       file: selectedFile,
-      comment,
       region
     });
 
@@ -47,74 +45,71 @@ const VisitForm = ({ placeId, placeName, onClose, onSuccess }: VisitFormProps) =
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full h-[90vh] md:h-auto md:max-h-[85vh] md:max-w-lg md:rounded-[32px] rounded-t-[32px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300">
+        
         {/* Header */}
-        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-indigo-50">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-indigo-600" />
-            {placeName} 방문 인증
-          </h2>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-200 transition-colors">
-            <X className="w-6 h-6 text-gray-500" />
+        <div className="px-6 py-5 border-b border-gray-50 flex justify-between items-center bg-white shrink-0">
+          <div>
+            <h2 className="text-lg font-black text-gray-800 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-rose-500" />
+              방문 인증하기
+            </h2>
+            <p className="text-xs text-gray-400 font-medium mt-1">{placeName}</p>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="p-2 -mr-2 rounded-full hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto custom-scrollbar">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+          <form id="visit-form" onSubmit={handleSubmit} className="space-y-8">
             
             {/* 1. Date Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                <Calendar className="w-4 h-4" /> 방문 날짜
+            <div className="space-y-3">
+              <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-rose-400" /> 방문 날짜
               </label>
               <input
                 type="date"
                 required
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-gray-700 font-medium focus:ring-2 focus:ring-rose-200 focus:border-rose-300 outline-none transition-all"
               />
             </div>
 
-            {/* 2. Region Selection (Chips) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">행정구역 선택</label>
-              <div className="flex flex-wrap gap-2">
-                {KOREA_REGIONS.map((r) => (
-                  <button
-                    type="button"
-                    key={r}
-                    onClick={() => setRegion(r)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                      region === r
-                        ? 'bg-indigo-600 text-white shadow-md transform scale-105'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-              {!region && <p className="text-xs text-red-400 mt-1 pl-1">* 행정구역을 선택해주세요.</p>}
-            </div>
-
-            {/* 3. Photo Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">인증 사진</label>
+            {/* 2. Photo Upload */}
+            <div className="space-y-3">
+              <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                <Camera className="w-4 h-4 text-rose-400" /> 인증 사진
+              </label>
               <div 
-                className={`relative w-full h-48 bg-gray-50 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden ${
-                  !previewUrl ? 'border-gray-300' : 'border-indigo-300'
+                className={`group relative w-full aspect-video md:h-52 bg-gray-50 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
+                  previewUrl ? 'border-rose-200 bg-rose-50/30' : 'border-gray-200 hover:border-rose-300 hover:bg-rose-50/10'
                 }`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {previewUrl ? (
-                  <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                ) : (
                   <>
-                    <Camera className="w-8 h-8 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-500">터치하여 사진 업로드</span>
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="bg-white/90 text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+                        사진 변경하기
+                      </span>
+                    </div>
                   </>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-gray-400 group-hover:text-rose-400 transition-colors">
+                    <div className="p-3 bg-white rounded-full shadow-sm">
+                      <Camera className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs font-bold">터치하여 사진 업로드</span>
+                  </div>
                 )}
                 <input
                   type="file"
@@ -126,30 +121,60 @@ const VisitForm = ({ placeId, placeName, onClose, onSuccess }: VisitFormProps) =
               </div>
             </div>
 
-            {/* 4. Comment */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">한 줄 평</label>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="장소에 대한 간단한 느낌을 남겨주세요."
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none resize-none h-24"
-              />
+            {/* 3. Region Selection (Chips) */}
+            <div className="space-y-3">
+              <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5 justify-between">
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-rose-400" /> 행정구역 선택
+                </span>
+                {!region && <span className="text-[10px] text-rose-500 font-medium">* 필수 선택</span>}
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {KOREA_REGIONS.map((r) => (
+                  <button
+                    type="button"
+                    key={r}
+                    onClick={() => setRegion(r)}
+                    className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                      region === r
+                        ? 'bg-rose-500 border-rose-500 text-white shadow-md shadow-rose-200'
+                        : 'bg-white border-gray-100 text-gray-400 hover:border-rose-200 hover:text-rose-500'
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Error Message */}
-            {error && <p className="text-sm text-red-500 text-center bg-red-50 p-2 rounded-lg">{error}</p>}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting || !region}
-              className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-lg hover:bg-indigo-700 active:transform active:scale-95 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg"
-            >
-              {isSubmitting ? '저장 중...' : '방문 완료 인증하기'}
-            </button>
+            {error && (
+              <div className="p-3 bg-rose-50 rounded-xl text-xs font-bold text-rose-500 text-center animate-pulse">
+                {error}
+              </div>
+            )}
           </form>
         </div>
+
+        {/* Footer Actions */}
+        <div className="p-4 md:p-6 border-t border-gray-50 bg-white shrink-0 safe-area-bottom">
+          <button
+            form="visit-form"
+            type="submit"
+            disabled={isSubmitting || !region}
+            className="w-full py-4 bg-rose-500 text-white rounded-2xl font-bold text-base hover:bg-rose-600 active:scale-[0.98] transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed shadow-lg shadow-rose-100 disabled:shadow-none flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                <Check className="w-5 h-5" strokeWidth={2.5} />
+                방문 인증 완료
+              </>
+            )}
+          </button>
+        </div>
+
       </div>
     </div>
   );

@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html, body {
+  overscroll-behavior: none;
+}
+
 @layer utilities {
   @keyframes bounce-short {
     0%, 100% {
@@ -13,6 +17,16 @@
   }
   .animate-bounce-short {
     animation: bounce-short 1s infinite;
+  }
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
   }
 }
 
@@ -29,5 +43,3 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #e5e5e5;
 }
-
-

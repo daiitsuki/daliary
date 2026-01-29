@@ -11,7 +11,6 @@ interface VerifyVisitParams {
   placeId: string;
   date: Date;
   file: File | null;
-  comment: string;
   region: string;
 }
 
@@ -48,7 +47,7 @@ export const useVisitVerification = () => {
     }
   };
 
-  const verifyVisit = async ({ placeId, date, file, comment, region }: VerifyVisitParams) => {
+  const verifyVisit = async ({ placeId, date, file, region }: VerifyVisitParams) => {
     setIsSubmitting(true);
     setError(null);
 
@@ -68,7 +67,7 @@ export const useVisitVerification = () => {
         p_place_id: placeId,
         p_visited_at: dateStr,
         p_image_url: imageUrl,
-        p_comment: comment,
+        p_comment: "", // Still pass empty string or null if DB function requires it
         p_region: region
       });
 

@@ -3,6 +3,7 @@ import { motion, Variants } from "framer-motion";
 import { Copy, Sparkles } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useHomeData } from "../hooks/useHomeData";
+import { useCouplePoints } from "../hooks/useCouplePoints";
 
 // Sub Components
 import HomeHeader from "../components/home/HomeHeader";
@@ -25,6 +26,8 @@ export default function Home() {
     refresh,
   } = useHomeData();
 
+  const { refresh: refreshPoints } = useCouplePoints();
+
   const [inputAnswer, setInputAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,6 +46,7 @@ export default function Home() {
       if (error) throw error;
       setInputAnswer("");
       refresh();
+      refreshPoints();
     } catch (err) {
       alert("답변 저장 실패");
     } finally {

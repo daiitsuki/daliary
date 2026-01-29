@@ -12,3 +12,12 @@ export interface Couple {
   invite_code: string | null;
   created_at?: string;
 }
+
+export interface VisitComment {
+  id: string;
+  visit_id: string;
+  writer_id: string;
+  content: string;
+  created_at: string;
+  writer?: Profile; // Joined data
+}

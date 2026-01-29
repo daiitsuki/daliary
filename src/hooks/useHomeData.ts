@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCouple } from './useCouple';
+import { Profile } from '../types';
 
 interface Answer {
   id: string;
@@ -14,12 +15,6 @@ interface Question {
   content: string;
 }
 
-interface ProfileData {
-  id: string;
-  nickname: string;
-  avatar_url: string | null;
-}
-
 export const useHomeData = () => {
   const { couple, loading: coupleLoading } = useCouple();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -27,8 +22,8 @@ export const useHomeData = () => {
   
   const [dDay, setDDay] = useState(0);
   const [todayQuestion, setTodayQuestion] = useState<Question | null>(null);
-  const [partnerProfile, setPartnerProfile] = useState<ProfileData | null>(null);
-  const [myProfile, setMyProfile] = useState<ProfileData | null>(null);
+  const [partnerProfile, setPartnerProfile] = useState<Profile | null>(null);
+  const [myProfile, setMyProfile] = useState<Profile | null>(null);
   const [myAnswer, setMyAnswer] = useState<Answer | null>(null);
   const [partnerAnswer, setPartnerAnswer] = useState<Answer | null>(null);
 
@@ -40,9 +35,17 @@ export const useHomeData = () => {
 
   useEffect(() => {
     if (couple?.anniversary_date) {
-      const start = new Date(couple.anniversary_date).getTime();
-      const now = new Date().getTime();
-      const diff = Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1;
+      // Get current date in KST
+      const kstNow = new Date(new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Seoul'
+      }).format(new Date()));
+      kstNow.setHours(0, 0, 0, 0);
+
+      // Anniversary date is already stored as YYYY-MM-DD
+      const start = new Date(couple.anniversary_date);
+      start.setHours(0, 0, 0, 0);
+
+      const diff = Math.floor((kstNow.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
       setDDay(diff);
     }
   }, [couple]);
@@ -52,7 +55,7 @@ export const useHomeData = () => {
     try {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, nickname, avatar_url')
+        .select('*')
         .eq('couple_id', couple.id);
 
       if (profiles) {

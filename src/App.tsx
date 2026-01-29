@@ -6,6 +6,7 @@ import Auth from './pages/Auth';
 import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import Places from './pages/Places';
+import Calendar from './pages/Calendar';
 import ProtectedRoute from './components/ProtectedRoute';
 import BottomNav from './components/BottomNav';
 
@@ -13,7 +14,7 @@ function App() {
   return (
     <CoupleProvider>
       <CouplePointsProvider>
-        <div className="relative w-full h-screen bg-gray-50 flex justify-center items-center md:py-8 overflow-hidden">
+        <div className="relative w-full h-[100dvh] bg-gray-50 flex justify-center items-center md:py-8 overflow-hidden">
           <div className="w-full h-full md:max-w-5xl md:h-[90vh] bg-white md:rounded-[32px] md:shadow-2xl md:border-8 md:border-white overflow-hidden relative flex flex-col">
             <Router>
               <div className="flex-1 relative overflow-hidden flex flex-col">
@@ -24,6 +25,7 @@ function App() {
                     <Route path="/" element={<Navigate to="/home" replace />} />
                     <Route path="/home" element={<Home />} />
                     <Route path="/places" element={<Places />} />
+                    <Route path="/calendar" element={<Calendar />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/onboarding" element={<Onboarding />} />
                   </Route>

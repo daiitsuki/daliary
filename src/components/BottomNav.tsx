@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Settings, Map } from "lucide-react";
+import { Home, Settings, Map, Calendar } from "lucide-react";
 
 export default function BottomNav() {
   const navigate = useNavigate();
@@ -26,6 +26,18 @@ export default function BottomNav() {
       >
         <Home size={24} strokeWidth={isActive("/") || isActive("/home") ? 2.5 : 2} />
         <span className="text-[10px] mt-1 font-bold">홈</span>
+      </button>
+
+      <button
+        onClick={() => navigate("/calendar")}
+        className={`flex flex-col items-center p-2 transition-all hover:scale-110 ${
+          isActive("/calendar")
+            ? "text-rose-500"
+            : "text-gray-300 hover:text-gray-500"
+        }`}
+      >
+        <Calendar size={24} strokeWidth={isActive("/calendar") ? 2.5 : 2} />
+        <span className="text-[10px] mt-1 font-bold">일정</span>
       </button>
 
       <button

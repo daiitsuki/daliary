@@ -7,9 +7,9 @@ export interface VisitWithPlace {
   id: string;
   visited_at: string;
   image_url: string | null;
-  comment: string | null;
   region: string;
   places: { name: string; address: string; } | null;
+  visit_comments?: { count: number }[];
 }
 
 export interface Place {
@@ -28,7 +28,7 @@ interface PlacesContextType {
   loading: boolean;
   refresh: () => Promise<void>;
   deleteWishlistPlace: (id: string) => Promise<boolean>;
-  updateVisit: (visitId: string, data: { visited_at: string; comment: string | null; image_url: string | null }) => Promise<boolean>;
+  updateVisit: (visitId: string, data: { visited_at: string; image_url: string | null }) => Promise<boolean>;
   deleteVisit: (visitId: string) => Promise<boolean>;
 }
 
@@ -50,7 +50,7 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       KOREA_REGIONS.forEach(r => counts[r] = 0);
       
       const [visitsRes, wishlistRes] = await Promise.allSettled([
-        supabase.from('visits').select('*, places!inner(name, address, couple_id)').eq('places.couple_id', couple.id).order('visited_at', { ascending: false }),
+        supabase.from('visits').select('*, places!inner(name, address, couple_id), visit_comments(count)').eq('places.couple_id', couple.id).order('visited_at', { ascending: false }),
         supabase.from('places').select('*').eq('couple_id', couple.id).eq('status', 'wishlist').order('created_at', { ascending: false })
       ]);
 
@@ -82,7 +82,7 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const updateVisit = async (visitId: string, data: { visited_at: string; comment: string | null; image_url: string | null }) => {
+  const updateVisit = async (visitId: string, data: { visited_at: string; image_url: string | null }) => {
     try {
       const { error } = await supabase
         .from('visits')
