@@ -10,6 +10,8 @@ import Calendar from './pages/Calendar';
 import ProtectedRoute from './components/ProtectedRoute';
 import BottomNav from './components/BottomNav';
 
+import UpdateNotification from './components/UpdateNotification';
+
 function App() {
   return (
     <CoupleProvider>
@@ -32,6 +34,8 @@ function App() {
                 </Routes>
               </div>
               
+              <UpdateNotification />
+
               <div className="shrink-0">
                 <BottomNav />
               </div>

@@ -287,14 +287,11 @@ const CalendarGrid = ({
   return (
     <motion.div
       layout
-      transition={{ layout: { duration: 0.2, ease: "easeInOut" } }}
+      transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
       className="bg-white rounded-[32px] pt-6 px-2 pb-2 sm:p-6 shadow-sm border border-rose-50 relative overflow-hidden"
     >
       {/* Header Days */}
-      <motion.div
-        layout
-        className="grid grid-cols-7 mb-2 border-b border-gray-50 pb-2"
-      >
+      <div className="grid grid-cols-7 mb-2 border-b border-gray-50 pb-2">
         {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
           <div
             key={d}
@@ -309,9 +306,9 @@ const CalendarGrid = ({
             {d}
           </div>
         ))}
-      </motion.div>
+      </div>
 
-      <div className="relative min-h-[300px]">
+      <div className="relative">
         <AnimatePresence mode="popLayout" initial={false} custom={direction}>
           <motion.div
             key={`${year}-${month}`}
@@ -321,10 +318,10 @@ const CalendarGrid = ({
             animate="center"
             exit="exit"
             transition={{
-              x: { type: "spring", stiffness: 200, damping: 25, mass: 0.8 },
-              opacity: { duration: 0.3, ease: "easeInOut" },
+              x: { type: "tween", ease: "circOut", duration: 0.3 },
+              opacity: { duration: 0.2 },
             }}
-            className="flex flex-col"
+            className="flex flex-col transform-gpu"
           >
             {weeks.map((weekDays, i) => (
               <WeekRow

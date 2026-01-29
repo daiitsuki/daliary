@@ -98,16 +98,17 @@ const ScheduleModal = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50"
           />
           <motion.div
             variants={modalVariants}
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg bg-white rounded-t-[32px] md:rounded-[32px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            transition={{ type: "tween", ease: "easeOut", duration: 0.25 }}
+            className="relative w-full max-w-lg bg-white rounded-t-[32px] md:rounded-[32px] shadow-xl flex flex-col max-h-[90vh] overflow-hidden transform-gpu"
           >
             <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
               <div className="px-6 py-6 border-b border-gray-50 flex items-center justify-between shrink-0">

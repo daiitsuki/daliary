@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { useSchedules, Schedule, ScheduleInput } from "../hooks/useSchedules";
 import { useHomeData } from "../hooks/useHomeData";
 import CalendarHeader from "../components/calendar/CalendarHeader";
@@ -7,28 +7,23 @@ import CalendarGrid from "../components/calendar/CalendarGrid";
 import ScheduleList from "../components/calendar/ScheduleList";
 import ScheduleModal from "../components/calendar/ScheduleModal";
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
       staggerChildren: 0.1,
-      delayChildren: 0.1
-    }
-  }
+    },
+  },
 };
 
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
   visible: {
-    y: 0,
     opacity: 1,
-    transition: {
-      type: "spring" as const,
-      stiffness: 100,
-      damping: 20
-    }
-  }
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
 };
 
 const Calendar = () => {
@@ -95,8 +90,7 @@ const Calendar = () => {
     
     setDirection(todayMonthTime > currentMonthTime ? 1 : todayMonthTime < currentMonthTime ? -1 : 0);
     setCurrentDate(today);
-    setSelectedDate(today);
-    setIsDateSelected(true);
+    setIsDateSelected(false);
     setIsSearchActive(false);
   };
 
@@ -154,27 +148,25 @@ const Calendar = () => {
   };
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/30"
-    >
+    <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/30">
       <div className="max-w-6xl mx-auto px-4 py-6 lg:py-10">
         
-        <motion.div variants={itemVariants}>
-          <CalendarHeader
-            currentDate={currentDate}
-            onMonthChange={handleMonthChange}
-            onGoToday={handleGoToday}
-            isSearchActive={isSearchActive}
-            setIsSearchActive={setIsSearchActive}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-          />
-        </motion.div>
+        <CalendarHeader
+          currentDate={currentDate}
+          onMonthChange={handleMonthChange}
+          onGoToday={handleGoToday}
+          isSearchActive={isSearchActive}
+          setIsSearchActive={setIsSearchActive}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col lg:flex-row gap-8 items-start mt-6"
+        >
           <motion.div variants={itemVariants} className="w-full lg:flex-1">
             <CalendarGrid
               currentDate={currentDate}
@@ -201,7 +193,7 @@ const Calendar = () => {
               partnerProfile={partnerProfile}
             />
           </motion.div>
-        </div>
+        </motion.div>
       </div>
 
       <ScheduleModal
@@ -214,7 +206,7 @@ const Calendar = () => {
         myProfile={myProfile}
         partnerProfile={partnerProfile}
       />
-    </motion.div>
+    </div>
   );
 };
 

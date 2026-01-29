@@ -1,11 +1,11 @@
 {
   "name": "daliary",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/generate-version.js && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
