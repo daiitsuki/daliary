@@ -168,6 +168,14 @@ const WeekRow = ({
           today.getMonth() === month &&
           today.getFullYear() === year;
 
+        // Check if there is a holiday on this day
+        const isHoliday = schedules.some(
+          (s) =>
+            s.id.startsWith("holiday-") &&
+            s.start_date <= dStr &&
+            s.end_date >= dStr
+        );
+
         return (
           <div
             key={`bg-${dStr}`}
@@ -186,7 +194,9 @@ const WeekRow = ({
                       ? "text-rose-500 scale-110 bg-white shadow-sm ring-1 ring-rose-100"
                       : !currentMonth
                         ? "text-gray-300"
-                        : "text-gray-700 group-hover:bg-white group-hover:shadow-sm"
+                        : isHoliday
+                          ? "text-red-500"
+                          : "text-gray-700 group-hover:bg-white group-hover:shadow-sm"
                 }`}
               >
                 {day}

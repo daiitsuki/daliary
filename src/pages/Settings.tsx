@@ -11,12 +11,13 @@ import ChangelogModal from "../components/ChangelogModal";
 import SettingsHeader from "../components/settings/SettingsHeader";
 import ProfileSection from "../components/settings/ProfileSection";
 import CoupleSettingsSection from "../components/settings/CoupleSettingsSection";
+import CalendarSettingsSection from "../components/settings/CalendarSettingsSection";
 import AppInfoSection from "../components/settings/AppInfoSection";
 import DangerZoneSection from "../components/settings/DangerZoneSection";
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { couple, fetchCoupleInfo, signOut } = useCouple();
+  const { couple, fetchCoupleInfo, signOut, isCoupleFormed } = useCouple();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [nickname, setNickname] = useState("");
   const [anniversary, setAnniversary] = useState("");
@@ -196,7 +197,10 @@ export default function Settings() {
           couple={couple}
           anniversary={anniversary}
           onAnniversaryChange={setAnniversary}
+          isCoupleFormed={isCoupleFormed}
         />
+
+        <CalendarSettingsSection />
 
         <AppInfoSection 
           onShowChangelog={() => setShowChangelog(true)}

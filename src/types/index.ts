@@ -4,6 +4,7 @@ export interface Profile {
   avatar_url: string | null;
   couple_id: string | null;
   updated_at?: string;
+  last_active_at?: string;
 }
 
 export interface Couple {

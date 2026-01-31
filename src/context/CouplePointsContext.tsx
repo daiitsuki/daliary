@@ -104,7 +104,7 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('Error checking attendance:', err);
     }
-  }, [couple]);
+  }, [couple?.id]);
 
   const checkIn = async () => {
     const { data: { user } } = await supabase.auth.getUser();

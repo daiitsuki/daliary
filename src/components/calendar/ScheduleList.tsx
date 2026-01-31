@@ -19,6 +19,7 @@ interface ScheduleListProps {
   onEditSchedule: (schedule: Schedule) => void;
   myProfile: Profile | null;
   partnerProfile: Profile | null;
+  today: Date;
 }
 
 const ScheduleCard = ({
@@ -27,12 +28,14 @@ const ScheduleCard = ({
   isSelected,
   myProfile,
   partnerProfile,
+  isToday,
 }: {
   schedule: Schedule;
   onClick: () => void;
   isSelected: boolean;
   myProfile: Profile | null;
   partnerProfile: Profile | null;
+  isToday?: boolean;
 }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
@@ -43,7 +46,9 @@ const ScheduleCard = ({
     className={`bg-white p-5 rounded-[28px] shadow-sm border transition-all flex items-center justify-between group cursor-pointer hover:shadow-md ${
       isSelected
         ? "border-rose-200 ring-1 ring-rose-50 shadow-rose-50/50"
-        : "border-gray-50"
+        : isToday
+          ? "border-rose-100 bg-rose-50/30"
+          : "border-gray-50"
     }`}
   >
     <div className="flex items-center gap-4">
@@ -52,20 +57,37 @@ const ScheduleCard = ({
         style={{ backgroundColor: schedule.color }}
       />
       <div>
-        <h4 className="text-[14px] sm:text-[15px] font-bold text-gray-800 group-hover:text-rose-500 transition-colors line-clamp-1">
-          {schedule.title}
-        </h4>
+        <div className="flex items-center gap-2">
+          <h4 className="text-[14px] sm:text-[15px] font-bold text-gray-800 group-hover:text-rose-500 transition-colors line-clamp-1">
+            {schedule.title}
+          </h4>
+          {isToday && (
+            <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-md border border-rose-100 uppercase">
+              Today
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-[10px] text-gray-400 font-black bg-gray-50 px-2 py-0.5 rounded-lg uppercase">
-            {schedule.category === "me"
-              ? myProfile?.nickname || "나"
-              : schedule.category === "partner"
-                ? partnerProfile?.nickname || "상대방"
-                : "우리"}
+          <span className="text-[10px] text-gray-400 font-black bg-white/50 px-2 py-0.5 rounded-lg uppercase border border-gray-100/50">
+            {schedule.id.startsWith("holiday-")
+              ? "공휴일"
+              : schedule.category === "me"
+                ? myProfile?.nickname || "나"
+                : schedule.category === "partner"
+                  ? partnerProfile?.nickname || "상대방"
+                  : "우리"}
           </span>
           <p className="text-[11px] text-gray-400 font-bold">
-            {schedule.start_date.slice(5).replace("-", ".")} -{" "}
-            {schedule.end_date.slice(5).replace("-", ".")}
+            {(() => {
+              if (schedule.start_date === schedule.end_date) {
+                return schedule.start_date.slice(5).replace("-", ".");
+              }
+              const start = new Date(schedule.start_date);
+              const end = new Date(schedule.end_date);
+              const diffTime = Math.abs(end.getTime() - start.getTime());
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+              return `${schedule.start_date.slice(5).replace("-", ".")} - ${schedule.end_date.slice(5).replace("-", ".")} (${diffDays}일간)`;
+            })()}
           </p>
         </div>
       </div>
@@ -92,6 +114,7 @@ const ScheduleList = ({
   onEditSchedule,
   myProfile,
   partnerProfile,
+  today,
 }: ScheduleListProps) => {
   const formatDate = (date: Date) => {
     const y = date.getFullYear();
@@ -99,6 +122,14 @@ const ScheduleList = ({
     const d = String(date.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   };
+
+  const todayStr = formatDate(today);
+  const todaySchedules = schedules.filter(
+    (s) => todayStr >= s.start_date && todayStr <= s.end_date,
+  );
+  const otherSchedules = schedules.filter(
+    (s) => !(todayStr >= s.start_date && todayStr <= s.end_date),
+  );
 
   return (
     <div className="w-full lg:w-[380px] shrink-0">
@@ -170,19 +201,64 @@ const ScheduleList = ({
                 exit={{ opacity: 0 }}
                 className="space-y-4"
               >
-                {schedules.map((s) => (
-                  <ScheduleCard
-                    key={s.id}
-                    schedule={s}
-                    onClick={() => onEditSchedule(s)}
-                    isSelected={
-                      isDateSelected &&
-                      s.start_date === formatDate(selectedDate)
-                    }
-                    myProfile={myProfile}
-                    partnerProfile={partnerProfile}
-                  />
-                ))}
+                {!isDateSelected &&
+                !isSearchActive &&
+                todaySchedules.length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-2 px-2 pb-1">
+                      <span className="text-[11px] font-bold text-gray-400">
+                        오늘 일정
+                      </span>
+                    </div>
+                    {todaySchedules.map((s) => (
+                      <ScheduleCard
+                        key={s.id}
+                        schedule={s}
+                        onClick={() => onEditSchedule(s)}
+                        isSelected={false}
+                        myProfile={myProfile}
+                        partnerProfile={partnerProfile}
+                        isToday={true}
+                      />
+                    ))}
+                    {otherSchedules.length > 0 && (
+                      <div className="flex items-center gap-2 px-2 pt-4 pb-1">
+                        <span className="text-[11px] font-bold text-gray-400">
+                          전체 일정
+                        </span>
+                      </div>
+                    )}
+                    {otherSchedules.map((s) => (
+                      <ScheduleCard
+                        key={s.id}
+                        schedule={s}
+                        onClick={() => onEditSchedule(s)}
+                        isSelected={false}
+                        myProfile={myProfile}
+                        partnerProfile={partnerProfile}
+                      />
+                    ))}
+                  </>
+                ) : (
+                  schedules.map((s) => (
+                    <ScheduleCard
+                      key={s.id}
+                      schedule={s}
+                      onClick={() => onEditSchedule(s)}
+                      isSelected={
+                        isDateSelected &&
+                        formatDate(selectedDate) >= s.start_date &&
+                        formatDate(selectedDate) <= s.end_date
+                      }
+                      myProfile={myProfile}
+                      partnerProfile={partnerProfile}
+                      isToday={
+                        formatDate(today) >= s.start_date &&
+                        formatDate(today) <= s.end_date
+                      }
+                    />
+                  ))
+                )}
               </motion.div>
             )}
           </AnimatePresence>

@@ -9,14 +9,34 @@ interface HomeHeaderProps {
   couple: any;
 }
 
-const HomeHeader: React.FC<HomeHeaderProps> = ({ 
-  currentUserId, 
-  myProfile, 
-  partnerProfile, 
-  dDay, 
-  couple 
+const HomeHeader: React.FC<HomeHeaderProps> = ({
+  currentUserId,
+  myProfile,
+  partnerProfile,
+  dDay,
+  couple,
 }) => {
-  const defaultAvatar = (id: string) => `https://api.dicebear.com/7.x/lorelei/svg?seed=${id}`;
+  const defaultAvatar = (id: string) =>
+    `https://api.dicebear.com/7.x/lorelei/svg?seed=${id}`;
+
+  const getLastActiveLabel = (dateString?: string) => {
+    if (!dateString) return null;
+    const lastActive = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor(
+      (now.getTime() - lastActive.getTime()) / 1000,
+    );
+
+    if (diffInSeconds < 300) return "접속중"; // Less than 5 minutes
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}시간 전`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)}일 전`; // Up to 7 days
+    return "오래전";
+  };
+
+  const activeStatus = getLastActiveLabel(partnerProfile?.last_active_at);
 
   return (
     <header className="px-6 pt-10 pb-6 flex flex-col items-center sticky top-0 bg-white/70 backdrop-blur-lg z-20">
@@ -25,12 +45,14 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
         <div className="flex flex-col items-center">
           <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-50 border border-rose-100 overflow-hidden shadow-sm transition-transform hover:scale-105">
             <img
-              src={myProfile?.avatar_url || defaultAvatar(currentUserId || 'me')}
+              src={
+                myProfile?.avatar_url || defaultAvatar(currentUserId || "me")
+              }
               alt="Me"
               className="w-full h-full object-cover opacity-90"
             />
           </div>
-          <span className="text-[10px] mt-2.5 text-gray-400 font-bold tracking-[0.1em] uppercase">
+          <span className="text-[11px] mt-2.5 text-gray-400 font-bold tracking-[0.1em] uppercase">
             {myProfile?.nickname || "나"}
           </span>
         </div>
@@ -48,7 +70,9 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
           <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-50 border border-gray-100 overflow-hidden shadow-sm transition-transform hover:scale-105 relative">
             {partnerProfile ? (
               <img
-                src={partnerProfile.avatar_url || defaultAvatar(partnerProfile.id)}
+                src={
+                  partnerProfile.avatar_url || defaultAvatar(partnerProfile.id)
+                }
                 alt="Partner"
                 className="w-full h-full object-cover opacity-90"
               />
@@ -57,10 +81,24 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                 <UserPlus size={20} />
               </div>
             )}
+
+            {/* Online Indicator Dot if '접속중' */}
+            {activeStatus === "접속중" && (
+              <div className="absolute bottom-1 right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
+            )}
           </div>
-          <span className="text-[10px] mt-2.5 text-gray-400 font-bold tracking-[0.1em] uppercase">
-            {partnerProfile?.nickname || "상대방"}
-          </span>
+          <div className="flex flex-col items-center mt-2.5">
+            <span className="text-[11px] text-gray-400 font-bold tracking-[0.1em] uppercase leading-none">
+              {partnerProfile?.nickname || "상대방"}
+            </span>
+            {activeStatus && (
+              <span
+                className={`text-[10px] font-medium mt-1 ${activeStatus === "접속중" ? "text-green-500" : "text-gray-400"}`}
+              >
+                {activeStatus}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </header>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Couple, Profile } from '../types';
 
@@ -20,6 +20,7 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const lastUpdateRef = useRef<number>(0);
 
   const fetchCoupleInfo = useCallback(async () => {
     try {
@@ -46,6 +47,7 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
         setProfile(null);
       } else {
         setProfile(profileData);
+        
         if (profileData?.couple_id) {
           const { data: coupleData, error: coupleError } = await supabase
             .from('couples')
@@ -66,6 +68,54 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, []);
+
+  // Heartbeat Effect: Update last_active_at periodically
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const updateActivity = async () => {
+      const now = Date.now();
+      // Throttle: Only update if at least 30 seconds have passed since last update
+      if (now - lastUpdateRef.current < 30000) return;
+
+      try {
+        await supabase
+          .from('profiles')
+          .update({ last_active_at: new Date().toISOString() })
+          .eq('id', profile.id);
+        
+        lastUpdateRef.current = now;
+      } catch (err) {
+        console.error('Error updating activity:', err);
+      }
+    };
+
+    // Initial update
+    updateActivity();
+
+    // Periodic update (every 3 minutes)
+    // "Online" threshold is 5 minutes, so 3 minute interval is efficient.
+    const intervalId = setInterval(() => {
+      // Only update if the page is visible to save DB writes
+      if (document.visibilityState === 'visible') {
+        updateActivity();
+      }
+    }, 180000);
+
+    // Update on visibility change (returning to app)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        updateActivity();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [profile?.id]);
 
   useEffect(() => {
     fetchCoupleInfo();

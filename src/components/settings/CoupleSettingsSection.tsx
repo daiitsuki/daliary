@@ -6,12 +6,14 @@ interface CoupleSettingsSectionProps {
   couple: Couple | null;
   anniversary: string;
   onAnniversaryChange: (value: string) => void;
+  isCoupleFormed?: boolean;
 }
 
 export default function CoupleSettingsSection({
   couple,
   anniversary,
   onAnniversaryChange,
+  isCoupleFormed = false,
 }: CoupleSettingsSectionProps) {
   return (
     <section className="space-y-4">
@@ -31,12 +33,14 @@ export default function CoupleSettingsSection({
         />
       </div>
 
-      <div className="bg-white p-5 rounded-[24px] border border-gray-100">
-        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">초대 코드</p>
-        <p className="font-mono text-lg font-bold text-gray-700 tracking-widest bg-gray-50 p-3 rounded-xl text-center">
-          {couple?.invite_code || "------"}
-        </p>
-      </div>
+      {!isCoupleFormed && (
+        <div className="bg-white p-5 rounded-[24px] border border-gray-100">
+          <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">초대 코드</p>
+          <p className="font-mono text-lg font-bold text-gray-700 tracking-widest bg-gray-50 p-3 rounded-xl text-center">
+            {couple?.invite_code || "------"}
+          </p>
+        </div>
+      )}
     </section>
   );
 }

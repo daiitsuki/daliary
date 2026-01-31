@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { motion, Variants } from "framer-motion";
 import { useSchedules, Schedule, ScheduleInput } from "../hooks/useSchedules";
+import { useHolidays } from "../hooks/useHolidays";
 import { useHomeData } from "../hooks/useHomeData";
 import CalendarHeader from "../components/calendar/CalendarHeader";
 import CalendarGrid from "../components/calendar/CalendarGrid";
@@ -28,7 +29,13 @@ const itemVariants: Variants = {
 
 const Calendar = () => {
   const { schedules, addSchedule, updateSchedule, deleteSchedule } = useSchedules();
+  const { holidaySchedules } = useHolidays();
   const { myProfile, partnerProfile } = useHomeData();
+
+  const allSchedules = useMemo(() => {
+    const combined = [...schedules, ...holidaySchedules];
+    return combined.sort((a, b) => a.start_date.localeCompare(b.start_date));
+  }, [schedules, holidaySchedules]);
 
   // 1. Date & View States
   const getKSTToday = useCallback(() => {
@@ -60,19 +67,19 @@ const Calendar = () => {
   const visibleSchedules = useMemo(() => {
     if (isSearchActive && searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      return schedules.filter(s => s.title.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q));
+      return allSchedules.filter(s => s.title.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q));
     }
     if (isDateSelected) {
       const dateStr = formatDate(selectedDate);
-      return schedules.filter(s => dateStr >= s.start_date && dateStr <= s.end_date);
+      return allSchedules.filter(s => dateStr >= s.start_date && dateStr <= s.end_date);
     }
-    return schedules.filter(s => {
+    return allSchedules.filter(s => {
       const startOfMonth = `${year}-${String(month + 1).padStart(2, "0")}-01`;
       const lastDay = new Date(year, month + 1, 0).getDate();
       const endOfMonth = `${year}-${String(month + 1).padStart(2, "0")}-${lastDay}`;
       return s.start_date <= endOfMonth && s.end_date >= startOfMonth;
     });
-  }, [schedules, isSearchActive, searchQuery, isDateSelected, selectedDate, year, month]);
+  }, [allSchedules, isSearchActive, searchQuery, isDateSelected, selectedDate, year, month]);
 
   // --- Handlers ---
 
@@ -103,7 +110,9 @@ const Calendar = () => {
       setIsDateSelected(true);
       setIsSearchActive(false);
       if (m !== month) {
-        setDirection(m > month ? 1 : -1);
+        const targetDate = new Date(y, m, 1);
+        const currentMonthDate = new Date(year, month, 1);
+        setDirection(targetDate > currentMonthDate ? 1 : -1);
         setCurrentDate(new Date(y, m, 1));
       }
     }
@@ -121,6 +130,7 @@ const Calendar = () => {
   };
 
   const openEditModal = (s: Schedule) => {
+    if (s.id.startsWith("holiday-")) return;
     setEditingSchedule(s);
     setShowModal(true);
   };
@@ -171,7 +181,7 @@ const Calendar = () => {
             <CalendarGrid
               currentDate={currentDate}
               direction={direction}
-              schedules={schedules}
+              schedules={allSchedules}
               selectedDate={selectedDate}
               isDateSelected={isDateSelected}
               onDayClick={handleDayClick}
@@ -191,6 +201,7 @@ const Calendar = () => {
               onEditSchedule={openEditModal}
               myProfile={myProfile}
               partnerProfile={partnerProfile}
+              today={getKSTToday()}
             />
           </motion.div>
         </motion.div>
