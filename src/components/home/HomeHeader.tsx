@@ -92,11 +92,16 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
               {partnerProfile?.nickname || "상대방"}
             </span>
             {activeStatus && (
-              <span
-                className={`text-[10px] font-medium mt-1 ${activeStatus === "접속중" ? "text-green-500" : "text-gray-400"}`}
+              <div
+                className={`flex items-center gap-1 mt-1 ${activeStatus === "접속중" ? "text-green-500" : "text-gray-400"}`}
               >
-                {activeStatus}
-              </span>
+                {activeStatus === "접속중" && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                )}
+                <span className="text-[10px] font-medium leading-none">
+                  {activeStatus}
+                </span>
+              </div>
             )}
           </div>
         </div>

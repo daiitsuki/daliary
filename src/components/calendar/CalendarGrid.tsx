@@ -217,21 +217,25 @@ const WeekRow = ({
           return (
             <div
               key={`${item.id}-${weekStartStr}`}
-              className="absolute h-1.5 sm:h-2 rounded-full shadow-sm"
+              className="absolute h-5 rounded-md shadow-sm flex items-center px-1.5 overflow-hidden"
               style={{
                 backgroundColor: item.color,
                 left: `${(item.startCol / 7) * 100}%`,
                 width: `calc(${(item.colSpan / 7) * 100}% - 4px)`, // -4px for gap
                 marginLeft: "2px", // Center in gap
-                top: `${item.laneIndex * 10}px`, // Simple stacking
+                top: `${item.laneIndex * 24}px`, // Adjusted for taller bars (20px + 4px gap)
                 opacity: 0.9,
                 // Border radius logic for continuity
-                borderTopLeftRadius: item.isStart ? "9999px" : "0",
-                borderBottomLeftRadius: item.isStart ? "9999px" : "0",
-                borderTopRightRadius: item.isEnd ? "9999px" : "0",
-                borderBottomRightRadius: item.isEnd ? "9999px" : "0",
+                borderTopLeftRadius: item.isStart ? "6px" : "0",
+                borderBottomLeftRadius: item.isStart ? "6px" : "0",
+                borderTopRightRadius: item.isEnd ? "6px" : "0",
+                borderBottomRightRadius: item.isEnd ? "6px" : "0",
               }}
-            />
+            >
+              <span className="text-[10px] font-bold text-white truncate w-full leading-none drop-shadow-md">
+                {item.title}
+              </span>
+            </div>
           );
         })}
       </div>
