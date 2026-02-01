@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Schedule } from "../../hooks/useSchedules";
 
@@ -37,7 +37,7 @@ const formatDateStr = (year: number, month: number, day: number) => {
   )}`;
 };
 
-const WeekRow = ({
+const WeekRow = memo(({
   days,
   schedules,
   onDayClick,
@@ -145,13 +145,11 @@ const WeekRow = ({
   }, [weekSchedules, days, weekStartStr, weekEndStr]);
 
   // Max visible lanes (rest handled by "more" indicator or just hidden)
-  // Since we have a fixed height for aspect-square cells, we can't show infinite.
-  // We'll show top 3 lanes? Or dynamic.
-  // Let's reserve space for the date number (approx 20-30px).
-  // Each bar is maybe 6px + 2px margin.
+  // Logic: Mobile h-28 (112px). Top-10 (40px). Available = 72px. Bar = 24px. Max = 3.
+  const MAX_LANES = 3;
 
   return (
-    <div className="relative grid grid-cols-7">
+    <div className="relative grid grid-cols-7 overflow-hidden bg-white">
       {/* Background Layer: Day Cells */}
       {days.map((dateObj) => {
         const { day, month, year, currentMonth } = dateObj;
@@ -180,7 +178,7 @@ const WeekRow = ({
           <div
             key={`bg-${dStr}`}
             onClick={() => onDayClick(day, month, year)}
-            className={`relative aspect-square cursor-pointer transition-all group border-r border-b border-gray-50/50 ${
+            className={`relative h-24 sm:h-28 cursor-pointer transition-all group border-r border-b border-gray-50/50 ${
               !currentMonth ? "bg-gray-50/30 text-opacity-30" : ""
             } ${isActive ? "bg-rose-50/30" : "hover:bg-gray-50"}`}
           >
@@ -208,31 +206,31 @@ const WeekRow = ({
 
       {/* Foreground Layer: Schedule Bars */}
       {/* We use a container that sits on top of the grid but respects the column widths */}
-      <div className="absolute inset-0 top-10 pointer-events-none px-0.5">
+      <div className="absolute inset-0 top-9 pointer-events-none px-0.5">
         {/* Render visible items */}
         {visibleItems.map((item) => {
-          // Skip if lane is too high (e.g., > 3) to prevent overflow
-          // if (item.laneIndex > 3) return null;
+          // Skip if lane is too high to prevent overflow
+          if (item.laneIndex >= MAX_LANES) return null;
 
           return (
             <div
               key={`${item.id}-${weekStartStr}`}
-              className="absolute h-5 rounded-md shadow-sm flex items-center px-1.5 overflow-hidden"
+              className="absolute h-4 rounded-md shadow-sm flex items-center px-1 overflow-hidden"
               style={{
                 backgroundColor: item.color,
                 left: `${(item.startCol / 7) * 100}%`,
                 width: `calc(${(item.colSpan / 7) * 100}% - 4px)`, // -4px for gap
                 marginLeft: "2px", // Center in gap
-                top: `${item.laneIndex * 24}px`, // Adjusted for taller bars (20px + 4px gap)
+                top: `${item.laneIndex * 18}px`, // Adjusted for shorter bars (16px + 2px gap)
                 opacity: 0.9,
                 // Border radius logic for continuity
-                borderTopLeftRadius: item.isStart ? "6px" : "0",
-                borderBottomLeftRadius: item.isStart ? "6px" : "0",
-                borderTopRightRadius: item.isEnd ? "6px" : "0",
-                borderBottomRightRadius: item.isEnd ? "6px" : "0",
+                borderTopLeftRadius: item.isStart ? "4px" : "0",
+                borderBottomLeftRadius: item.isStart ? "4px" : "0",
+                borderTopRightRadius: item.isEnd ? "4px" : "0",
+                borderBottomRightRadius: item.isEnd ? "4px" : "0",
               }}
             >
-              <span className="text-[10px] font-bold text-white truncate w-full leading-none drop-shadow-md">
+              <span className="text-[9px] font-bold text-white truncate w-full leading-none drop-shadow-sm">
                 {item.title}
               </span>
             </div>
@@ -241,7 +239,7 @@ const WeekRow = ({
       </div>
     </div>
   );
-};
+});
 
 const CalendarGrid = ({
   currentDate,
@@ -299,9 +297,7 @@ const CalendarGrid = ({
   }, [year, month]);
 
   return (
-    <motion.div
-      layout
-      transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
+    <div
       className="bg-white rounded-[32px] pt-6 px-2 pb-2 sm:p-6 shadow-sm border border-rose-50 relative overflow-hidden"
     >
       {/* Header Days */}
@@ -351,7 +347,7 @@ const CalendarGrid = ({
           </motion.div>
         </AnimatePresence>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
