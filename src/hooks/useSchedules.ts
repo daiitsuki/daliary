@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCouple } from './useCouple';
+import { CATEGORY_CONFIG } from '../components/calendar/constants';
 
 export interface Schedule {
   id: string;
@@ -26,6 +27,9 @@ export const useSchedules = () => {
     if (!couple?.id) return;
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
@@ -33,7 +37,34 @@ export const useSchedules = () => {
         .order('start_date', { ascending: true });
 
       if (error) throw error;
-      setSchedules(data || []);
+
+      // Transform data based on viewer perspective
+      const transformedData = (data || []).map((schedule: Schedule) => {
+        // If it's a couple schedule, no transformation needed
+        if (schedule.category === 'couple') return schedule;
+
+        const isWriter = schedule.writer_id === user.id;
+        let effectiveCategory = schedule.category;
+
+        if (isWriter) {
+          // I wrote it: 'me' is me, 'partner' is partner. No change.
+          effectiveCategory = schedule.category;
+        } else {
+          // Partner wrote it:
+          // Their 'me' is my 'partner'
+          // Their 'partner' is 'me'
+          effectiveCategory = schedule.category === 'me' ? 'partner' : 'me';
+        }
+
+        return {
+          ...schedule,
+          category: effectiveCategory,
+          // Override color based on the interpreted category to ensure consistency
+          color: CATEGORY_CONFIG[effectiveCategory as keyof typeof CATEGORY_CONFIG].color
+        };
+      });
+
+      setSchedules(transformedData);
     } catch (err) {
       console.error('Error fetching schedules:', err);
     } finally {
