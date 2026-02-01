@@ -16,10 +16,10 @@ function App() {
   return (
     <CoupleProvider>
       <CouplePointsProvider>
-        <div className="relative w-full h-[100svh] bg-gray-50 flex justify-center items-center md:py-8 overflow-hidden">
+        <div className="fixed inset-0 w-full h-full bg-gray-50 flex justify-center items-center md:py-8 overflow-hidden">
           <div className="w-full h-full md:max-w-5xl md:h-[90vh] bg-white md:rounded-[32px] md:shadow-2xl md:border-8 md:border-white overflow-hidden relative flex flex-col">
             <Router>
-              <div className="flex-1 relative overflow-hidden flex flex-col">
+              <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
                 <Routes>
                   <Route path="/login" element={<Auth />} />
                   

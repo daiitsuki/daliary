@@ -91,7 +91,23 @@ export const useSchedules = () => {
   };
 
   const updateSchedule = async (id: string, updates: Partial<Schedule>) => {
-    const { error } = await supabase.from('schedules').update(updates).eq('id', id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Find original schedule to check ownership
+    const originalSchedule = schedules.find(s => s.id === id);
+    if (!originalSchedule) return;
+
+    let finalUpdates = { ...updates };
+    
+    // If I am NOT the writer, I need to inverse-transform the category back to the writer's perspective
+    if (originalSchedule.writer_id !== user.id && updates.category && updates.category !== 'couple') {
+      const inverseCategory = updates.category === 'me' ? 'partner' : 'me';
+      finalUpdates.category = inverseCategory;
+      finalUpdates.color = CATEGORY_CONFIG[inverseCategory as keyof typeof CATEGORY_CONFIG].color;
+    }
+
+    const { error } = await supabase.from('schedules').update(finalUpdates).eq('id', id);
     if (error) throw error;
     fetchSchedules();
   };
