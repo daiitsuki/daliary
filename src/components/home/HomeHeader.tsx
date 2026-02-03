@@ -81,11 +81,6 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
                 <UserPlus size={20} />
               </div>
             )}
-
-            {/* Online Indicator Dot if '접속중' */}
-            {activeStatus === "접속중" && (
-              <div className="absolute bottom-1 right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
-            )}
           </div>
           <div className="flex flex-col items-center mt-2.5">
             <span className="text-[11px] text-gray-400 font-bold tracking-[0.1em] uppercase leading-none">

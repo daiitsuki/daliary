@@ -69,11 +69,17 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
           .limit(50)
       ]);
 
-      if (totalRes.error) throw totalRes.error;
-      if (historyRes.error) throw historyRes.error;
+      if (totalRes.error) {
+        console.error('Error fetching total points:', totalRes.error);
+      } else {
+        setTotalPoints(Number(totalRes.data) || 0);
+      }
 
-      setTotalPoints(totalRes.data || 0);
-      setHistory(historyRes.data || []);
+      if (historyRes.error) {
+        console.error('Error fetching point history:', historyRes.error);
+      } else {
+        setHistory(historyRes.data || []);
+      }
     } catch (err) {
       console.error('Error fetching points:', err);
     }
@@ -139,9 +145,20 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
     if (couple?.id) {
       loadAll();
 
+      // Refetch on window focus or visibility change to ensure consistency
+      // Use silent refresh (not loadAll) to avoid UI flickering
+      const handleFocus = () => {
+        if (document.visibilityState === 'visible') {
+          Promise.all([fetchPoints(), fetchAttendance()]);
+        }
+      };
+
+      window.addEventListener('focus', handleFocus);
+      document.addEventListener('visibilitychange', handleFocus);
+
       // Real-time subscriptions
       const pointsChannel = supabase
-        .channel('points-realtime-global')
+        .channel(`points-realtime-${couple.id}`)
         .on('postgres_changes', { 
           event: 'INSERT', 
           schema: 'public', 
@@ -151,7 +168,7 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
         .subscribe();
 
       const attendanceChannel = supabase
-        .channel('attendance-realtime-global')
+        .channel(`attendance-realtime-${couple.id}`)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -161,6 +178,8 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
         .subscribe();
 
       return () => {
+        window.removeEventListener('focus', handleFocus);
+        document.removeEventListener('visibilitychange', handleFocus);
         supabase.removeChannel(pointsChannel);
         supabase.removeChannel(attendanceChannel);
       };
