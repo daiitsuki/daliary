@@ -1,5 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Smile, Heart, Unlock, Lock } from "lucide-react";
+import { Smile, Heart, Unlock, Lock, History } from "lucide-react";
+import { useState } from "react";
+import QuestionHistoryModal from "./QuestionHistoryModal";
 
 interface DailyQuestionSectionProps {
   todayQuestion: any;
@@ -9,6 +11,9 @@ interface DailyQuestionSectionProps {
   setInputAnswer: (val: string) => void;
   isSubmitting: boolean;
   onSubmit: () => void;
+  coupleId: string | undefined;
+  currentUserId: string | null;
+  couple?: any;
 }
 
 const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
@@ -19,15 +24,26 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
   setInputAnswer,
   isSubmitting,
   onSubmit,
+  coupleId,
+  currentUserId,
+  couple,
 }) => {
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const bothAnswered = !!(myAnswer && partnerAnswer);
 
   return (
     <section>
-      <div className="flex items-center space-x-2 mb-4 px-2">
+      <div className="flex items-center justify-between mb-4 px-2">
         <h2 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">
           오늘의 질문
         </h2>
+        <button
+          onClick={() => setIsHistoryOpen(true)}
+          className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 hover:text-rose-400 transition-colors bg-gray-50 px-3 py-1.5 rounded-full"
+        >
+          <History size={12} />
+          기록 보기
+        </button>
       </div>
 
       <AnimatePresence mode="wait">
@@ -106,6 +122,17 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
               </div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isHistoryOpen && (
+          <QuestionHistoryModal
+            onClose={() => setIsHistoryOpen(false)}
+            coupleId={coupleId}
+            currentUserId={currentUserId}
+            createdAt={couple?.created_at}
+          />
         )}
       </AnimatePresence>
     </section>

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { SimpleSouthKoreaMapChart } from 'react-simple-south-korea-map-chart';
 import 'react-simple-south-korea-map-chart/dist/map.css';
 
@@ -34,7 +34,7 @@ const FULL_NAME_TO_REGION: Record<string, string> = Object.entries(REGION_TO_FUL
   return acc;
 }, {} as Record<string, string>);
 
-const KoreaMap: React.FC<KoreaMapProps> = ({ stats, onRegionClick }) => {
+const KoreaMap: React.FC<KoreaMapProps> = memo(({ stats, onRegionClick }) => {
   
   const data = useMemo(() => {
     return Object.entries(stats).map(([koreanName, count]) => {
@@ -53,7 +53,7 @@ const KoreaMap: React.FC<KoreaMapProps> = ({ stats, onRegionClick }) => {
   };
 
   // Custom tooltip to prevent empty boxes from showing
-  const CustomTooltip = ({ children, tooltipStyle }: any) => {
+  const CustomTooltip = memo(({ children, tooltipStyle }: any) => {
     if (!children) return null;
     return (
       <div 
@@ -77,7 +77,7 @@ const KoreaMap: React.FC<KoreaMapProps> = ({ stats, onRegionClick }) => {
         {children}
       </div>
     );
-  };
+  });
 
   // The library doesn't pass onClick to its paths correctly, so we use event delegation
   const handleMapClick = (e: React.MouseEvent) => {
@@ -114,6 +114,6 @@ const KoreaMap: React.FC<KoreaMapProps> = ({ stats, onRegionClick }) => {
       </div>
     </div>
   );
-};
+});
 
 export default KoreaMap;

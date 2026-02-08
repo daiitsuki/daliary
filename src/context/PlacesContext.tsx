@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { KOREA_REGIONS } from '../hooks/useVisitVerification';
+import { KOREA_REGIONS } from '../constants/regions';
 import { useCouple } from '../hooks/useCouple';
 
 export interface VisitWithPlace {
@@ -8,6 +8,7 @@ export interface VisitWithPlace {
   visited_at: string;
   image_url: string | null;
   region: string;
+  sub_region: string | null;
   places: { name: string; address: string; } | null;
   visit_comments?: { count: number }[];
 }
@@ -25,6 +26,7 @@ interface PlacesContextType {
   visits: VisitWithPlace[];
   wishlist: Place[];
   stats: Record<string, number>;
+  subRegionStats: Record<string, Record<string, number>>;
   loading: boolean;
   refresh: () => Promise<void>;
   deleteWishlistPlace: (id: string) => Promise<boolean>;
@@ -39,6 +41,7 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [visits, setVisits] = useState<VisitWithPlace[]>([]);
   const [wishlist, setWishlist] = useState<Place[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({});
+  const [subRegionStats, setSubRegionStats] = useState<Record<string, Record<string, number>>>({});
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -47,7 +50,11 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       setLoading(true);
       const counts: Record<string, number> = {};
-      KOREA_REGIONS.forEach(r => counts[r] = 0);
+      const subCounts: Record<string, Record<string, number>> = {};
+      KOREA_REGIONS.forEach(r => {
+        counts[r] = 0;
+        subCounts[r] = {};
+      });
       
       const [visitsRes, wishlistRes] = await Promise.allSettled([
         supabase.from('visits').select('*, places!inner(name, address, couple_id), visit_comments(count)').eq('places.couple_id', couple.id).order('visited_at', { ascending: false }),
@@ -57,12 +64,22 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (visitsRes.status === 'fulfilled' && visitsRes.value.data) {
         setVisits(visitsRes.value.data as any);
         visitsRes.value.data.forEach(v => {
-          if (v.region && counts.hasOwnProperty(v.region)) counts[v.region]++;
+          if (v.region && counts.hasOwnProperty(v.region)) {
+            counts[v.region]++;
+            
+            if (v.sub_region) {
+              if (!subCounts[v.region][v.sub_region]) {
+                subCounts[v.region][v.sub_region] = 0;
+              }
+              subCounts[v.region][v.sub_region]++;
+            }
+          }
         });
       }
       if (wishlistRes.status === 'fulfilled' && wishlistRes.value.data) setWishlist(wishlistRes.value.data);
 
       setStats(counts);
+      setSubRegionStats(subCounts);
     } catch (err) {
       console.error('Error fetching places data:', err);
     } finally {
@@ -82,7 +99,13 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const updateVisit = async (visitId: string, data: { visited_at: string; image_url: string | null }) => {
+  const updateVisit = async (visitId: string, data: { 
+    visited_at: string; 
+    image_url: string | null;
+    place_id?: string;
+    region?: string;
+    sub_region?: string | null;
+  }) => {
     try {
       const { error } = await supabase
         .from('visits')
@@ -120,7 +143,7 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   return (
     <PlacesContext.Provider value={{ 
-      visits, wishlist, stats, loading, 
+      visits, wishlist, stats, subRegionStats, loading, 
       refresh: fetchData, deleteWishlistPlace, updateVisit, deleteVisit 
     }}>
       {children}

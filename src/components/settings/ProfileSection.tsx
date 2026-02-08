@@ -1,4 +1,4 @@
-import { Camera } from "lucide-react";
+import { Camera, User } from "lucide-react";
 import { Profile } from "../../types";
 import { useRef } from "react";
 
@@ -7,6 +7,8 @@ interface ProfileSectionProps {
   nickname: string;
   onNicknameChange: (value: string) => void;
   onAvatarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSave?: () => void;
+  showSave?: boolean;
 }
 
 export default function ProfileSection({
@@ -14,13 +16,15 @@ export default function ProfileSection({
   nickname,
   onNicknameChange,
   onAvatarChange,
+  onSave,
+  showSave = false,
 }: ProfileSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <section className="flex flex-col items-center">
       <div className="relative mb-4">
-        <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden border-4 border-white shadow-md">
+        <div className="w-24 h-24 rounded-full bg-gray-50 overflow-hidden border-4 border-white shadow-md flex items-center justify-center">
           {profile?.avatar_url ? (
             <img
               src={profile.avatar_url}
@@ -28,11 +32,7 @@ export default function ProfileSection({
               className="w-full h-full object-cover"
             />
           ) : (
-            <img
-              src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${profile?.id || "default"}`}
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
+            <User size={40} className="text-gray-300" />
           )}
         </div>
         <button
@@ -54,18 +54,23 @@ export default function ProfileSection({
         <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">
           닉네임
         </label>
-        <input
-          type="text"
-          value={nickname}
-          onChange={(e) => onNicknameChange(e.target.value)}
-          className="w-full bg-white p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-rose-300 text-gray-800"
-          placeholder="닉네임을 입력하세요"
-        />
-        {profile && nickname !== profile.nickname && (
-          <p className="text-xs text-rose-500 mt-2 ml-1 animate-pulse">
-            * 오른쪽 위 저장 버튼을 눌러 변경사항을 저장하세요.
-          </p>
-        )}
+        <div className="relative flex items-center">
+          <input
+            type="text"
+            value={nickname}
+            onChange={(e) => onNicknameChange(e.target.value)}
+            className="w-full bg-white p-4 pr-16 rounded-xl border border-gray-200 focus:outline-none focus:border-rose-300 text-gray-800"
+            placeholder="닉네임을 입력하세요"
+          />
+          {showSave && (
+            <button
+              onClick={onSave}
+              className="absolute right-3 px-3 py-1 bg-rose-500 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-rose-600 transition-colors"
+            >
+              저장
+            </button>
+          )}
+        </div>
       </div>
     </section>
   );

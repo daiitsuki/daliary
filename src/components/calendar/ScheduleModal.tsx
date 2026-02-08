@@ -60,9 +60,33 @@ const ScheduleModal = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const handleStartDateChange = (date: string) => {
+    setStartDate(date);
+    // 시작일이 종료일보다 늦어지면 종료일을 시작일과 맞춤
+    if (new Date(date) > new Date(endDate)) {
+      setEndDate(date);
+    }
+  };
+
+  const handleEndDateChange = (date: string) => {
+    // 종료일이 시작일보다 빠르면 무시하거나 시작일로 맞춤
+    if (new Date(date) < new Date(startDate)) {
+      alert("종료일은 시작일보다 빠를 수 없습니다.");
+      setEndDate(startDate);
+    } else {
+      setEndDate(date);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title) return;
+
+    // 최종 검증
+    if (new Date(startDate) > new Date(endDate)) {
+      alert("날짜 설정이 올바르지 않습니다.");
+      return;
+    }
     
     const data = {
       title,
@@ -141,8 +165,8 @@ const ScheduleModal = ({
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <DatePicker label="시작 날짜" value={startDate} onChange={setStartDate} />
-                  <DatePicker label="종료 날짜" value={endDate} onChange={setEndDate} />
+                  <DatePicker label="시작 날짜" value={startDate} onChange={handleStartDateChange} />
+                  <DatePicker label="종료 날짜" value={endDate} onChange={handleEndDateChange} />
                 </div>
 
                 <div className="space-y-3">

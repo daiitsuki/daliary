@@ -260,6 +260,7 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
         <VisitForm
           placeId={savedPlaceId}
           placeName={selectedPlace.place_name}
+          placeAddress={selectedPlace.road_address_name || selectedPlace.address_name}
           onClose={() => setIsVisitFormOpen(false)}
           onSuccess={() => {
             setIsVisitFormOpen(false);

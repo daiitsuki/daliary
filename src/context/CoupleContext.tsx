@@ -10,6 +10,7 @@ interface CoupleContextType {
   fetchCoupleInfo: () => Promise<void>;
   generateInviteCode: () => Promise<Couple>;
   joinCouple: (code: string) => Promise<void>;
+  disconnect: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -197,6 +198,23 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const disconnect = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.rpc('delete_couple_and_all_data');
+      if (error) throw error;
+      
+      setCouple(null);
+      await fetchCoupleInfo();
+    } catch (err: any) {
+      console.error('Error disconnecting couple:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setCouple(null);
@@ -204,7 +222,7 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <CoupleContext.Provider value={{ couple, profile, loading, error, fetchCoupleInfo, generateInviteCode, joinCouple, signOut }}>
+    <CoupleContext.Provider value={{ couple, profile, loading, error, fetchCoupleInfo, generateInviteCode, joinCouple, disconnect, signOut }}>
       {children}
     </CoupleContext.Provider>
   );

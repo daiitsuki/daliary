@@ -1,8 +1,8 @@
-import React from "react";
-import { Heart, UserPlus } from "lucide-react";
+import React, { useState } from "react";
+import { Heart, UserPlus, User } from "lucide-react";
+import ImageViewerModal from "../common/ImageViewerModal";
 
 interface HomeHeaderProps {
-  currentUserId: string | null;
   myProfile: any;
   partnerProfile: any;
   dDay: number | string;
@@ -10,14 +10,25 @@ interface HomeHeaderProps {
 }
 
 const HomeHeader: React.FC<HomeHeaderProps> = ({
-  currentUserId,
   myProfile,
   partnerProfile,
   dDay,
   couple,
 }) => {
-  const defaultAvatar = (id: string) =>
-    `https://api.dicebear.com/7.x/lorelei/svg?seed=${id}`;
+  const [viewerState, setViewerState] = useState<{ isOpen: boolean; url: string | null; title: string }>({
+    isOpen: false,
+    url: null,
+    title: ""
+  });
+
+  const openViewer = (url: string | null, title: string) => {
+    if (!url) return;
+    setViewerState({ isOpen: true, url, title });
+  };
+
+  const closeViewer = () => {
+    setViewerState(prev => ({ ...prev, isOpen: false }));
+  };
 
   const getLastActiveLabel = (dateString?: string) => {
     if (!dateString) return null;
@@ -43,14 +54,19 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
       <div className="flex items-center justify-center space-x-10 mb-2">
         {/* My Profile */}
         <div className="flex flex-col items-center">
-          <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-50 border border-rose-100 overflow-hidden shadow-sm transition-transform hover:scale-105">
-            <img
-              src={
-                myProfile?.avatar_url || defaultAvatar(currentUserId || "me")
-              }
-              alt="Me"
-              className="w-full h-full object-cover opacity-90"
-            />
+          <div 
+            onClick={() => openViewer(myProfile?.avatar_url, myProfile?.nickname || "나")}
+            className={`w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-50 border border-rose-100 overflow-hidden shadow-sm transition-transform active:scale-95 flex items-center justify-center ${myProfile?.avatar_url ? 'cursor-pointer hover:scale-105' : ''}`}
+          >
+            {myProfile?.avatar_url ? (
+              <img
+                src={myProfile.avatar_url}
+                alt="Me"
+                className="w-full h-full object-cover opacity-90"
+              />
+            ) : (
+              <User size={24} className="text-gray-300" />
+            )}
           </div>
           <span className="text-[11px] mt-2.5 text-gray-400 font-bold tracking-[0.1em] uppercase">
             {myProfile?.nickname || "나"}
@@ -67,19 +83,22 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
         {/* Partner Profile */}
         <div className="flex flex-col items-center">
-          <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-50 border border-gray-100 overflow-hidden shadow-sm transition-transform hover:scale-105 relative">
-            {partnerProfile ? (
+          <div 
+            onClick={() => openViewer(partnerProfile?.avatar_url, partnerProfile?.nickname || "상대방")}
+            className={`w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-50 border border-gray-100 overflow-hidden shadow-sm transition-transform active:scale-95 relative flex items-center justify-center ${partnerProfile?.avatar_url ? 'cursor-pointer hover:scale-105' : ''}`}
+          >
+            {partnerProfile?.avatar_url ? (
               <img
-                src={
-                  partnerProfile.avatar_url || defaultAvatar(partnerProfile.id)
-                }
+                src={partnerProfile.avatar_url}
                 alt="Partner"
                 className="w-full h-full object-cover opacity-90"
               />
-            ) : (
+            ) : !partnerProfile ? (
               <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-300">
                 <UserPlus size={20} />
               </div>
+            ) : (
+              <User size={24} className="text-gray-300" />
             )}
           </div>
           <div className="flex flex-col items-center mt-2.5">
@@ -101,6 +120,13 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
           </div>
         </div>
       </div>
+
+      <ImageViewerModal
+        isOpen={viewerState.isOpen}
+        onClose={closeViewer}
+        imageUrl={viewerState.url}
+        title={viewerState.title}
+      />
     </header>
   );
 };

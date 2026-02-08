@@ -159,24 +159,25 @@ const Calendar = () => {
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/30">
-      <div className="max-w-6xl mx-auto px-4 py-6 lg:py-10">
-        
-        <CalendarHeader
-          currentDate={currentDate}
-          onMonthChange={handleMonthChange}
-          onGoToday={handleGoToday}
-          isSearchActive={isSearchActive}
-          setIsSearchActive={setIsSearchActive}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-        />
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="max-w-6xl mx-auto px-4 py-6 lg:py-10"
+      >
+        <motion.div variants={itemVariants}>
+          <CalendarHeader
+            currentDate={currentDate}
+            onMonthChange={handleMonthChange}
+            onGoToday={handleGoToday}
+            isSearchActive={isSearchActive}
+            setIsSearchActive={setIsSearchActive}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+        </motion.div>
 
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="flex flex-col lg:flex-row gap-8 items-start mt-6"
-        >
+        <div className="flex flex-col lg:flex-row gap-8 items-start mt-6">
           <motion.div variants={itemVariants} className="w-full lg:flex-1">
             <CalendarGrid
               currentDate={currentDate}
@@ -204,8 +205,8 @@ const Calendar = () => {
               today={getKSTToday()}
             />
           </motion.div>
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
 
       <ScheduleModal
         isOpen={showModal}

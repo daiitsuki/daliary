@@ -2,10 +2,26 @@ import React, { useState, useMemo } from 'react';
 import { usePlaces, Place } from '../context/PlacesContext';
 import { MapPin, Trash2, CheckCircle, Navigation, Search } from 'lucide-react';
 import VisitForm from './VisitForm';
+import { motion, Variants } from 'framer-motion';
 
-interface WishlistProps {
-  onShowOnMap: (place: Place) => void;
-}
+const container: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const item: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" }
+  }
+};
 
 const getRegionFromAddress = (address: string | null): string => {
   if (!address) return "기타";
@@ -29,6 +45,10 @@ const getRegionFromAddress = (address: string | null): string => {
   return "기타";
 };
 
+interface WishlistProps {
+  onShowOnMap: (place: Place) => void;
+}
+
 const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
   const { wishlist, loading, deleteWishlistPlace, refresh } = usePlaces();
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -42,7 +62,6 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
       groups[region].push(place);
     });
     
-    // 지역 이름으로 정렬 (가나다 순)
     return Object.keys(groups)
       .sort()
       .reduce((acc, key) => {
@@ -73,23 +92,30 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      <div className="px-6 py-6 pb-2">
+    <motion.div 
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="flex flex-col h-full bg-white"
+    >
+      {/* Header Section */}
+      <motion.div variants={item} className="px-6 py-6 pb-2">
         <h1 className="text-2xl font-bold text-gray-800 mb-1">가고 싶은 곳 ⭐</h1>
         <p className="text-gray-500 text-sm">
           우리 함께 가기로 약속한 <span className="text-rose-500 font-bold">{wishlist.length}곳</span>의 장소들이에요.
         </p>
-      </div>
+      </motion.div>
 
+      {/* List Section */}
       <div className="flex-1 overflow-y-auto p-4 space-y-8 custom-scrollbar pb-32">
         {wishlist.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200 mt-4">
+          <motion.div variants={item} className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200 mt-4">
             <Search className="mx-auto text-gray-200 mb-3" size={48} />
             <p className="text-gray-400 text-sm">아직 저장된 장소가 없어요.<br/>'장소 찾기'에서 가고 싶은 곳을 추가해보세요!</p>
-          </div>
+          </motion.div>
         ) : (
           Object.entries(groupedWishlist).map(([region, places]) => (
-            <div key={region} className="space-y-3">
+            <motion.div variants={item} key={region} className="space-y-3">
               <div className="flex items-center gap-2 px-1">
                 <div className="w-1 h-3 bg-rose-400 rounded-full"></div>
                 <h2 className="text-xs font-black text-gray-600 uppercase tracking-tight">
@@ -137,7 +163,7 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ))
         )}
       </div>
@@ -146,6 +172,7 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
         <VisitForm
           placeId={selectedPlace.id}
           placeName={selectedPlace.name}
+          placeAddress={selectedPlace.address}
           onClose={() => setIsVisitFormOpen(false)}
           onSuccess={() => {
             setIsVisitFormOpen(false);
@@ -153,7 +180,7 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
           }}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
 

@@ -86,7 +86,6 @@ export default function Home() {
   return (
     <div className="flex-1 bg-white text-gray-800 pb-24 overflow-y-auto custom-scrollbar relative">
       <HomeHeader
-        currentUserId={currentUserId}
         myProfile={myProfile}
         partnerProfile={partnerProfile}
         dDay={dDay}
@@ -149,6 +148,9 @@ export default function Home() {
               setInputAnswer={setInputAnswer}
               isSubmitting={isSubmitting}
               onSubmit={handleAnswerSubmit}
+              coupleId={couple?.id}
+              currentUserId={currentUserId}
+              couple={couple}
             />
           </motion.div>
         </main>

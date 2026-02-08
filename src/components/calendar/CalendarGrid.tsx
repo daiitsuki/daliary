@@ -37,209 +37,211 @@ const formatDateStr = (year: number, month: number, day: number) => {
   )}`;
 };
 
-const WeekRow = memo(({
-  days,
-  schedules,
-  onDayClick,
-  selectedDate,
-  isDateSelected,
-  today,
-}: {
-  days: any[];
-  schedules: Schedule[];
-  onDayClick: (d: number, m: number, y: number) => void;
-  selectedDate: Date;
-  isDateSelected: boolean;
-  today: Date;
-}) => {
-  // 1. Identify Week Range
-  const weekStart = days[0];
-  const weekEnd = days[6];
-  const weekStartStr = formatDateStr(
-    weekStart.year,
-    weekStart.month,
-    weekStart.day,
-  );
-  const weekEndStr = formatDateStr(weekEnd.year, weekEnd.month, weekEnd.day);
+const WeekRow = memo(
+  ({
+    days,
+    schedules,
+    onDayClick,
+    selectedDate,
+    isDateSelected,
+    today,
+  }: {
+    days: any[];
+    schedules: Schedule[];
+    onDayClick: (d: number, m: number, y: number) => void;
+    selectedDate: Date;
+    isDateSelected: boolean;
+    today: Date;
+  }) => {
+    // 1. Identify Week Range
+    const weekStart = days[0];
+    const weekEnd = days[6];
+    const weekStartStr = formatDateStr(
+      weekStart.year,
+      weekStart.month,
+      weekStart.day,
+    );
+    const weekEndStr = formatDateStr(weekEnd.year, weekEnd.month, weekEnd.day);
 
-  // 2. Filter schedules in this week
-  const weekSchedules = useMemo(() => {
-    return schedules
-      .filter((s) => s.end_date >= weekStartStr && s.start_date <= weekEndStr)
-      .sort((a, b) => {
-        // Sort by start date, then by duration (longer first)
-        if (a.start_date !== b.start_date)
-          return a.start_date.localeCompare(b.start_date);
-        const durA =
-          new Date(a.end_date).getTime() - new Date(a.start_date).getTime();
-        const durB =
-          new Date(b.end_date).getTime() - new Date(b.start_date).getTime();
-        return durB - durA;
-      });
-  }, [schedules, weekStartStr, weekEndStr]);
+    // 2. Filter schedules in this week
+    const weekSchedules = useMemo(() => {
+      return schedules
+        .filter((s) => s.end_date >= weekStartStr && s.start_date <= weekEndStr)
+        .sort((a, b) => {
+          // Sort by start date, then by duration (longer first)
+          if (a.start_date !== b.start_date)
+            return a.start_date.localeCompare(b.start_date);
+          const durA =
+            new Date(a.end_date).getTime() - new Date(a.start_date).getTime();
+          const durB =
+            new Date(b.end_date).getTime() - new Date(b.start_date).getTime();
+          return durB - durA;
+        });
+    }, [schedules, weekStartStr, weekEndStr]);
 
-  // 3. Allocate Slots
-  // We map each visual schedule item to a "lane" index (0, 1, 2...)
-  const visibleItems = useMemo(() => {
-    const lanes: string[] = []; // stores the end_date of the last item in this lane
-    const items: any[] = [];
+    // 3. Allocate Slots
+    // We map each visual schedule item to a "lane" index (0, 1, 2...)
+    const visibleItems = useMemo(() => {
+      const lanes: string[] = []; // stores the end_date of the last item in this lane
+      const items: any[] = [];
 
-    weekSchedules.forEach((s) => {
-      // Determine columns (0-6)
-      let startCol = 0;
-      let endCol = 6;
+      weekSchedules.forEach((s) => {
+        // Determine columns (0-6)
+        let startCol = 0;
+        let endCol = 6;
 
-      // Find precise start col
-      if (s.start_date >= weekStartStr) {
-        // We can't just use day index because of month boundaries
-        // Instead, find the matching day object in 'days' array
-        const idx = days.findIndex(
-          (d) => formatDateStr(d.year, d.month, d.day) === s.start_date,
-        );
-        if (idx !== -1) startCol = idx;
-      }
-
-      // Find precise end col
-      if (s.end_date <= weekEndStr) {
-        const idx = days.findIndex(
-          (d) => formatDateStr(d.year, d.month, d.day) === s.end_date,
-        );
-        if (idx !== -1) endCol = idx;
-      }
-
-      // Check for free lane
-      let laneIndex = -1;
-      for (let i = 0; i < lanes.length; i++) {
-        // We need a gap? Usually no, but dates are inclusive.
-        // If last item ended on '2024-01-01', next item can start on '2024-01-02'.
-        // Comparing strings: if lanes[i] < s.start_date
-        if (lanes[i] < s.start_date) {
-          laneIndex = i;
-          break;
+        // Find precise start col
+        if (s.start_date >= weekStartStr) {
+          // We can't just use day index because of month boundaries
+          // Instead, find the matching day object in 'days' array
+          const idx = days.findIndex(
+            (d) => formatDateStr(d.year, d.month, d.day) === s.start_date,
+          );
+          if (idx !== -1) startCol = idx;
         }
-      }
 
-      if (laneIndex === -1) {
-        laneIndex = lanes.length;
-        lanes.push(s.end_date);
-      } else {
-        lanes[laneIndex] = s.end_date;
-      }
+        // Find precise end col
+        if (s.end_date <= weekEndStr) {
+          const idx = days.findIndex(
+            (d) => formatDateStr(d.year, d.month, d.day) === s.end_date,
+          );
+          if (idx !== -1) endCol = idx;
+        }
 
-      // Visual Properties
-      const isStart = s.start_date >= weekStartStr;
-      const isEnd = s.end_date <= weekEndStr;
-      const colSpan = endCol - startCol + 1;
+        // Check for free lane
+        let laneIndex = -1;
+        for (let i = 0; i < lanes.length; i++) {
+          // We need a gap? Usually no, but dates are inclusive.
+          // If last item ended on '2024-01-01', next item can start on '2024-01-02'.
+          // Comparing strings: if lanes[i] < s.start_date
+          if (lanes[i] < s.start_date) {
+            laneIndex = i;
+            break;
+          }
+        }
 
-      items.push({
-        ...s,
-        laneIndex,
-        startCol,
-        colSpan,
-        isStart,
-        isEnd,
+        if (laneIndex === -1) {
+          laneIndex = lanes.length;
+          lanes.push(s.end_date);
+        } else {
+          lanes[laneIndex] = s.end_date;
+        }
+
+        // Visual Properties
+        const isStart = s.start_date >= weekStartStr;
+        const isEnd = s.end_date <= weekEndStr;
+        const colSpan = endCol - startCol + 1;
+
+        items.push({
+          ...s,
+          laneIndex,
+          startCol,
+          colSpan,
+          isStart,
+          isEnd,
+        });
       });
-    });
 
-    return items;
-  }, [weekSchedules, days, weekStartStr, weekEndStr]);
+      return items;
+    }, [weekSchedules, days, weekStartStr, weekEndStr]);
 
-  // Max visible lanes (rest handled by "more" indicator or just hidden)
-  // Logic: Mobile h-28 (112px). Top-10 (40px). Available = 72px. Bar = 24px. Max = 3.
-  const MAX_LANES = 3;
+    // Max visible lanes (rest handled by "more" indicator or just hidden)
+    // Logic: Mobile h-28 (112px). Top-10 (40px). Available = 72px. Bar = 24px. Max = 3.
+    const MAX_LANES = 3;
 
-  return (
-    <div className="relative grid grid-cols-7 overflow-hidden bg-white">
-      {/* Background Layer: Day Cells */}
-      {days.map((dateObj) => {
-        const { day, month, year, currentMonth } = dateObj;
-        const dStr = formatDateStr(year, month, day);
+    return (
+      <div className="relative grid grid-cols-7 overflow-hidden bg-white">
+        {/* Background Layer: Day Cells */}
+        {days.map((dateObj) => {
+          const { day, month, year, currentMonth } = dateObj;
+          const dStr = formatDateStr(year, month, day);
 
-        const isActive =
-          isDateSelected &&
-          selectedDate.getDate() === day &&
-          selectedDate.getMonth() === month &&
-          selectedDate.getFullYear() === year;
+          const isActive =
+            isDateSelected &&
+            selectedDate.getDate() === day &&
+            selectedDate.getMonth() === month &&
+            selectedDate.getFullYear() === year;
 
-        const isToday =
-          today.getDate() === day &&
-          today.getMonth() === month &&
-          today.getFullYear() === year;
+          const isToday =
+            today.getDate() === day &&
+            today.getMonth() === month &&
+            today.getFullYear() === year;
 
-        // Check if there is a holiday on this day
-        const isHoliday = schedules.some(
-          (s) =>
-            s.id.startsWith("holiday-") &&
-            s.start_date <= dStr &&
-            s.end_date >= dStr
-        );
-
-        return (
-          <div
-            key={`bg-${dStr}`}
-            onClick={() => onDayClick(day, month, year)}
-            className={`relative h-24 sm:h-28 cursor-pointer transition-all group border-r border-b border-gray-50/50 ${
-              !currentMonth ? "bg-gray-50/30 text-opacity-30" : ""
-            } ${isActive ? "bg-rose-50/30" : "hover:bg-gray-50"}`}
-          >
-            {/* Day Number */}
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-              <span
-                className={`text-[13px] sm:text-sm font-black transition-all flex items-center justify-center w-7 h-7 rounded-full ${
-                  isToday
-                    ? "bg-rose-500 text-white shadow-sm"
-                    : isActive
-                      ? "text-rose-500 scale-110 bg-white shadow-sm ring-1 ring-rose-100"
-                      : !currentMonth
-                        ? "text-gray-300"
-                        : isHoliday
-                          ? "text-red-500"
-                          : "text-gray-700 group-hover:bg-white group-hover:shadow-sm"
-                }`}
-              >
-                {day}
-              </span>
-            </div>
-          </div>
-        );
-      })}
-
-      {/* Foreground Layer: Schedule Bars */}
-      {/* We use a container that sits on top of the grid but respects the column widths */}
-      <div className="absolute inset-0 top-9 pointer-events-none px-0.5">
-        {/* Render visible items */}
-        {visibleItems.map((item) => {
-          // Skip if lane is too high to prevent overflow
-          if (item.laneIndex >= MAX_LANES) return null;
+          // Check if there is a holiday on this day
+          const isHoliday = schedules.some(
+            (s) =>
+              s.id.startsWith("holiday-") &&
+              s.start_date <= dStr &&
+              s.end_date >= dStr,
+          );
 
           return (
             <div
-              key={`${item.id}-${weekStartStr}`}
-              className="absolute h-4 rounded-md shadow-sm flex items-center px-1 overflow-hidden"
-              style={{
-                backgroundColor: item.color,
-                left: `${(item.startCol / 7) * 100}%`,
-                width: `calc(${(item.colSpan / 7) * 100}% - 4px)`, // -4px for gap
-                marginLeft: "2px", // Center in gap
-                top: `${item.laneIndex * 18}px`, // Adjusted for shorter bars (16px + 2px gap)
-                opacity: 0.9,
-                // Border radius logic for continuity
-                borderTopLeftRadius: item.isStart ? "4px" : "0",
-                borderBottomLeftRadius: item.isStart ? "4px" : "0",
-                borderTopRightRadius: item.isEnd ? "4px" : "0",
-                borderBottomRightRadius: item.isEnd ? "4px" : "0",
-              }}
+              key={`bg-${dStr}`}
+              onClick={() => onDayClick(day, month, year)}
+              className={`relative h-24 sm:h-28 cursor-pointer transition-all group border-r border-b border-gray-50/50 ${
+                !currentMonth ? "bg-gray-50/30 text-opacity-30" : ""
+              } ${isActive ? "bg-rose-50/30" : "hover:bg-gray-50"}`}
             >
-              <span className="text-[9px] font-bold text-white truncate w-full leading-none drop-shadow-sm">
-                {item.title}
-              </span>
+              {/* Day Number */}
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
+                <span
+                  className={`text-[13px] sm:text-sm font-black transition-all flex items-center justify-center w-6 h-6 rounded-full ${
+                    isToday
+                      ? "bg-rose-500 text-white shadow-sm"
+                      : isActive
+                        ? "text-rose-500 scale-110 bg-white shadow-sm ring-1 ring-rose-100"
+                        : !currentMonth
+                          ? "text-gray-300"
+                          : isHoliday
+                            ? "text-red-500"
+                            : "text-gray-700 group-hover:bg-white group-hover:shadow-sm"
+                  }`}
+                >
+                  {day}
+                </span>
+              </div>
             </div>
           );
         })}
+
+        {/* Foreground Layer: Schedule Bars */}
+        {/* We use a container that sits on top of the grid but respects the column widths */}
+        <div className="absolute inset-0 top-9 pointer-events-none px-0.5">
+          {/* Render visible items */}
+          {visibleItems.map((item) => {
+            // Skip if lane is too high to prevent overflow
+            if (item.laneIndex >= MAX_LANES) return null;
+
+            return (
+              <div
+                key={`${item.id}-${weekStartStr}`}
+                className="absolute h-4 rounded-md shadow-sm flex items-center px-1 overflow-hidden"
+                style={{
+                  backgroundColor: item.color,
+                  left: `${(item.startCol / 7) * 100}%`,
+                  width: `calc(${(item.colSpan / 7) * 100}% - 4px)`, // -4px for gap
+                  marginLeft: "2px", // Center in gap
+                  top: `${item.laneIndex * 18}px`, // Adjusted for shorter bars (16px + 2px gap)
+                  opacity: 0.9,
+                  // Border radius logic for continuity
+                  borderTopLeftRadius: item.isStart ? "4px" : "0",
+                  borderBottomLeftRadius: item.isStart ? "4px" : "0",
+                  borderTopRightRadius: item.isEnd ? "4px" : "0",
+                  borderBottomRightRadius: item.isEnd ? "4px" : "0",
+                }}
+              >
+                <span className="text-[9px] font-bold text-white truncate w-full leading-none drop-shadow-sm">
+                  {item.title}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
 const CalendarGrid = ({
   currentDate,
@@ -297,9 +299,7 @@ const CalendarGrid = ({
   }, [year, month]);
 
   return (
-    <div
-      className="bg-white rounded-[32px] pt-6 px-2 pb-2 sm:p-6 shadow-sm border border-rose-50 relative overflow-hidden"
-    >
+    <div className="bg-white rounded-[32px] pt-6 px-2 pb-2 sm:p-6 shadow-sm border border-rose-50 relative overflow-hidden">
       {/* Header Days */}
       <div className="grid grid-cols-7 mb-2 border-b border-gray-50 pb-2">
         {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (

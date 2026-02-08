@@ -2,15 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { Schedule } from "./useSchedules";
 import staticHolidaysData from "../data/holidays.json";
 
-interface HolidayRawData {
-  date: string;
-  name: string;
-}
-
 interface HolidayData {
   date: string;
   title: string;
 }
+
+// Module-level cache to persist across hook instantiations
+let cachedHolidaySchedules: Schedule[] | null = null;
 
 export const useHolidays = () => {
   const [showHolidays, setShowHolidays] = useState<boolean>(() => {
@@ -18,7 +16,7 @@ export const useHolidays = () => {
     return stored === null ? true : stored === "true";
   });
 
-  const [holidaySchedules, setHolidaySchedules] = useState<Schedule[]>([]);
+  const [holidaySchedules, setHolidaySchedules] = useState<Schedule[]>(cachedHolidaySchedules || []);
   const [updating, setUpdating] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(() => {
     return localStorage.getItem('holidaysLastUpdated');
@@ -47,6 +45,12 @@ export const useHolidays = () => {
       return;
     }
 
+    // Use memory cache if available
+    if (cachedHolidaySchedules && cachedHolidaySchedules.length > 0) {
+      setHolidaySchedules(cachedHolidaySchedules);
+      return;
+    }
+
     const cached = localStorage.getItem("cachedHolidays");
     let dataToUse: HolidayData[] = staticHolidaysData as HolidayData[];
 
@@ -58,7 +62,9 @@ export const useHolidays = () => {
       }
     }
 
-    setHolidaySchedules(convertToSchedules(dataToUse));
+    const schedules = convertToSchedules(dataToUse);
+    cachedHolidaySchedules = schedules; // Save to module cache
+    setHolidaySchedules(schedules);
   }, [showHolidays, convertToSchedules]);
 
   const toggleHolidays = (value: boolean) => {
@@ -68,7 +74,6 @@ export const useHolidays = () => {
 
   // Fetch latest holidays from remote
   const refreshHolidays = async () => {
-    // 5분 쿨타임 체크
     if (lastUpdated) {
       const last = new Date(lastUpdated).getTime();
       const now = new Date().getTime();
@@ -84,16 +89,12 @@ export const useHolidays = () => {
     try {
       const today = new Date();
       const currentYear = today.getFullYear();
-      const currentMonth = today.getMonth(); // 0: 1월, 7: 8월
+      const currentMonth = today.getMonth();
       const startYear = currentYear - 2;
-      
-      // 사용자의 피드백 반영: 8월 이후일 때만 내년(+1년) 데이터를 포함
       const endYear = currentMonth >= 7 ? currentYear + 1 : currentYear;
       
       const years = [];
-      for (let y = startYear; y <= endYear; y++) {
-        years.push(y);
-      }
+      for (let y = startYear; y <= endYear; y++) years.push(y);
 
       const baseUrl = 'https://holidays.hyunbin.page/';
       
@@ -104,18 +105,12 @@ export const useHolidays = () => {
               if (!res.ok) throw new Error(`Failed to fetch ${year}`);
               return res.json();
             })
-            .catch(err => {
-              console.warn(`Skipping year ${year}:`, err);
-              return []; // Skip failed years
-            })
+            .catch(() => [])
         )
       );
 
-      // Process Raw Data: Array of Objects where keys are dates
       const flatHolidays: HolidayData[] = [];
-      
       results.forEach(yearData => {
-        // yearData is an Object: { "YYYY-MM-DD": ["Holiday Name"], ... }
         if (yearData && typeof yearData === 'object' && !Array.isArray(yearData)) {
           Object.entries(yearData).forEach(([date, names]) => {
             const nameArray = names as string[];
@@ -127,7 +122,6 @@ export const useHolidays = () => {
         }
       });
 
-      // Deduplicate by date
       flatHolidays.sort((a, b) => a.date.localeCompare(b.date));
 
       if (flatHolidays.length > 0) {
@@ -137,8 +131,11 @@ export const useHolidays = () => {
         localStorage.setItem('holidaysLastUpdated', nowIso);
         setLastUpdated(nowIso);
 
+        const schedules = convertToSchedules(flatHolidays);
+        cachedHolidaySchedules = schedules; // Update memory cache
+
         if (showHolidays) {
-            setHolidaySchedules(convertToSchedules(flatHolidays));
+            setHolidaySchedules(schedules);
         }
         alert('공휴일 정보를 성공적으로 업데이트했습니다.');
       } else {

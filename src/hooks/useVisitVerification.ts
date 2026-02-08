@@ -2,16 +2,12 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import imageCompression from 'browser-image-compression';
 
-export const KOREA_REGIONS = [
-  '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
-  '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'
-];
-
 interface VerifyVisitParams {
   placeId: string;
   date: Date;
   file: File | null;
   region: string;
+  subRegion?: string;
 }
 
 export const useVisitVerification = () => {
@@ -47,7 +43,7 @@ export const useVisitVerification = () => {
     }
   };
 
-  const verifyVisit = async ({ placeId, date, file, region }: VerifyVisitParams) => {
+  const verifyVisit = async ({ placeId, date, file, region, subRegion }: VerifyVisitParams) => {
     setIsSubmitting(true);
     setError(null);
 
@@ -68,7 +64,8 @@ export const useVisitVerification = () => {
         p_visited_at: dateStr,
         p_image_url: imageUrl,
         p_comment: "", // Still pass empty string or null if DB function requires it
-        p_region: region
+        p_region: region,
+        p_sub_region: subRegion
       });
 
       if (rpcError) throw rpcError;

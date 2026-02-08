@@ -1,23 +1,69 @@
-import React, { useState, useRef } from 'react';
-import { useVisitVerification, KOREA_REGIONS } from '../hooks/useVisitVerification';
-import { Camera, X, Calendar, MapPin, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useVisitVerification } from '../hooks/useVisitVerification';
+import { KOREA_REGIONS, SUB_REGIONS, METROPOLITAN_CITIES } from '../constants/regions';
+import { Camera, X, MapPin, Check, ChevronRight, Calendar } from 'lucide-react';
+import DatePicker from './common/DatePicker';
 
 interface VisitFormProps {
   placeId: string;
   placeName: string;
+  placeAddress?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const VisitForm = ({ placeId, placeName, onClose, onSuccess }: VisitFormProps) => {
+const VisitForm = ({ placeId, placeName, placeAddress, onClose, onSuccess }: VisitFormProps) => {
   const { verifyVisit, isSubmitting, error } = useVisitVerification();
   
   const [region, setRegion] = useState('');
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]); // Default today
+  const [subRegion, setSubRegion] = useState('');
+  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (placeAddress) {
+      const parts = placeAddress.split(' ');
+      if (parts.length >= 1) {
+        const firstPart = parts[0];
+        let matchedRegion = '';
+        if (firstPart.includes('서울')) matchedRegion = '서울';
+        else if (firstPart.includes('부산')) matchedRegion = '부산';
+        else if (firstPart.includes('대구')) matchedRegion = '대구';
+        else if (firstPart.includes('인천')) matchedRegion = '인천';
+        else if (firstPart.includes('광주')) matchedRegion = '광주';
+        else if (firstPart.includes('대전')) matchedRegion = '대전';
+        else if (firstPart.includes('울산')) matchedRegion = '울산';
+        else if (firstPart.includes('세종')) matchedRegion = '세종';
+        else if (firstPart.includes('경기')) matchedRegion = '경기';
+        else if (firstPart.includes('강원')) matchedRegion = '강원';
+        else if (firstPart.includes('충북') || firstPart.includes('충청북도')) matchedRegion = '충북';
+        else if (firstPart.includes('충남') || firstPart.includes('충청남도')) matchedRegion = '충남';
+        else if (firstPart.includes('전북') || (firstPart.includes('전라북') && !firstPart.includes('특별자치도'))) matchedRegion = '전북';
+        else if (firstPart.includes('전북특별자치도')) matchedRegion = '전북';
+        else if (firstPart.includes('전남') || firstPart.includes('전라남도')) matchedRegion = '전남';
+        else if (firstPart.includes('경북') || firstPart.includes('경상북도')) matchedRegion = '경북';
+        else if (firstPart.includes('경남') || firstPart.includes('경상남도')) matchedRegion = '경남';
+        else if (firstPart.includes('제주')) matchedRegion = '제주';
+
+        if (matchedRegion && KOREA_REGIONS.includes(matchedRegion)) {
+          setRegion(matchedRegion);
+          if (!METROPOLITAN_CITIES.includes(matchedRegion) && parts.length >= 2) {
+            const secondPart = parts[1];
+            const subRegions = SUB_REGIONS[matchedRegion] || [];
+            const matchedSubRegion = subRegions.find(sr => 
+              secondPart.includes(sr) || sr.includes(secondPart)
+            );
+            if (matchedSubRegion) {
+              setSubRegion(matchedSubRegion);
+            }
+          }
+        }
+      }
+    }
+  }, [placeAddress]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -30,18 +76,23 @@ const VisitForm = ({ placeId, placeName, onClose, onSuccess }: VisitFormProps) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     const success = await verifyVisit({
       placeId,
       date: new Date(date),
       file: selectedFile,
-      region
+      region,
+      subRegion: subRegion || undefined
     });
 
     if (success) {
       alert('방문 인증이 완료되었습니다!');
       onSuccess();
     }
+  };
+
+  const handleRegionSelect = (r: string) => {
+    setRegion(r);
+    setSubRegion('');
   };
 
   return (
@@ -74,12 +125,10 @@ const VisitForm = ({ placeId, placeName, onClose, onSuccess }: VisitFormProps) =
               <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-rose-400" /> 방문 날짜
               </label>
-              <input
-                type="date"
-                required
+              <DatePicker 
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-gray-700 font-medium focus:ring-2 focus:ring-rose-200 focus:border-rose-300 outline-none transition-all"
+                onChange={setDate}
+                variant="calendar"
               />
             </div>
 
@@ -134,7 +183,7 @@ const VisitForm = ({ placeId, placeName, onClose, onSuccess }: VisitFormProps) =
                   <button
                     type="button"
                     key={r}
-                    onClick={() => setRegion(r)}
+                    onClick={() => handleRegionSelect(r)}
                     className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
                       region === r
                         ? 'bg-rose-500 border-rose-500 text-white shadow-md shadow-rose-200'
@@ -146,6 +195,34 @@ const VisitForm = ({ placeId, placeName, onClose, onSuccess }: VisitFormProps) =
                 ))}
               </div>
             </div>
+
+            {/* 4. Sub-Region Selection (if applicable) */}
+            {region && SUB_REGIONS[region] && (
+              <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5 justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <ChevronRight className="w-4 h-4 text-rose-400" /> 상세 지역 선택
+                  </span>
+                  {!subRegion && <span className="text-[10px] text-rose-500 font-medium">* 필수 선택</span>}
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {SUB_REGIONS[region].map((sr) => (
+                    <button
+                      type="button"
+                      key={sr}
+                      onClick={() => setSubRegion(sr)}
+                      className={`py-2 rounded-xl text-[10px] font-bold transition-all border ${
+                        subRegion === sr
+                          ? 'bg-rose-400 border-rose-400 text-white shadow-md'
+                          : 'bg-white border-gray-100 text-gray-400 hover:border-rose-200 hover:text-rose-400'
+                      }`}
+                    >
+                      {sr}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Error Message */}
             {error && (
@@ -161,7 +238,7 @@ const VisitForm = ({ placeId, placeName, onClose, onSuccess }: VisitFormProps) =
           <button
             form="visit-form"
             type="submit"
-            disabled={isSubmitting || !region}
+            disabled={isSubmitting || !region || (SUB_REGIONS[region] && !subRegion)}
             className="w-full py-4 bg-rose-500 text-white rounded-2xl font-bold text-base hover:bg-rose-600 active:scale-[0.98] transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed shadow-lg shadow-rose-100 disabled:shadow-none flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
