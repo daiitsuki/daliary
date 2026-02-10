@@ -42,9 +42,7 @@ function App() {
                     
                     <UpdateNotification />
 
-                    <div className="shrink-0">
-                      <BottomNav />
-                    </div>
+                    <BottomNav />
                   </Router>
                 </div>
               </div>

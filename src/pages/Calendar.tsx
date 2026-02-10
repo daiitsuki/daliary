@@ -158,7 +158,7 @@ const Calendar = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/30">
+    <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/30 pb-24">
       <motion.div 
         variants={containerVariants}
         initial="hidden"

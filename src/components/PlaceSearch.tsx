@@ -177,7 +177,7 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
           </form>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/50 min-h-0">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/50 min-h-0 pb-24">
           {isSearching ? (
             <div className="flex flex-col justify-center items-center h-full py-10">
               <div className="animate-spin rounded-full h-6 w-6 border-2 border-rose-200 border-t-rose-500 mb-2"></div>
@@ -221,7 +221,7 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
         </div>
 
         {selectedPlace && (
-          <div className="p-4 bg-white border-t border-gray-100 shrink-0 grid grid-cols-2 gap-2 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+          <div className="p-4 pb-24 md:pb-4 bg-white border-t border-gray-100 shrink-0 grid grid-cols-2 gap-2 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
             <button
               onClick={async () => {
                 try {

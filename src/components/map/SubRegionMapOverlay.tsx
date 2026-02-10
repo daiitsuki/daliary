@@ -72,7 +72,7 @@ const SubRegionMapOverlay: React.FC<SubRegionMapOverlayProps> = ({
 
         {/* 미분류 방문 기록 소형 버튼 (왼쪽 하단 배치) */}
         {unassignedCount > 0 && (
-          <div className="absolute bottom-4 left-4">
+          <div className="absolute bottom-24 left-4">
             <button
               onClick={() => onSubRegionClick("미분류")}
               className="bg-white/80 backdrop-blur-sm border border-gray-100 px-3 py-2 rounded-xl shadow-sm flex items-center gap-2 active:scale-[0.95] transition-all group"

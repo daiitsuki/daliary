@@ -75,7 +75,7 @@ const RegionCardList: React.FC<RegionCardListProps> = ({
       variants={container}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-6 overflow-y-auto custom-scrollbar h-full"
+      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-6 pb-32 overflow-y-auto custom-scrollbar h-full"
     >
       {sortedRegions.map((region) => {
         const count = stats[region] || 0;
