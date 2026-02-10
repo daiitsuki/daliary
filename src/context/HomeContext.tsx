@@ -134,25 +134,37 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [couple?.id, currentUserId]);
 
+  const refresh = useCallback(async () => {
+    // 로딩 상태를 최소화하기 위해 병렬로 실행하되, 데이터가 있을 때만 처리
+    await Promise.all([fetchProfiles(), fetchDailyData()]);
+  }, [fetchProfiles, fetchDailyData]);
+
   useEffect(() => {
     if (couple?.id && currentUserId && !hasLoaded) {
       calculateDDay();
-      fetchProfiles();
-      fetchDailyData();
+      refresh().then(() => setHasLoaded(true));
     }
-  }, [calculateDDay, fetchProfiles, fetchDailyData, couple?.id, currentUserId, hasLoaded]);
+  }, [couple?.id, currentUserId, hasLoaded, calculateDDay, refresh]);
 
   // Realtime Sync
   useEffect(() => {
     if (!couple?.id) return;
 
     const channel = supabase
-      .channel('home-context-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'answers', filter: `couple_id=eq.${couple.id}` }, fetchDailyData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `couple_id=eq.${couple.id}` }, fetchProfiles)
+      .channel(`home_sync_${couple.id}`)
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'answers', filter: `couple_id=eq.${couple.id}` }, 
+        fetchDailyData
+      )
+      .on('postgres_changes', 
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `couple_id=eq.${couple.id}` }, 
+        fetchProfiles
+      )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { 
+      supabase.removeChannel(channel); 
+    };
   }, [couple?.id, fetchDailyData, fetchProfiles]);
 
   return (
@@ -164,7 +176,7 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
       myAnswer,
       partnerAnswer,
       loading: coupleLoading || dataLoading,
-      refresh: fetchDailyData,
+      refresh,
       currentUserId
     }}>
       {children}

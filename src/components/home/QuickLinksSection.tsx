@@ -123,35 +123,35 @@ export default function QuickLinksSection() {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between px-1">
-        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">빠른 이동</h2>
+      <div className="flex items-center justify-between px-2">
+        <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.15em]">둘만의 도구함</h2>
         <button
           onClick={() => setIsEditMode(!isEditMode)}
-          className={`p-1.5 rounded-full transition-colors ${
-            isEditMode ? 'bg-rose-100 text-rose-500' : 'text-gray-300 hover:bg-gray-100'
+          className={`p-1.5 rounded-lg transition-all ${
+            isEditMode ? 'bg-rose-100 text-rose-500' : 'bg-gray-50 text-gray-300 hover:bg-gray-100'
           }`}
         >
-          <Settings2 size={16} />
+          <Settings2 size={14} />
         </button>
       </div>
 
-      <div className="bg-white rounded-[24px] p-4 shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-start space-x-4 overflow-x-auto pb-2 custom-scrollbar snap-x">
+      <div className="bg-white rounded-[28px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-gray-50 overflow-hidden">
+        <div className="flex items-start space-x-5 overflow-x-auto pb-2 no-scrollbar snap-x scroll-smooth">
           {tools.map((tool, index) => {
             const IconComponent = TOOL_ICONS[tool.icon_key] || TOOL_ICONS['globe'];
             return (
-              <div key={tool.id} className="flex flex-col items-center flex-shrink-0 snap-start relative group w-[60px]">
+              <div key={tool.id} className="flex flex-col items-center flex-shrink-0 snap-start relative group w-[56px]">
                 <div className="relative">
                   <button
                     onClick={() => handleToolClick(tool)}
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 transition-all ${
-                      isEditMode ? 'bg-gray-50 ring-2 ring-rose-200' : 'bg-white hover:bg-gray-50 hover:scale-105 active:scale-95'
+                    className={`w-12 h-12 rounded-[18px] flex items-center justify-center shadow-sm border border-gray-100 transition-all ${
+                      isEditMode ? 'bg-gray-50 ring-2 ring-rose-200' : 'bg-white hover:shadow-md hover:scale-105 active:scale-95'
                     }`}
                   >
                     <IconComponent size={20} className="text-gray-700" />
                     {isEditMode && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/50 rounded-2xl backdrop-blur-[1px]">
-                        <Pencil size={14} className="text-rose-600 drop-shadow-sm" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/50 rounded-[18px] backdrop-blur-[1px]">
+                        <Pencil size={12} className="text-rose-600 drop-shadow-sm" />
                       </div>
                     )}
                   </button>
@@ -159,32 +159,32 @@ export default function QuickLinksSection() {
                   {isEditMode && (
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteTool(tool.id); }}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white text-rose-500 border border-rose-100 rounded-full flex items-center justify-center shadow-md z-20"
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-white text-rose-500 border border-rose-100 rounded-full flex items-center justify-center shadow-md z-20"
                     >
                       <Trash2 size={10} />
                     </button>
                   )}
                 </div>
 
-                <span className="mt-2 text-[10px] font-medium text-gray-600 text-center truncate w-full px-1">
+                <span className="mt-2 text-[10px] font-bold text-gray-500 text-center truncate w-full px-1">
                   {tool.title}
                 </span>
 
                 {isEditMode && (
-                  <div className="absolute -bottom-6 flex space-x-1 z-10 bg-white/90 p-0.5 rounded-full border border-gray-100 shadow-sm">
+                  <div className="absolute -bottom-7 flex space-x-1 z-10 bg-white/95 p-1 rounded-full border border-gray-100 shadow-md">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleMoveTool(index, 'left'); }}
                       disabled={index === 0}
-                      className="p-0.5 text-gray-500 disabled:opacity-30"
+                      className="p-1 text-gray-500 disabled:opacity-30 hover:bg-gray-50 rounded-full"
                     >
-                      <ChevronLeft size={10} />
+                      <ChevronLeft size={12} />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleMoveTool(index, 'right'); }}
                       disabled={index === tools.length - 1}
-                      className="p-0.5 text-gray-500 disabled:opacity-30"
+                      className="p-1 text-gray-500 disabled:opacity-30 hover:bg-gray-50 rounded-full"
                     >
-                      <ChevronRight size={10} />
+                      <ChevronRight size={12} />
                     </button>
                   </div>
                 )}
@@ -192,17 +192,17 @@ export default function QuickLinksSection() {
             );
           })}
 
-          <div className="flex flex-col items-center flex-shrink-0 w-[60px]">
+          <div className="flex flex-col items-center flex-shrink-0 w-[56px]">
             <button
               onClick={() => {
                 setEditingTool(null);
                 setIsModalOpen(true);
               }}
-              className="w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-200 text-gray-400 hover:border-rose-300 hover:text-rose-400 hover:bg-rose-50 transition-all"
+              className="w-12 h-12 rounded-[18px] flex items-center justify-center border-2 border-dashed border-gray-100 text-gray-300 hover:border-rose-200 hover:text-rose-400 hover:bg-rose-50 transition-all active:scale-95"
             >
               <Plus size={20} />
             </button>
-            <span className="mt-2 text-[10px] font-medium text-gray-400">추가</span>
+            <span className="mt-2 text-[10px] font-bold text-gray-300">추가</span>
           </div>
         </div>
       </div>

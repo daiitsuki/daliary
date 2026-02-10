@@ -23,7 +23,6 @@ export default function Home() {
     myProfile,
     myAnswer,
     partnerAnswer,
-    refresh,
   } = useHomeData();
 
   const { refresh: refreshPoints } = useCouplePoints();
@@ -44,8 +43,10 @@ export default function Home() {
         content: inputAnswer,
       });
       if (error) throw error;
+      
       setInputAnswer("");
-      refresh();
+      // refresh() 대신 realtime이 감지하여 처리하도록 유도하거나, 
+      // 포인트만 즉시 갱신하여 트래픽 최적화
       refreshPoints();
     } catch (err) {
       alert("답변 저장 실패");
@@ -84,7 +85,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex-1 bg-white text-gray-800 pb-24 overflow-y-auto custom-scrollbar relative">
+    <div className="flex-1 bg-[#FDFDFE] text-gray-800 pb-24 overflow-y-auto custom-scrollbar relative">
       <HomeHeader
         myProfile={myProfile}
         partnerProfile={partnerProfile}
@@ -96,7 +97,7 @@ export default function Home() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-xl mx-auto"
+        className="max-w-xl mx-auto space-y-2"
       >
         <motion.div variants={itemVariants}>
           <HeartGauge />
@@ -106,28 +107,28 @@ export default function Home() {
           <AttendanceButton />
         </motion.div>
 
-        <main className="px-6 space-y-10">
+        <main className="px-6 space-y-12 pb-10">
           {/* Invite Code Section (Partner missing case) */}
           {!partnerProfile && couple?.invite_code && (
             <motion.div variants={itemVariants}>
-              <div className="bg-white border border-gray-100 rounded-[32px] p-8 text-center shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-4 -top-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-700">
+              <div className="bg-white border border-rose-100/50 rounded-[38px] p-8 text-center shadow-[0_10px_40px_rgba(0,0,0,0.03)] relative overflow-hidden group">
+                <div className="absolute -right-4 -top-4 opacity-[0.05] group-hover:scale-110 transition-transform duration-700">
                   <Sparkles size={100} className="text-rose-400" />
                 </div>
                 <h3 className="text-gray-800 text-lg font-black mb-1">
                   초대 코드를 공유해보세요!
                 </h3>
-                <p className="text-gray-400 text-[11px] font-bold mb-6 uppercase tracking-widest"></p>
+                <p className="text-gray-400 text-[11px] font-bold mb-6 uppercase tracking-widest">둘만의 다이어리를 시작할 시간</p>
                 <button
                   onClick={copyInviteCode}
-                  className="bg-gray-50 rounded-2xl px-6 py-4 flex items-center justify-center space-x-3 mx-auto hover:bg-rose-50 transition-all w-full group border border-gray-100"
+                  className="bg-rose-50/50 rounded-[22px] px-6 py-4 flex items-center justify-center space-x-3 mx-auto hover:bg-rose-50 transition-all w-full group border border-rose-100/30"
                 >
                   <span className="text-xl font-mono font-black text-rose-400 tracking-[0.2em]">
                     {couple.invite_code}
                   </span>
                   <Copy
                     size={16}
-                    className="text-gray-300 group-hover:text-rose-300 transition-colors"
+                    className="text-rose-300 group-hover:text-rose-400 transition-colors"
                   />
                 </button>
               </div>

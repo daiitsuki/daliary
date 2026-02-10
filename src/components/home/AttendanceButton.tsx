@@ -22,26 +22,26 @@ const AttendanceButton = () => {
   return (
     <div className="px-6 mb-8">
       <motion.button
-        whileTap={{ scale: 0.97 }}
+        whileTap={{ scale: 0.96 }}
         onClick={handleCheckIn}
         disabled={hasCheckedIn || actionLoading}
-        className={`w-full py-4 rounded-[24px] flex items-center justify-center gap-3 transition-all ${
+        className={`w-full py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md ${
           hasCheckedIn 
-            ? "bg-gray-50 text-gray-400 cursor-default" 
-            : "bg-white border border-rose-100 text-rose-500 shadow-sm hover:shadow-md"
+            ? "bg-gray-50 text-gray-300 shadow-none border border-gray-100/50" 
+            : "bg-rose-400 text-white shadow-rose-100 hover:bg-rose-500"
         }`}
       >
         {actionLoading ? (
-          <Loader2 className="animate-spin" size={20} />
+          <Loader2 className="animate-spin" size={18} />
         ) : hasCheckedIn ? (
           <>
-            <CheckCircle2 size={20} className="text-rose-300" />
-            <span className="text-sm font-bold text-gray-400">내일 또 만나요!</span>
+            <CheckCircle2 size={16} />
+            <span className="text-[12px] font-bold tracking-tight">오늘 출석 완료</span>
           </>
         ) : (
           <>
-            <CalendarCheck2 size={20} />
-            <span className="text-sm font-black">오늘의 출석체크 (+50 PT)</span>
+            <CalendarCheck2 size={16} />
+            <span className="text-[12px] font-bold tracking-tight">오늘의 출석체크 (+50 PT)</span>
           </>
         )}
       </motion.button>
