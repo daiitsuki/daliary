@@ -64,8 +64,30 @@ export const useNotifications = (userId: string | null) => {
       .maybeSingle();
     
     if (data) {
+      // 1. 브라우저 권한 확인
+      const isPermissionGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+      
+      // 2. 현재 기기의 푸시 구독 정보 확인
+      let hasActiveSubscription = false;
+      if (isPermissionGranted && 'serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        hasActiveSubscription = !!subscription;
+      }
+      
+      // 권한이 없거나 실제 구독 정보가 없는 경우 DB 상태와 무관하게 비활성화로 간주
+      const isActuallyEnabled = data.is_enabled && isPermissionGranted && hasActiveSubscription;
+      
+      // DB 상태가 실제 상황과 다르면 업데이트 (특히 켜져있다고 나오는데 실제로는 못받는 경우)
+      if (data.is_enabled && !isActuallyEnabled) {
+        await supabase
+          .from('notification_settings')
+          .update({ is_enabled: false })
+          .eq('user_id', userId);
+      }
+
       setSettings({
-        is_enabled: data.is_enabled,
+        is_enabled: isActuallyEnabled,
         notify_question_answered: data.notify_question_answered,
         notify_question_request: data.notify_question_request,
         notify_schedule_change: data.notify_schedule_change,
