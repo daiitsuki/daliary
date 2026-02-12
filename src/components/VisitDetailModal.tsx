@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar, MoreVertical, Trash2, Camera, Loader2, ImageIcon, Send, Image as ImageIconLucide, MessageCircle, MapPin, ChevronDown, Edit2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -31,10 +32,37 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({ visit, onClose, onU
   const [editSubRegion, setEditSubRegion] = useState<string | null>(null);
 
   const [newCommentInput, setNewCommentInput] = useState("");
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { profile } = useCouple();
   const { comments, addComment, deleteComment, loading: commentsLoading } = useVisitComments(visit?.id);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // 뒤로가기 시 모달 닫기 로직
+  useEffect(() => {
+    if (visit) {
+      window.history.pushState({ modal: "visit-detail" }, "");
+      
+      const handlePopState = () => {
+        onClose();
+      };
+      
+      window.addEventListener("popstate", handlePopState);
+      
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+        if (window.history.state?.modal === "visit-detail") {
+          window.history.back();
+        }
+      };
+    }
+  }, [visit, onClose]);
 
   useEffect(() => {
     if (visit) {
@@ -144,8 +172,14 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({ visit, onClose, onU
     setLoading(false);
   };
 
-  return (
-    <>
+  const modalVariants = {
+    initial: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
+    animate: isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 },
+    exit: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
+  };
+
+  const modalContent = (
+    <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 overflow-hidden">
         <motion.div
           key="visit-modal-backdrop"
@@ -158,24 +192,13 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({ visit, onClose, onU
         
         <motion.div
           key="visit-modal-content"
-          initial={
-            window.innerWidth < 768
-              ? { y: "100%" }
-              : { opacity: 0, scale: 0.95, y: 20 }
-          }
-          animate={
-            window.innerWidth < 768
-              ? { y: 0 }
-              : { opacity: 1, scale: 1, y: 0 }
-          }
-          exit={
-            window.innerWidth < 768
-              ? { y: "100%" }
-              : { opacity: 0, scale: 0.95, y: 20 }
-          }
+          variants={modalVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-lg bg-white rounded-t-[32px] md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
-          onClick={() => setShowMenu(false)} // Close menu on bg click
+          className="relative w-full max-w-lg bg-white rounded-t-[32px] md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10 transform-gpu"
+          onClick={(e) => { e.stopPropagation(); setShowMenu(false); }} // Close menu on bg click
         >
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10 shrink-0">
@@ -431,8 +454,10 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({ visit, onClose, onU
         imageUrl={editImage}
         title={visit.places?.name}
       />
-    </>
+    </AnimatePresence>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default VisitDetailModal;

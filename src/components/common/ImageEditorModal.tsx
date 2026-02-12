@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { X, RotateCcw, ZoomIn, RefreshCw, Check } from "lucide-react";
 
 interface ImageEditorModalProps {
@@ -22,6 +23,31 @@ const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // 뒤로가기 시 모달 닫기 로직
+  useEffect(() => {
+    window.history.pushState({ modal: "image-editor" }, "");
+    
+    const handlePopState = () => {
+      onClose();
+    };
+    
+    window.addEventListener("popstate", handlePopState);
+    
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (window.history.state?.modal === "image-editor") {
+        window.history.back();
+      }
+    };
+  }, [onClose]);
 
   const onCropComplete = useCallback(
     (_croppedArea: any, croppedAreaPixels: any) => {
@@ -102,91 +128,115 @@ const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
     setRotation(0);
   };
 
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative w-full max-w-lg bg-white rounded-[32px] overflow-hidden flex flex-col max-h-[90vh]"
-      >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-          <h3 className="text-lg font-black text-gray-800">사진 편집</h3>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
+  const modalVariants = {
+    initial: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
+    animate: isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 },
+    exit: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
+  };
 
-        {/* Editor Area */}
-        <div className="relative flex-1 min-h-[350px] bg-gray-900">
-          <Cropper
-            image={image}
-            crop={crop}
-            zoom={zoom}
-            rotation={rotation}
-            aspect={aspect}
-            cropShape={circularCrop ? "round" : "rect"}
-            showGrid={false}
-            onCropChange={setCrop}
-            onRotationChange={setRotation}
-            onCropComplete={onCropComplete}
-            onZoomChange={setZoom}
-          />
-        </div>
-
-        {/* Controls */}
-        <div className="p-6 bg-white space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <ZoomIn size={18} className="text-gray-400" />
-              <input
-                type="range"
-                value={zoom}
-                min={1}
-                max={3}
-                step={0.1}
-                aria-labelledby="Zoom"
-                onChange={(e) => setZoom(Number(e.target.value))}
-                className="flex-1 accent-rose-500 h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-            <div className="flex items-center gap-4">
-              <RefreshCw size={18} className="text-gray-400" />
-              <input
-                type="range"
-                value={rotation}
-                min={0}
-                max={360}
-                step={1}
-                aria-labelledby="Rotation"
-                onChange={(e) => setRotation(Number(e.target.value))}
-                className="flex-1 accent-rose-500 h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-3">
+  const modalContent = (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center p-0 md:p-6 overflow-hidden">
+        {/* Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={onClose}
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        />
+        
+        <motion.div
+          variants={modalVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={{ type: "tween", ease: "easeOut", duration: 0.25 }}
+          className="relative w-full max-w-lg bg-white rounded-t-[32px] md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transform-gpu"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+            <h3 className="text-lg font-black text-gray-800">사진 편집</h3>
             <button
-              onClick={handleReset}
-              className="flex-1 py-3 px-4 bg-gray-50 text-gray-500 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors"
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
             >
-              <RotateCcw size={16} />
-            </button>
-            <button
-              onClick={handleSave}
-              className="flex-[2] py-3 px-4 bg-gray-800 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
-            >
-              <Check size={18} />
-              편집 완료
+              <X size={20} />
             </button>
           </div>
-        </div>
-      </motion.div>
-    </div>
+
+          {/* Editor Area */}
+          <div className="relative flex-1 min-h-[350px] bg-gray-900">
+            <Cropper
+              image={image}
+              crop={crop}
+              zoom={zoom}
+              rotation={rotation}
+              aspect={aspect}
+              cropShape={circularCrop ? "round" : "rect"}
+              showGrid={false}
+              onCropChange={setCrop}
+              onRotationChange={setRotation}
+              onCropComplete={onCropComplete}
+              onZoomChange={setZoom}
+            />
+          </div>
+
+          {/* Controls */}
+          <div className="p-6 bg-white space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <ZoomIn size={18} className="text-gray-400" />
+                <input
+                  type="range"
+                  value={zoom}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  aria-labelledby="Zoom"
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="flex-1 accent-rose-500 h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+              <div className="flex items-center gap-4">
+                <RefreshCw size={18} className="text-gray-400" />
+                <input
+                  type="range"
+                  value={rotation}
+                  min={0}
+                  max={360}
+                  step={1}
+                  aria-labelledby="Rotation"
+                  onChange={(e) => setRotation(Number(e.target.value))}
+                  className="flex-1 accent-rose-500 h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleReset}
+                className="flex-1 py-3 px-4 bg-gray-50 text-gray-500 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors"
+              >
+                <RotateCcw size={16} />
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex-[2] py-3 px-4 bg-gray-800 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
+              >
+                <Check size={18} />
+                편집 완료
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default ImageEditorModal;

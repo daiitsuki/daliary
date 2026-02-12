@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, ChevronDown, ChevronUp } from "lucide-react";
 import { changelog } from "../data/changelog";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,6 +13,26 @@ export default function ChangelogModal({
   onClose,
 }: ChangelogModalProps) {
   const [showAll, setShowAll] = useState(false);
+
+  // 뒤로가기 시 모달 닫기 로직
+  useEffect(() => {
+    if (isOpen) {
+      window.history.pushState({ modal: "changelog" }, "");
+      
+      const handlePopState = () => {
+        onClose();
+      };
+      
+      window.addEventListener("popstate", handlePopState);
+      
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+        if (window.history.state?.modal === "changelog") {
+          window.history.back();
+        }
+      };
+    }
+  }, [isOpen, onClose]);
 
   const reversedChangelog = [...changelog].reverse();
   const initialItems = reversedChangelog.slice(0, 2);

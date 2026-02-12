@@ -32,6 +32,9 @@ export const useAppUpdate = () => {
       // 첫 방문이거나 버전이 없으면 현재 버전 저장하고 종료
       if (!currentVersion) {
         localStorage.setItem('app_version', serverData.version);
+        // Also set last_seen_changelog_version to current version on first visit 
+        // to avoid showing changelog immediately on first ever load
+        localStorage.setItem('last_seen_changelog_version', serverData.version);
         return;
       }
 

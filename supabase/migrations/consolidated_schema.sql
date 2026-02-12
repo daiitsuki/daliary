@@ -47,7 +47,8 @@ create table public.visits (
   visited_at date not null,
   image_url text,
   comment text,
-  region text not null
+  region text not null,
+  sub_region text
 );
 
 -- VISIT COMMENTS
@@ -207,7 +208,7 @@ end;
 $$;
 
 -- Action: Verify Visit
-create or replace function public.verify_visit(p_place_id uuid, p_visited_at date, p_image_url text, p_comment text, p_region text)
+create or replace function public.verify_visit(p_place_id uuid, p_visited_at date, p_image_url text, p_comment text, p_region text, p_sub_region text default null)
 returns void language plpgsql security definer 
 set search_path = public
 as $$
@@ -220,8 +221,8 @@ begin
     raise exception 'Access denied: You do not have permission to verify this visit.';
   end if;
 
-  insert into public.visits (place_id, visited_at, image_url, comment, region) 
-  values (p_place_id, p_visited_at, p_image_url, p_comment, p_region);
+  insert into public.visits (place_id, visited_at, image_url, comment, region, sub_region) 
+  values (p_place_id, p_visited_at, p_image_url, p_comment, p_region, p_sub_region);
   
   update public.places set status = 'visited', updated_at = now() where id = p_place_id;
 end;
@@ -266,6 +267,10 @@ declare
   point_val int;
   desc_text text;
 begin
+  if (tg_op = 'DELETE') then
+    return old;
+  end if;
+
   if tg_table_name = 'answers' then
     target_couple_id := new.couple_id; point_type := 'answer'; point_val := 10; desc_text := '오늘의 질문 답변 완료';
   
@@ -309,6 +314,80 @@ begin
 end;
 $$ language plpgsql;
 
+-- Trigger Function: Notifications
+CREATE OR REPLACE FUNCTION public.handle_notification_trigger()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_partner_id UUID;
+    v_partner_nickname TEXT;
+    v_my_nickname TEXT;
+    v_couple_id UUID;
+    v_title TEXT;
+    v_content TEXT;
+    v_type TEXT;
+BEGIN
+    -- Handle DELETE operation
+    IF (TG_OP = 'DELETE') THEN
+        IF (TG_TABLE_NAME = 'schedules') THEN
+            SELECT nickname, couple_id INTO v_my_nickname, v_couple_id 
+            FROM public.profiles WHERE id = auth.uid();
+            SELECT id, nickname INTO v_partner_id, v_partner_nickname 
+            FROM public.profiles 
+            WHERE couple_id = v_couple_id AND id != auth.uid()
+            LIMIT 1;
+            IF v_partner_id IS NOT NULL THEN
+                v_type := 'schedule_change';
+                v_title := '일정 소식';
+                v_content := v_my_nickname || '님이 ' || to_char(OLD.start_date, 'MM') || '월 일정을 삭제했어요!';
+                INSERT INTO public.notifications (user_id, couple_id, type, title, content)
+                VALUES (v_partner_id, v_couple_id, v_type, v_title, v_content);
+            END IF;
+        END IF;
+        RETURN OLD;
+    END IF;
+
+    -- Handle INSERT/UPDATE operations
+    SELECT nickname, couple_id INTO v_my_nickname, v_couple_id 
+    FROM public.profiles WHERE id = auth.uid();
+    SELECT id, nickname INTO v_partner_id, v_partner_nickname 
+    FROM public.profiles 
+    WHERE couple_id = v_couple_id AND id != auth.uid()
+    LIMIT 1;
+    IF v_partner_id IS NULL THEN RETURN NEW; END IF;
+
+    IF (TG_TABLE_NAME = 'answers') THEN
+        v_type := 'question_answered';
+        v_title := '오늘의 질문 답변 완료';
+        v_content := v_my_nickname || '님이 오늘의 질문에 답변했어요!';
+        INSERT INTO public.notifications (user_id, couple_id, type, title, content)
+        VALUES (v_partner_id, v_couple_id, v_type, v_title, v_content);
+    ELSIF (TG_TABLE_NAME = 'schedules') THEN
+        v_type := 'schedule_change';
+        v_title := '일정 소식';
+        IF (TG_OP = 'INSERT') THEN
+            v_content := v_my_nickname || '님이 ' || to_char(NEW.start_date, 'MM') || '월 일정을 추가했어요!';
+        ELSIF (TG_OP = 'UPDATE') THEN
+            v_content := v_my_nickname || '님이 ' || to_char(NEW.start_date, 'MM') || '월 일정을 수정했어요!';
+        END IF;
+        INSERT INTO public.notifications (user_id, couple_id, type, title, content)
+        VALUES (v_partner_id, v_couple_id, v_type, v_title, v_content);
+    ELSIF (TG_TABLE_NAME = 'places' AND NEW.status = 'wishlist') THEN
+        v_type := 'place_added';
+        v_title := '새로운 장소';
+        v_content := v_my_nickname || '님이 새로운 가고 싶은 곳을 추가했어요!';
+        INSERT INTO public.notifications (user_id, couple_id, type, title, content)
+        VALUES (v_partner_id, v_couple_id, v_type, v_title, v_content);
+    ELSIF (TG_TABLE_NAME = 'visits') THEN
+        v_type := 'visit_verified';
+        v_title := '방문 인증 완료';
+        v_content := NEW.region || '의 방문 인증이 완료되었어요!';
+        INSERT INTO public.notifications (user_id, couple_id, type, title, content)
+        VALUES (v_partner_id, v_couple_id, v_type, v_title, v_content);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
 -- ==========================================
 -- 4. Triggers
 -- ==========================================
@@ -335,6 +414,19 @@ create trigger tr_add_points_on_visit_comment after insert on public.visit_comme
 
 -- Schedules Timestamp
 create trigger set_updated_at before update on public.schedules for each row execute procedure update_updated_at_column();
+
+-- Notifications
+drop trigger if exists tr_notify_answer on public.answers;
+create trigger tr_notify_answer after insert on public.answers for each row execute procedure handle_notification_trigger();
+
+drop trigger if exists tr_notify_schedule on public.schedules;
+create trigger tr_notify_schedule after insert or update or delete on public.schedules for each row execute procedure handle_notification_trigger();
+
+drop trigger if exists tr_notify_place on public.places;
+create trigger tr_notify_place after insert on public.places for each row execute procedure handle_notification_trigger();
+
+drop trigger if exists tr_notify_visit on public.visits;
+create trigger tr_notify_visit after insert on public.visits for each row execute procedure handle_notification_trigger();
 
 -- ==========================================
 -- 5. Security & RLS Policies

@@ -16,6 +16,7 @@ import CoupleSettingsSection from "../components/settings/CoupleSettingsSection"
 import CalendarSettingsSection from "../components/settings/CalendarSettingsSection";
 import AppInfoSection from "../components/settings/AppInfoSection";
 import DangerZoneSection from "../components/settings/DangerZoneSection";
+import NotificationSettingsSection from "../components/settings/NotificationSettingsSection";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -288,6 +289,10 @@ export default function Settings() {
 
         <motion.div variants={itemVariants}>
           <CalendarSettingsSection />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <NotificationSettingsSection userId={profile?.id || null} />
         </motion.div>
 
         <motion.div variants={itemVariants}>

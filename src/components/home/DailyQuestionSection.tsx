@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Smile, Heart, Unlock, Lock, History } from "lucide-react";
+import { Smile, Heart, Unlock, Lock, History, Send, Loader2 } from "lucide-react";
 import { useState } from "react";
 import QuestionHistoryModal from "./QuestionHistoryModal";
+import { supabase } from "../../lib/supabase";
 
 interface DailyQuestionSectionProps {
   todayQuestion: any;
@@ -14,6 +15,7 @@ interface DailyQuestionSectionProps {
   coupleId: string | undefined;
   currentUserId: string | null;
   couple?: any;
+  myProfile?: any;
 }
 
 const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
@@ -27,9 +29,44 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
   coupleId,
   currentUserId,
   couple,
+  myProfile,
 }) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
   const bothAnswered = !!(myAnswer && partnerAnswer);
+
+  const handleRequestAnswer = async () => {
+    if (!coupleId || !currentUserId || isRequesting) return;
+    
+    setIsRequesting(true);
+    try {
+      // 상대방 ID 찾기
+      const { data: partner } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('couple_id', coupleId)
+        .neq('id', currentUserId)
+        .maybeSingle();
+
+      if (partner) {
+        const { error } = await supabase.from('notifications').insert({
+          user_id: partner.id,
+          couple_id: coupleId,
+          type: 'question_request',
+          title: '답변 요청',
+          content: `${myProfile?.nickname || '상대방'}님이 오늘의 질문에 답변하라고 요청했어요!`
+        });
+        
+        if (error) throw error;
+        alert('상대방에게 답변 요청 알림을 보냈습니다!');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('알림 보내기 실패');
+    } finally {
+      setIsRequesting(false);
+    }
+  };
 
   return (
     <section className="space-y-3">
@@ -115,10 +152,24 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
                     "{partnerAnswer?.content}"
                   </div>
                 ) : (
-                  <div className="py-6 flex flex-col items-center justify-center text-center bg-gray-50/30 rounded-2xl border border-dashed border-gray-100">
-                    <p className="text-[12px] text-gray-300 font-medium italic">
+                  <div className="py-8 flex flex-col items-center justify-center text-center bg-gray-50/30 rounded-2xl border border-dashed border-gray-100">
+                    <p className="text-[12px] text-gray-300 font-medium italic mb-4">
                       상대방의 답변을 기다리고 있어요
                     </p>
+                    {myAnswer && (
+                      <button
+                        onClick={handleRequestAnswer}
+                        disabled={isRequesting}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-rose-100 text-rose-400 rounded-full text-[11px] font-bold shadow-sm hover:bg-rose-50 transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        {isRequesting ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Send size={12} />
+                        )}
+                        답변 요청하기
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -127,16 +178,13 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {isHistoryOpen && (
-          <QuestionHistoryModal
-            onClose={() => setIsHistoryOpen(false)}
-            coupleId={coupleId}
-            currentUserId={currentUserId}
-            createdAt={couple?.created_at}
-          />
-        )}
-      </AnimatePresence>
+      <QuestionHistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        coupleId={coupleId}
+        currentUserId={currentUserId}
+        createdAt={couple?.created_at}
+      />
     </section>
   );
 };

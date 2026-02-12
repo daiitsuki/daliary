@@ -14,8 +14,23 @@ import ProtectedRoute from './components/ProtectedRoute';
 import BottomNav from './components/BottomNav';
 
 import UpdateNotification from './components/UpdateNotification';
+import ChangelogModal from './components/ChangelogModal';
+import { useState, useEffect } from 'react';
 
 function App() {
+  const [showChangelog, setShowChangelog] = useState(false);
+
+  useEffect(() => {
+    // Check if we should show the changelog
+    const currentVersion = localStorage.getItem('app_version');
+    const lastSeenVersion = localStorage.getItem('last_seen_changelog_version');
+
+    if (currentVersion && lastSeenVersion !== currentVersion) {
+      setShowChangelog(true);
+      localStorage.setItem('last_seen_changelog_version', currentVersion);
+    }
+  }, []);
+
   return (
     <CoupleProvider>
       <CouplePointsProvider>
@@ -41,6 +56,11 @@ function App() {
                     </div>
                     
                     <UpdateNotification />
+                    
+                    <ChangelogModal 
+                      isOpen={showChangelog} 
+                      onClose={() => setShowChangelog(false)} 
+                    />
 
                     <BottomNav />
                   </Router>

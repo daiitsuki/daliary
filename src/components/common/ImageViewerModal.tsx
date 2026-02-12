@@ -28,6 +28,26 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
     };
   }, [isOpen, imageUrl]);
 
+  // 뒤로가기 시 모달 닫기 로직
+  useEffect(() => {
+    if (isOpen && imageUrl) {
+      window.history.pushState({ modal: "image-viewer" }, "");
+      
+      const handlePopState = () => {
+        onClose();
+      };
+      
+      window.addEventListener("popstate", handlePopState);
+      
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+        if (window.history.state?.modal === "image-viewer") {
+          window.history.back();
+        }
+      };
+    }
+  }, [isOpen, imageUrl, onClose]);
+
   const modalContent = (
     <AnimatePresence>
       {isOpen && imageUrl && (

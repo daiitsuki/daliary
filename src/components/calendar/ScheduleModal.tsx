@@ -60,6 +60,26 @@ const ScheduleModal = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // 뒤로가기 시 모달 닫기 로직
+  useEffect(() => {
+    if (isOpen) {
+      window.history.pushState({ modal: "schedule" }, "");
+      
+      const handlePopState = () => {
+        onClose();
+      };
+      
+      window.addEventListener("popstate", handlePopState);
+      
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+        if (window.history.state?.modal === "schedule") {
+          window.history.back();
+        }
+      };
+    }
+  }, [isOpen, onClose]);
+
   const handleStartDateChange = (date: string) => {
     setStartDate(date);
     // 시작일이 종료일보다 늦어지면 종료일을 시작일과 맞춤

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Check } from 'lucide-react';
 import { TOOL_ICONS, ICON_KEYS } from './constants';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +16,13 @@ export default function AddToolModal({ isOpen, onClose, onAdd, initialData }: Ad
   const [url, setUrl] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('globe');
   const [error, setError] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -30,6 +38,26 @@ export default function AddToolModal({ isOpen, onClose, onAdd, initialData }: Ad
       setError('');
     }
   }, [isOpen, initialData]);
+
+  // 뒤로가기 시 모달 닫기 로직
+  useEffect(() => {
+    if (isOpen) {
+      window.history.pushState({ modal: "add-tool" }, "");
+      
+      const handlePopState = () => {
+        onClose();
+      };
+      
+      window.addEventListener("popstate", handlePopState);
+      
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+        if (window.history.state?.modal === "add-tool") {
+          window.history.back();
+        }
+      };
+    }
+  }, [isOpen, onClose]);
 
   const handleSubmit = () => {
     if (!title.trim()) {
@@ -58,18 +86,31 @@ export default function AddToolModal({ isOpen, onClose, onAdd, initialData }: Ad
     onClose();
   };
 
-  return (
+  const modalVariants = {
+    initial: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
+    animate: isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 },
+    exit: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
+  };
+
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          onClick={onClose}
-        >
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden flex flex-col"
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          />
+          <motion.div
+            variants={modalVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ type: "tween", ease: "easeOut", duration: 0.25 }}
+            className="relative w-full max-w-sm bg-white rounded-t-[32px] md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col transform-gpu"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -149,4 +190,6 @@ export default function AddToolModal({ isOpen, onClose, onAdd, initialData }: Ad
       )}
     </AnimatePresence>
   );
+
+  return createPortal(modalContent, document.body);
 }

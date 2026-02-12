@@ -34,3 +34,28 @@
 
 - 모든 버튼과 인터랙티브 요소는 `active:scale-95` 또는 `transition-all`을 포함하여 즉각적인 피드백을 제공해야 합니다.
 - 페이지 전환 및 모달 오픈 시 `framer-motion`을 활용한 부드러운 애니메이션을 권장합니다.
+
+## 5. Notification System
+
+알림 기능은 브라우저 Push API와 Supabase 실시간 연동, 그리고 Vercel 서버리스 함수를 기반으로 하며 다음의 원칙을 따릅니다.
+
+- **Background Push**: 앱이 닫혀 있을 때도 알림을 보내기 위해 Vercel 서버리스 함수(`/api/push.ts`)와 Web Push API(VAPID)를 사용합니다. Supabase Webhook이 `notifications` 테이블의 신규 행을 감지하여 Vercel API를 호출합니다.
+- **Device Policy**: 알림은 보안 및 효율성을 위해 사용자당 가장 최근에 설정한 **기기 1대**로만 전송됩니다. (`push_subscriptions` 테이블의 PK가 `user_id`)
+- **History Management**: 알림 내역(`notifications` 테이블)은 서버 부하 및 클라이언트 성능을 위해 사용자별로 **최대 20개**까지만 유지 및 표시합니다.
+- **Trigger Architecture**: 
+    - 답변 완료, 일정 변경, 장소 추가, 방문 인증 등 주요 액션은 PostgreSQL 트리거(`handle_notification_trigger`)를 통해 자동 생성됩니다.
+    - 본인에게는 알림을 보내지 않으며, 상대방의 `user_id`를 찾아 알림을 생성합니다.
+- **Stacking (Tagging)**: 동일한 유형의 알림이 단시간 내에 여러 번 발생할 경우, 알림이 난잡하게 쌓이지 않도록 `type` 필드를 `tag`로 활용하여 브라우저 수준에서 알림을 스택(Stack) 또는 그룹화하여 처리합니다.
+- **Permission UX**: 알림 권한이 거부되었을 경우 세팅 탭에서 사용자에게 브라우저 설정 변경 방법을 친절하게 안내해야 합니다.
+
+## 6. Modal Animation Standard
+
+모든 모달 컴포넌트는 기기 환경에 맞춰 일관된 애니메이션 경험을 제공해야 합니다.
+
+- **Responsive Animation**: `window.innerWidth`를 감지하여 모바일과 데스크탑 애니메이션을 분기합니다.
+    - **Mobile (< 768px)**: 하단에서 위로 슬라이드되어 올라오는 애니메이션 (`y: "100%" -> 0`)을 적용합니다. `rounded-t-[32px]`를 사용하여 하단바 느낌을 줍니다.
+    - **Desktop (>= 768px)**: 중앙에서 페이드 인과 동시에 살짝 커지며 위로 올라오는 애니메이션 (`opacity: 0, scale: 0.95, y: 20 -> opacity: 1, scale: 1, y: 0`)을 적용합니다. `rounded-[32px]`를 사용하여 플로팅 카드 느낌을 줍니다.
+- **Backdrop**: 모든 모달은 `bg-black/50` 배경과 `backdrop-blur-sm` 효과를 가진 백드롭을 가져야 하며, 백드롭 클릭 시 모달이 닫히는 기능을 포함해야 합니다.
+- **Back Button Support**: 모달이 열릴 때 브라우저 히스토리에 상태를 추가(`history.pushState`)하여, 사용자가 기기의 뒤로가기 버튼을 눌렀을 때 페이지가 이동하는 대신 모달만 닫히도록 구현해야 합니다.
+- **Transitions**: `type: "tween"`, `ease: "easeOut"`, `duration: 0.2`~`0.25` 수준의 부드럽고 빠른 전환을 권장합니다.
+- **Portals**: 레이아웃 간섭을 방지하기 위해 모든 모달은 `createPortal`을 통해 `document.body` 최하단에 렌더링되어야 합니다.

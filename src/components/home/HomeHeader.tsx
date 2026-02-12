@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Heart, UserPlus, User } from "lucide-react";
+import { Heart, UserPlus, User, Bell } from "lucide-react";
 import ImageViewerModal from "../common/ImageViewerModal";
+import NotificationHistoryModal from "./NotificationHistoryModal";
 import { Profile, Couple } from "../../types";
 
 interface HomeHeaderProps {
@@ -21,6 +22,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
     url: null,
     title: ""
   });
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const openViewer = (url: string | null | undefined, title: string) => {
     if (!url) return;
@@ -52,6 +54,13 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
   return (
     <header className="px-6 pt-10 pb-6 flex flex-col items-center sticky top-0 bg-white/70 backdrop-blur-lg z-20">
+      <button 
+        onClick={() => setIsHistoryOpen(true)}
+        className="absolute right-6 top-10 p-2 hover:bg-gray-100 rounded-full transition-colors group"
+      >
+        <Bell size={20} className="text-gray-400 group-hover:text-rose-400" />
+      </button>
+
       <div className="flex items-center justify-center space-x-10 mb-2">
         {/* My Profile */}
         <div className="flex flex-col items-center">
@@ -121,6 +130,12 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
           </div>
         </div>
       </div>
+
+      <NotificationHistoryModal 
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        userId={myProfile?.id || null}
+      />
 
       <ImageViewerModal
         isOpen={viewerState.isOpen}
