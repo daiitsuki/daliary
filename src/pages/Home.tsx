@@ -23,6 +23,7 @@ export default function Home() {
     myProfile,
     myAnswer,
     partnerAnswer,
+    refresh,
   } = useHomeData();
 
   const { refresh: refreshPoints } = useCouplePoints();
@@ -45,8 +46,8 @@ export default function Home() {
       if (error) throw error;
       
       setInputAnswer("");
-      // refresh() 대신 realtime이 감지하여 처리하도록 유도하거나, 
-      // 포인트만 즉시 갱신하여 트래픽 최적화
+      // 데이터 즉시 갱신
+      await refresh();
       refreshPoints();
     } catch (err) {
       alert("답변 저장 실패");
