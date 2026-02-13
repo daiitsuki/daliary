@@ -192,15 +192,20 @@ export const useNotifications = (userId: string | null) => {
     }
 
     // 3. DB 설정 업데이트
+    console.log('[Push] Updating DB settings to:', targetState);
     const { error } = await supabase
       .from('notification_settings')
-      .upsert({ user_id: userId, is_enabled: targetState });
+      .update({ is_enabled: targetState })
+      .eq('user_id', userId);
 
-    if (!error) {
-      setSettings(prev => ({ ...prev, is_enabled: targetState }));
-      return true;
+    if (error) {
+      console.error('[Push] DB update error:', error);
+      return false;
     }
-    return false;
+
+    console.log('[Push] DB update successful');
+    setSettings(prev => ({ ...prev, is_enabled: targetState }));
+    return true;
   };
 
   const markAsRead = async (notificationId: string) => {

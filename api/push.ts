@@ -19,8 +19,6 @@ const supabase = createClient(
 );
 
 export default async function handler(req: any, res: any) {
-  console.log('[API/Push] Request received:', JSON.stringify(req.body, null, 2));
-
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -29,7 +27,6 @@ export default async function handler(req: any, res: any) {
     const { record } = req.body;
 
     if (!record || !record.user_id) {
-      console.error('[API/Push] Invalid payload: missing record or user_id');
       return res.status(400).json({ error: 'Invalid payload' });
     }
 
@@ -40,16 +37,12 @@ export default async function handler(req: any, res: any) {
       .eq('user_id', record.user_id)
       .single();
 
-    console.log('[API/Push] User settings:', settings);
-
     if (!settings?.is_enabled) {
-      console.log('[API/Push] User disabled notifications');
       return res.status(200).json({ message: 'User disabled notifications' });
     }
 
     const settingKey = `notify_${record.type}`;
     if (settings.hasOwnProperty(settingKey) && !settings[settingKey]) {
-      console.log(`[API/Push] User disabled notifications for ${record.type}`);
       return res.status(200).json({ message: `User disabled notifications for ${record.type}` });
     }
 
@@ -61,11 +54,8 @@ export default async function handler(req: any, res: any) {
       .single();
 
     if (!pushSub || !pushSub.subscription) {
-      console.error('[API/Push] No push subscription found for user:', record.user_id);
       return res.status(200).json({ message: 'No push subscription found' });
     }
-
-    console.log('[API/Push] Sending push to subscription:', JSON.stringify(pushSub.subscription));
 
     // 3. 실제 Push 발송
     const payload = JSON.stringify({
@@ -83,10 +73,9 @@ export default async function handler(req: any, res: any) {
       payload
     );
 
-    console.log('[API/Push] Push sent successfully');
     return res.status(200).json({ success: true });
   } catch (error: any) {
-    console.error('[API/Push] Error processing push:', error);
+    console.error('Push Error:', error);
     return res.status(500).json({ error: error.message });
   }
 }
