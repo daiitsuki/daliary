@@ -6,21 +6,16 @@ import './index.css'
 // 서비스 워커 등록
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // 캐시 방지를 위해 타임스탬프 추가
-    navigator.serviceWorker.register(`/sw.js?v=${Date.now()}`).then(registration => {
+    navigator.serviceWorker.register('/sw.js').then(registration => {
       console.log('SW registration successful with scope: ', registration.scope);
-      
-      // 즉시 업데이트 체크
-      registration.update();
       
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              if (confirm('새로운 버전의 앱이 준비되었습니다. 새로고침하시겠습니까?')) {
-                window.location.reload();
-              }
+              // 실제로 새로운 버전이 있을 때만 알림
+              console.log('New service worker content is available; please refresh.');
             }
           });
         }
