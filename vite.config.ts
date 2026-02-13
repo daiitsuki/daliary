@@ -14,8 +14,12 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      injectRegister: 'inline',
+      includeAssets: ['favicon.ico', 'logo.png'],
       manifest: {
         name: 'Daliary - 우리만의 커플 다이어리',
         short_name: 'Daliary',
