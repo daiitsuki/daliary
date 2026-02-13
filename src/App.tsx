@@ -51,6 +51,8 @@ function App() {
                           <Route path="/calendar" element={<Calendar />} />
                           <Route path="/settings" element={<Settings />} />
                           <Route path="/onboarding" element={<Onboarding />} />
+                          {/* 정의되지 않은 모든 경로는 홈으로 리다이렉트 */}
+                          <Route path="*" element={<Navigate to="/home" replace />} />
                         </Route>
                       </Routes>
                     </div>
