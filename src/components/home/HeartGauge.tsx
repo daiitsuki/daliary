@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight,
@@ -18,6 +18,26 @@ const HeartGauge = () => {
   const { hasCheckedIn } = useAttendance();
   const [showHistory, setShowHistory] = useState(false);
   const [activeTab, setActiveTab] = useState<"history" | "guide">("history");
+
+  // 뒤로가기 시 모달 닫기 로직
+  useEffect(() => {
+    if (showHistory) {
+      window.history.pushState({ modal: "point-history" }, "");
+      
+      const handlePopState = () => {
+        setShowHistory(false);
+      };
+      
+      window.addEventListener("popstate", handlePopState);
+      
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+        if (window.history.state?.modal === "point-history") {
+          window.history.back();
+        }
+      };
+    }
+  }, [showHistory]);
 
   if (loading || !levelInfo) return null;
 

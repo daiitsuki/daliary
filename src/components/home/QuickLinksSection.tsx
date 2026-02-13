@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, ChevronLeft, ChevronRight, Pencil, Settings2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useCouple } from '../../hooks/useCouple';
@@ -15,50 +16,42 @@ interface Tool {
 
 export default function QuickLinksSection() {
   const { couple } = useCouple();
-  const [tools, setTools] = useState<Tool[]>([]);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
 
-  const fetchTools = async () => {
-    if (!couple) return;
-    try {
+  const { data: tools = [], refetch } = useQuery({
+    queryKey: ['tools', couple?.id],
+    queryFn: async () => {
+      if (!couple?.id) return [];
       const { data, error } = await supabase
         .from('tools')
-        .select('*')
+        .select('id, title, url, icon_key, sort_order')
         .eq('couple_id', couple.id)
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
-      setTools(data || []);
-    } catch (error) {
-      console.error('Error fetching tools:', error);
-    }
-  };
+      return data as Tool[];
+    },
+    enabled: !!couple?.id,
+  });
 
-  useEffect(() => {
-    fetchTools();
-  }, [couple]);
+  const saveMutation = useMutation({
+    mutationFn: async ({ title, url, iconKey }: { title: string, url: string, iconKey: string }) => {
+      if (!couple) return;
 
-  const handleSaveTool = async (title: string, url: string, iconKey: string) => {
-    if (!couple) return;
-
-    try {
       if (editingTool) {
         const { error } = await supabase
           .from('tools')
           .update({ title, url, icon_key: iconKey })
           .eq('id', editingTool.id);
-
         if (error) throw error;
-        
-        setTools(tools.map(t => t.id === editingTool.id ? { ...t, title, url, icon_key: iconKey } : t));
-        setEditingTool(null);
       } else {
         const maxOrder = tools.length > 0 ? Math.max(...tools.map(t => t.sort_order)) : -1;
         const newOrder = maxOrder + 1;
 
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('tools')
           .insert({
             couple_id: couple.id,
@@ -66,14 +59,41 @@ export default function QuickLinksSection() {
             url,
             icon_key: iconKey,
             sort_order: newOrder
-          })
-          .select()
-          .single();
-
+          });
         if (error) throw error;
-        setTools([...tools, data]);
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tools', couple?.id] });
       setIsModalOpen(false);
+      setEditingTool(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('tools').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tools', couple?.id] });
+    },
+  });
+
+  const moveMutation = useMutation({
+    mutationFn: async ({ currentId, currentOrder, targetId, targetOrder }: any) => {
+      const { error: error1 } = await supabase.from('tools').update({ sort_order: targetOrder }).eq('id', currentId);
+      const { error: error2 } = await supabase.from('tools').update({ sort_order: currentOrder }).eq('id', targetId);
+      if (error1 || error2) throw error1 || error2;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tools', couple?.id] });
+    },
+  });
+
+  const handleSaveTool = async (title: string, url: string, iconKey: string) => {
+    try {
+      await saveMutation.mutateAsync({ title, url, iconKey });
     } catch (error) {
       console.error('Error saving tool:', error);
       alert('저장 중 오류가 발생했습니다.');
@@ -83,9 +103,7 @@ export default function QuickLinksSection() {
   const handleDeleteTool = async (id: string) => {
     if (!confirm('삭제하시겠습니까?')) return;
     try {
-      const { error } = await supabase.from('tools').delete().eq('id', id);
-      if (error) throw error;
-      setTools(tools.filter(t => t.id !== id));
+      await deleteMutation.mutateAsync(id);
     } catch (error) {
       console.error('Error deleting tool:', error);
     }
@@ -98,17 +116,16 @@ export default function QuickLinksSection() {
     const currentTool = tools[index];
     const targetTool = tools[targetIndex];
 
-    const newTools = [...tools];
-    [newTools[index], newTools[targetIndex]] = [newTools[targetIndex], newTools[index]];
-    setTools(newTools);
-
     try {
-      const { error: error1 } = await supabase.from('tools').update({ sort_order: targetTool.sort_order }).eq('id', currentTool.id);
-      const { error: error2 } = await supabase.from('tools').update({ sort_order: currentTool.sort_order }).eq('id', targetTool.id);
-      if (error1 || error2) throw error1 || error2;
+      await moveMutation.mutateAsync({
+        currentId: currentTool.id,
+        currentOrder: currentTool.sort_order,
+        targetId: targetTool.id,
+        targetOrder: targetTool.sort_order
+      });
     } catch (error) {
       console.error('Error moving tool:', error);
-      fetchTools();
+      refetch();
     }
   };
 

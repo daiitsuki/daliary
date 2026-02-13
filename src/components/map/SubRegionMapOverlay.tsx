@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { usePlaces, VisitWithPlace } from "../../context/PlacesContext";
@@ -17,6 +17,25 @@ const SubRegionMapOverlay: React.FC<SubRegionMapOverlayProps> = ({
   onSubRegionClick,
 }) => {
   const { subRegionStats, visits } = usePlaces();
+
+  // 뒤로가기 시 모달 닫기 로직
+  useEffect(() => {
+    window.history.pushState({ modal: "subregion-map" }, "");
+    
+    const handlePopState = () => {
+      onBack();
+    };
+    
+    window.addEventListener("popstate", handlePopState);
+    
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (window.history.state?.modal === "subregion-map") {
+        window.history.back();
+      }
+    };
+  }, [onBack]);
+
   const stats = subRegionStats[region] || {};
 
   // 해당 시/도에 속하지만 시/군/구가 지정되지 않은 방문 기록 개수 확인

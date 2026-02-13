@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { ArrowLeft, ImageIcon, MapPin, Calendar, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { VisitWithPlace } from "../../context/PlacesContext";
@@ -16,6 +16,24 @@ const RegionDetailOverlay = ({
   onBack,
   onVisitClick,
 }: RegionDetailOverlayProps) => {
+  // 뒤로가기 시 모달 닫기 로직
+  useEffect(() => {
+    window.history.pushState({ modal: "region-detail" }, "");
+    
+    const handlePopState = () => {
+      onBack();
+    };
+    
+    window.addEventListener("popstate", handlePopState);
+    
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (window.history.state?.modal === "region-detail") {
+        window.history.back();
+      }
+    };
+  }, [onBack]);
+
   const groupedVisits = useMemo(() => {
     return visits.reduce(
       (acc, v) => {

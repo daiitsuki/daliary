@@ -39,7 +39,7 @@ const itemVariants: Variants = {
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { couple, fetchCoupleInfo, signOut, disconnect, isCoupleFormed } = useCouple();
+  const { couple, profile: contextProfile, fetchCoupleInfo, signOut, disconnect, isCoupleFormed } = useCouple();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [nickname, setNickname] = useState("");
   const [anniversary, setAnniversary] = useState("");
@@ -53,29 +53,14 @@ export default function Settings() {
 
   // 초기 데이터 로드
   useEffect(() => {
-    const loadData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (data) {
-        setProfile(data);
-        setNickname(data.nickname || "");
-      }
-
-      if (couple?.anniversary_date) {
-        setAnniversary(couple.anniversary_date);
-      }
-    };
-    loadData();
-  }, [couple]);
+    if (contextProfile) {
+      setProfile(contextProfile);
+      setNickname(contextProfile.nickname || "");
+    }
+    if (couple?.anniversary_date) {
+      setAnniversary(couple.anniversary_date);
+    }
+  }, [contextProfile, couple]);
 
   // 파일 선택 시 편집 모달 열기
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

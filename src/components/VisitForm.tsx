@@ -65,6 +65,24 @@ const VisitForm = ({ placeId, placeName, placeAddress, onClose, onSuccess }: Vis
     }
   }, [placeAddress]);
 
+  // 뒤로가기 시 모달 닫기 로직
+  useEffect(() => {
+    window.history.pushState({ modal: "visit-form" }, "");
+    
+    const handlePopState = () => {
+      onClose();
+    };
+    
+    window.addEventListener("popstate", handlePopState);
+    
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (window.history.state?.modal === "visit-form") {
+        window.history.back();
+      }
+    };
+  }, [onClose]);
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];

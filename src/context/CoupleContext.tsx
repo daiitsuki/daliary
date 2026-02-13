@@ -1,10 +1,13 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { Couple, Profile } from '../types';
 
 interface CoupleContextType {
   couple: Couple | null;
   profile: Profile | null;
+  notificationSettings: any | null;
+  isCoupleFormed: boolean;
   loading: boolean;
   error: string | null;
   fetchCoupleInfo: () => Promise<void>;
@@ -17,58 +20,32 @@ interface CoupleContextType {
 const CoupleContext = createContext<CoupleContextType | undefined>(undefined);
 
 export function CoupleProvider({ children }: { children: ReactNode }) {
-  const [couple, setCouple] = useState<Couple | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const lastUpdateRef = useRef<number>(0);
 
+  // React Query for common initial data
+  const { data: initData, isLoading: queryLoading, refetch } = useQuery({
+    queryKey: ['couple_info'],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+
+      const { data, error } = await supabase.rpc('get_app_init_data');
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const couple = initData?.couple || null;
+  const profile = initData?.profile || null;
+  const notificationSettings = initData?.notification_settings || null;
+  const isCoupleFormed = initData?.is_couple_formed || false;
+
   const fetchCoupleInfo = useCallback(async () => {
-    try {
-      // setLoading(true); // Don't trigger loading on refresh to avoid flickering
-      setError(null);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setCouple(null);
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        // 프로필이 없는 경우 (회원가입 직후 등) 무시
-        setCouple(null);
-        setProfile(null);
-      } else {
-        setProfile(profileData);
-        
-        if (profileData?.couple_id) {
-          const { data: coupleData, error: coupleError } = await supabase
-            .from('couples')
-            .select('*')
-            .eq('id', profileData.couple_id)
-            .single();
-
-          if (coupleError) throw coupleError;
-          setCouple(coupleData);
-        } else {
-          setCouple(null);
-        }
-      }
-    } catch (err: any) {
-      console.error('Error fetching couple info:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    await refetch();
+  }, [refetch]);
 
   // Heartbeat Effect: Update last_active_at periodically
   useEffect(() => {
@@ -119,20 +96,16 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   }, [profile?.id]);
 
   useEffect(() => {
-    fetchCoupleInfo();
-
     // Auth 상태 변경 감지
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      fetchCoupleInfo();
+      queryClient.invalidateQueries({ queryKey: ['couple_info'] });
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchCoupleInfo]);
+  }, [queryClient]);
 
   const generateInviteCode = async () => {
     try {
-      setLoading(true);
-
       // 클라이언트 측 중복 생성 방지
       if (couple) {
         throw new Error('이미 연결된 커플(초대 코드)이 있습니다. 설정에서 연결 해제 후 다시 시도해주세요.');
@@ -150,27 +123,23 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
         throw error;
       }
 
-      setCouple(newCouple); // 상태 즉시 업데이트
+      await queryClient.invalidateQueries({ queryKey: ['couple_info'] });
       return newCouple;
     } catch (err: any) {
       console.error(err);
       setError(err.message);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const joinCouple = async (code: string) => {
     try {
-      setLoading(true);
-      // 컨텍스트의 error 상태는 초기화하지만 loading은 유지
       setError(null);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
-      const { data: updatedCouple, error: rpcError } = await supabase
+      const { error: rpcError } = await supabase
         .rpc('join_couple_by_code', { invite_code_input: code });
 
       if (rpcError) {
@@ -186,43 +155,46 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
         throw new Error(message);
       }
 
-      setCouple(updatedCouple);
-      // 성공 시에만 fetchCoupleInfo 호출하여 상태를 완전히 동기화
-      await fetchCoupleInfo();
+      await queryClient.invalidateQueries({ queryKey: ['couple_info'] });
     } catch (err: any) {
       console.error('Final Context error:', err.message);
       setError(err.message);
       throw err; // 상위 컴포넌트(Onboarding)에서 catch 하도록 재전송
-    } finally {
-      setLoading(false);
     }
   };
 
   const disconnect = async () => {
     try {
-      setLoading(true);
       const { error } = await supabase.rpc('delete_couple_and_all_data');
       if (error) throw error;
       
-      setCouple(null);
-      await fetchCoupleInfo();
+      await queryClient.invalidateQueries({ queryKey: ['couple_info'] });
     } catch (err: any) {
       console.error('Error disconnecting couple:', err);
       setError(err.message);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setCouple(null);
-    setProfile(null);
+    queryClient.clear();
   };
 
   return (
-    <CoupleContext.Provider value={{ couple, profile, loading, error, fetchCoupleInfo, generateInviteCode, joinCouple, disconnect, signOut }}>
+    <CoupleContext.Provider value={{ 
+      couple, 
+      profile, 
+      notificationSettings,
+      isCoupleFormed, 
+      loading: queryLoading, 
+      error, 
+      fetchCoupleInfo, 
+      generateInviteCode, 
+      joinCouple, 
+      disconnect, 
+      signOut 
+    }}>
       {children}
     </CoupleContext.Provider>
   );

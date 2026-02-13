@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import { Bell, AlertCircle, Settings as SettingsIcon, MessageSquare, Calendar, MapPin, TrendingUp, CheckCircle2 } from "lucide-react";
-import { useNotifications, NotificationSettings } from "../../hooks/useNotifications";
+import { useNotifications } from "../../hooks/useNotifications";
+import { NotificationSettings } from "../../context/NotificationsContext";
 
 interface NotificationSettingsSectionProps {
   userId: string | null;
 }
 
-const NotificationSettingsSection: React.FC<NotificationSettingsSectionProps> = ({ userId }) => {
-  const { settings, toggleNotifications, updateGranularSetting, permissionStatus } = useNotifications(userId);
+const NotificationSettingsSection: React.FC<NotificationSettingsSectionProps> = () => {
+  const { settings, toggleNotifications, updateGranularSetting, permissionStatus } = useNotifications();
   const [isProcessing, setIsProcessing] = useState(false);
+
+  if (!settings) return null;
 
   const handleToggle = async () => {
     setIsProcessing(true);
@@ -16,7 +19,7 @@ const NotificationSettingsSection: React.FC<NotificationSettingsSectionProps> = 
     setIsProcessing(false);
   };
 
-  const notificationTypes = [
+  const notificationTypes: { key: keyof NotificationSettings; label: string; icon: React.ReactNode }[] = [
     { key: 'notify_question_answered', label: '오늘의 질문 답변', icon: <MessageSquare size={14} /> },
     { key: 'notify_question_request', label: '답변 요청', icon: <Bell size={14} /> },
     { key: 'notify_schedule_change', label: '일정 변경', icon: <Calendar size={14} /> },
@@ -68,14 +71,14 @@ const NotificationSettingsSection: React.FC<NotificationSettingsSectionProps> = 
                   <span className="text-[12px] font-bold text-gray-600">{type.label}</span>
                 </div>
                 <button
-                  onClick={() => updateGranularSetting(type.key as keyof NotificationSettings, !settings[type.key as keyof NotificationSettings])}
+                  onClick={() => updateGranularSetting(type.key, !settings[type.key])}
                   className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
-                    settings[type.key as keyof NotificationSettings] ? "bg-rose-300" : "bg-gray-200"
+                    settings[type.key] ? "bg-rose-300" : "bg-gray-200"
                   }`}
                 >
                   <span
                     className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                      settings[type.key as keyof NotificationSettings] ? "translate-x-5" : "translate-x-1"
+                      settings[type.key] ? "translate-x-5" : "translate-x-1"
                     }`}
                   />
                 </button>

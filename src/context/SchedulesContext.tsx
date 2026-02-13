@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCouple } from '../hooks/useCouple';
 import { CATEGORY_CONFIG } from '../components/calendar/constants';
@@ -30,109 +31,99 @@ interface SchedulesContextType {
 const SchedulesContext = createContext<SchedulesContextType | undefined>(undefined);
 
 export const SchedulesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { couple } = useCouple();
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasLoaded, setHasLoaded] = useState(false); // 캐싱 여부 확인
+  const { couple, profile, loading: coupleLoading } = useCouple();
+  const queryClient = useQueryClient();
 
-  const fetchSchedules = useCallback(async (showLoading = true) => {
-    if (!couple?.id) return;
-    if (showLoading) setLoading(true);
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
+  const { data: rawSchedules = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['schedules', couple?.id],
+    queryFn: async () => {
+      if (!couple?.id || !profile?.id) return [];
+      
       const { data, error } = await supabase
         .from('schedules')
-        .select('*')
+        .select('id, created_at, couple_id, writer_id, title, description, start_date, end_date, color, category')
         .eq('couple_id', couple.id)
         .order('start_date', { ascending: true });
 
       if (error) throw error;
+      return data;
+    },
+    enabled: !!couple?.id && !!profile?.id && !coupleLoading,
+  });
 
-      const transformedData = (data || []).map((schedule: Schedule) => {
-        if (schedule.category === 'couple') return schedule;
+  const schedules = (rawSchedules || []).map((schedule: any) => {
+    if (schedule.category === 'couple') return schedule;
 
-        const isWriter = schedule.writer_id === user.id;
-        let effectiveCategory = schedule.category;
+    const isWriter = schedule.writer_id === profile?.id;
+    let effectiveCategory = schedule.category;
 
-        if (isWriter) {
-          effectiveCategory = schedule.category;
-        } else {
-          effectiveCategory = schedule.category === 'me' ? 'partner' : 'me';
-        }
-
-        return {
-          ...schedule,
-          category: effectiveCategory,
-          color: CATEGORY_CONFIG[effectiveCategory as keyof typeof CATEGORY_CONFIG].color
-        };
-      });
-
-      setSchedules(transformedData);
-      setHasLoaded(true);
-    } catch (err) {
-      console.error('Error fetching schedules:', err);
-    } finally {
-      setLoading(false);
+    if (!isWriter) {
+      effectiveCategory = schedule.category === 'me' ? 'partner' : 'me';
     }
-  }, [couple?.id]);
 
-  useEffect(() => {
-    if (couple?.id && !hasLoaded) {
-      fetchSchedules();
-    }
-  }, [couple?.id, hasLoaded, fetchSchedules]);
-
-  const addSchedule = async (schedule: ScheduleInput) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || !couple?.id) return;
-
-    const { error } = await supabase.from('schedules').insert({
+    return {
       ...schedule,
-      couple_id: couple.id,
-      writer_id: user.id
-    });
+      category: effectiveCategory,
+      color: CATEGORY_CONFIG[effectiveCategory as keyof typeof CATEGORY_CONFIG].color
+    };
+  }) as Schedule[];
 
-    if (error) throw error;
-    await fetchSchedules(false); // 백그라운드 갱신
-  };
+  const addMutation = useMutation({
+    mutationFn: async (schedule: ScheduleInput) => {
+      if (!profile?.id || !couple?.id) return;
+      const { error } = await supabase.from('schedules').insert({
+        ...schedule,
+        couple_id: couple.id,
+        writer_id: profile.id
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedules', couple?.id] });
+    },
+  });
 
-  const updateSchedule = async (id: string, updates: Partial<Schedule>) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string, updates: Partial<Schedule> }) => {
+      if (!profile?.id) return;
 
-    const originalSchedule = schedules.find(s => s.id === id);
-    if (!originalSchedule) return;
+      const originalSchedule = schedules.find(s => s.id === id);
+      if (!originalSchedule) return;
 
-    let finalUpdates = { ...updates };
-    
-    if (originalSchedule.writer_id !== user.id && updates.category && updates.category !== 'couple') {
-      const inverseCategory = updates.category === 'me' ? 'partner' : 'me';
-      finalUpdates.category = inverseCategory;
-      finalUpdates.color = CATEGORY_CONFIG[inverseCategory as keyof typeof CATEGORY_CONFIG].color;
-    }
+      let finalUpdates = { ...updates };
+      
+      if (originalSchedule.writer_id !== profile.id && updates.category && updates.category !== 'couple') {
+        const inverseCategory = updates.category === 'me' ? 'partner' : 'me';
+        finalUpdates.category = inverseCategory;
+        finalUpdates.color = CATEGORY_CONFIG[inverseCategory as keyof typeof CATEGORY_CONFIG].color;
+      }
 
-    const { error } = await supabase.from('schedules').update(finalUpdates).eq('id', id);
-    if (error) throw error;
-    await fetchSchedules(false); // 백그라운드 갱신
-  };
+      const { error: updateError } = await supabase.from('schedules').update(finalUpdates).eq('id', id);
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedules', couple?.id] });
+    },
+  });
 
-  const deleteSchedule = async (id: string) => {
-    const { error } = await supabase.from('schedules').delete().eq('id', id);
-    if (error) throw error;
-    await fetchSchedules(false); // 백그라운드 갱신
-  };
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error: deleteError } = await supabase.from('schedules').delete().eq('id', id);
+      if (deleteError) throw deleteError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedules', couple?.id] });
+    },
+  });
 
   return (
     <SchedulesContext.Provider value={{
       schedules,
       loading,
-      addSchedule,
-      updateSchedule,
-      deleteSchedule,
-      refresh: () => fetchSchedules(true)
+      addSchedule: (s) => addMutation.mutateAsync(s),
+      updateSchedule: (id, updates) => updateMutation.mutateAsync({ id, updates }),
+      deleteSchedule: (id) => deleteMutation.mutateAsync(id),
+      refresh: async () => { await refetch(); }
     }}>
       {children}
     </SchedulesContext.Provider>

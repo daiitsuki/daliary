@@ -76,7 +76,7 @@ export const usePlaceSearch = () => {
           // Fetch the existing place to return its ID
           const { data: existingPlace, error: fetchError } = await supabase
             .from('places')
-            .select('*')
+            .select('id, name, address, lat, lng, status')
             .eq('couple_id', couple.id)
             .eq('kakao_place_id', place.id)
             .single();

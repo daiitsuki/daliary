@@ -1,42 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
 import { useCoupleContext } from '../context/CoupleContext';
 
+/**
+ * useCouple 훅은 CoupleContext의 상태를 편리하게 접근하기 위한 래퍼입니다.
+ * 이제 모든 상태와 로직은 CoupleContext에서 전역적으로 관리됩니다.
+ */
 export const useCouple = () => {
-  const context = useCoupleContext();
-  const [isCoupleFormed, setIsCoupleFormed] = useState(false);
-
-  const checkCoupleStatus = useCallback(async () => {
-    if (!context.couple?.id) {
-      setIsCoupleFormed(false);
-      return;
-    }
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { count, error } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('couple_id', context.couple.id);
-
-      if (error) throw error;
-      
-      // If count is 2 or more, the couple is formed
-      setIsCoupleFormed((count || 0) >= 2);
-    } catch (err) {
-      console.error('Error checking couple status:', err);
-      setIsCoupleFormed(false);
-    }
-  }, [context.couple?.id]);
-
-  useEffect(() => {
-    checkCoupleStatus();
-  }, [checkCoupleStatus]);
-
-  return {
-    ...context,
-    isCoupleFormed
-  };
+  return useCoupleContext();
 };

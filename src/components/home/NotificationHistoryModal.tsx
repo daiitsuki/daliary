@@ -12,8 +12,8 @@ interface NotificationHistoryModalProps {
   userId: string | null;
 }
 
-const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isOpen, onClose, userId }) => {
-  const { notifications, loading, markAsRead } = useNotifications(userId);
+const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isOpen, onClose }) => {
+  const { notifications, loading, markAsRead } = useNotifications();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {

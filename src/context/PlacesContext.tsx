@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { KOREA_REGIONS } from '../constants/regions';
 import { useCouple } from '../hooks/useCouple';
@@ -37,114 +38,110 @@ interface PlacesContextType {
 const PlacesContext = createContext<PlacesContextType | undefined>(undefined);
 
 export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { couple } = useCouple();
-  const [visits, setVisits] = useState<VisitWithPlace[]>([]);
-  const [wishlist, setWishlist] = useState<Place[]>([]);
-  const [stats, setStats] = useState<Record<string, number>>({});
-  const [subRegionStats, setSubRegionStats] = useState<Record<string, Record<string, number>>>({});
-  const [loading, setLoading] = useState(true);
+  const { couple, loading: coupleLoading } = useCouple();
+  const queryClient = useQueryClient();
 
-  const fetchData = useCallback(async () => {
-    if (!couple?.id) return;
+  const { data: placesData, isLoading: loading, refetch } = useQuery({
+    queryKey: ['places_data', couple?.id],
+    queryFn: async () => {
+      if (!couple?.id) return { visits: [], wishlist: [], stats: {}, subRegionStats: {} };
 
-    try {
-      setLoading(true);
       const counts: Record<string, number> = {};
       const subCounts: Record<string, Record<string, number>> = {};
       KOREA_REGIONS.forEach(r => {
         counts[r] = 0;
         subCounts[r] = {};
       });
-      
-      const [visitsRes, wishlistRes] = await Promise.allSettled([
+
+      const [visitsRes, wishlistRes] = await Promise.all([
         supabase.from('visits').select('*, places!inner(name, address, couple_id), visit_comments(count)').eq('places.couple_id', couple.id).order('visited_at', { ascending: false }),
-        supabase.from('places').select('*').eq('couple_id', couple.id).eq('status', 'wishlist').order('created_at', { ascending: false })
+        supabase.from('places').select('id, name, address, lat, lng, status, created_at').eq('couple_id', couple.id).eq('status', 'wishlist').order('created_at', { ascending: false })
       ]);
 
-      if (visitsRes.status === 'fulfilled' && visitsRes.value.data) {
-        setVisits(visitsRes.value.data as any);
-        visitsRes.value.data.forEach(v => {
-          if (v.region && counts.hasOwnProperty(v.region)) {
-            counts[v.region]++;
-            
-            if (v.sub_region) {
-              if (!subCounts[v.region][v.sub_region]) {
-                subCounts[v.region][v.sub_region] = 0;
-              }
-              subCounts[v.region][v.sub_region]++;
+      const visits = (visitsRes.data || []) as any[];
+      const wishlist = (wishlistRes.data || []) as Place[];
+
+      visits.forEach(v => {
+        if (v.region && counts.hasOwnProperty(v.region)) {
+          counts[v.region]++;
+          
+          if (v.sub_region) {
+            if (!subCounts[v.region][v.sub_region]) {
+              subCounts[v.region][v.sub_region] = 0;
             }
+            subCounts[v.region][v.sub_region]++;
           }
-        });
-      }
-      if (wishlistRes.status === 'fulfilled' && wishlistRes.value.data) setWishlist(wishlistRes.value.data);
+        }
+      });
 
-      setStats(counts);
-      setSubRegionStats(subCounts);
-    } catch (err) {
-      console.error('Error fetching places data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [couple?.id]);
+      return { visits, wishlist, stats: counts, subRegionStats: subCounts };
+    },
+    enabled: !!couple?.id && !coupleLoading,
+  });
 
-  const deleteWishlistPlace = async (id: string) => {
-    try {
+  const deleteWishlistMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase.from('places').delete().eq('id', id);
       if (error) throw error;
-      setWishlist(prev => prev.filter(p => p.id !== id));
-      return true;
-    } catch (err) {
-      console.error(err);
-      return false;
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['places_data', couple?.id] });
+    },
+  });
 
-  const updateVisit = async (visitId: string, data: { 
-    visited_at: string; 
-    image_url: string | null;
-    place_id?: string;
-    region?: string;
-    sub_region?: string | null;
-  }) => {
-    try {
+  const updateVisitMutation = useMutation({
+    mutationFn: async ({ visitId, data }: { visitId: string, data: any }) => {
       const { error } = await supabase
         .from('visits')
         .update(data)
         .eq('id', visitId);
-      
       if (error) throw error;
-      await fetchData(); // 전역 데이터 갱신
-      return true;
-    } catch (err) {
-      console.error('Error updating visit:', err);
-      return false;
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['places_data', couple?.id] });
+    },
+  });
 
-  const deleteVisit = async (visitId: string) => {
-    try {
+  const deleteVisitMutation = useMutation({
+    mutationFn: async (visitId: string) => {
       const { error } = await supabase
         .from('visits')
         .delete()
         .eq('id', visitId);
-      
       if (error) throw error;
-      await fetchData(); // 전역 데이터 갱신
-      return true;
-    } catch (err) {
-      console.error('Error deleting visit:', err);
-      return false;
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['places_data', couple?.id] });
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const visits = placesData?.visits || [];
+  const wishlist = placesData?.wishlist || [];
+  const stats = placesData?.stats || {};
+  const subRegionStats = placesData?.subRegionStats || {};
 
   return (
     <PlacesContext.Provider value={{ 
       visits, wishlist, stats, subRegionStats, loading, 
-      refresh: fetchData, deleteWishlistPlace, updateVisit, deleteVisit 
+      refresh: async () => { await refetch(); },
+      deleteWishlistPlace: async (id) => {
+        try {
+          await deleteWishlistMutation.mutateAsync(id);
+          return true;
+        } catch { return false; }
+      },
+      updateVisit: async (visitId, data) => {
+        try {
+          await updateVisitMutation.mutateAsync({ visitId, data });
+          return true;
+        } catch { return false; }
+      },
+      deleteVisit: async (visitId) => {
+        try {
+          await deleteVisitMutation.mutateAsync(visitId);
+          return true;
+        } catch { return false; }
+      }
     }}>
       {children}
     </PlacesContext.Provider>

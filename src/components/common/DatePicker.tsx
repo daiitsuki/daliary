@@ -123,6 +123,26 @@ const DatePicker = ({
     if (selectedDay > daysInMonth) setSelectedDay(daysInMonth);
   }, [daysInMonth, selectedDay]);
 
+  // 뒤로가기 시 모달 닫기 로직
+  useEffect(() => {
+    if (isOpen) {
+      window.history.pushState({ modal: "date-picker" }, "");
+      
+      const handlePopState = () => {
+        setIsOpen(false);
+      };
+      
+      window.addEventListener("popstate", handlePopState);
+      
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+        if (window.history.state?.modal === "date-picker") {
+          window.history.back();
+        }
+      };
+    }
+  }, [isOpen]);
+
   const handleDateSelect = (d: number, m: number, y: number) => {
     const formatted = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     onChange(formatted);

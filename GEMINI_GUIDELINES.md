@@ -59,3 +59,54 @@
 - **Back Button Support**: 모달이 열릴 때 브라우저 히스토리에 상태를 추가(`history.pushState`)하여, 사용자가 기기의 뒤로가기 버튼을 눌렀을 때 페이지가 이동하는 대신 모달만 닫히도록 구현해야 합니다.
 - **Transitions**: `type: "tween"`, `ease: "easeOut"`, `duration: 0.2`~`0.25` 수준의 부드럽고 빠른 전환을 권장합니다.
 - **Portals**: 레이아웃 간섭을 방지하기 위해 모든 모달은 `createPortal`을 통해 `document.body` 최하단에 렌더링되어야 합니다.
+
+## 7. Data Fetching & Performance Optimization
+
+효율적인 서버 자원 활용과 확장성 있는 구조를 위해 **'하이브리드 영역별 데이터 창구'** 원칙을 엄격히 준수합니다.
+
+- **Hybrid Data Fetching Strategy**:
+    - **공통 데이터 (Foundation)**: 앱 구동 및 권한 확인에 필수적인 데이터(`profile`, `couple`, `is_couple_formed`, `notification_settings`)는 `get_app_init_data` RPC를 통해 **단 한 번의 요청**으로 가져옵니다.
+    - **도메인 데이터 (Domain-Specific)**: 일정, 다이어리, 포인트 등 각 기능별 데이터는 해당 도메인을 담당하는 Context/Hook에서 **독립적인 React Query**를 통해 각각 호출합니다.
+- **Independence & Scalability**:
+    - "모든 것을 담는 단 하나의 통로" 대신 "영역별로 잘 정리된 창구"를 지향합니다. 기능이 100개로 늘어나도 공통 RPC가 비대해지지 않으며, 각 도메인은 서로 간섭 없이 독립적으로 유지보수될 수 있습니다.
+- **Sequential Loading (Dependency Chain)**:
+    - 도메인 쿼리는 반드시 공통 데이터 로딩(`loading`)이 완료되고 필수 ID가 확보된 시점에만 실행되도록 `enabled` 옵션을 설정합니다.
+    - 예: `enabled: !!couple?.id && !!profile?.id && !coupleLoading`
+- **Selective Column Fetching**: 
+    - `select('*')` 사용을 엄격히 금지하며, 반드시 필요한 컬럼만 명시적으로 선택합니다.
+
+## 8. Data Structure & Processing Flow
+
+앱의 데이터 처리는 다음과 같은 계층화된 전문 창구 구조를 따릅니다.
+
+1.  **Level 0: Foundation RPC (get_app_init_data)**
+    *   `App.tsx` 마운트 시 호출되어 앱의 '뼈대'가 되는 공통 정보를 JSON으로 수신합니다.
+2.  **Level 1: Foundation Hydration (CoupleContext)**
+    *   수신된 뼈대 데이터를 기반으로 앱의 전역 인증 및 연결 상태를 형성합니다.
+3.  **Level 2: Domain-Specific Service (Individual Providers)**
+    *   **Diary/Home**: 오늘의 질문과 답변 관리 (`HomeContext`)
+    *   **Schedule**: 커플 일정 데이터 관리 (`SchedulesContext`)
+    *   **Points**: 경험치 및 출석 데이터 관리 (`CouplePointsContext`)
+    *   **Notifications**: 알림 내역 관리 (`NotificationsContext`)
+    *   이들은 각자 독립적으로 데이터를 페칭하고 React Query 캐시를 관리합니다.
+4.  **Level 3: Operational Action (Realtime & Mutation)**
+    *   데이터 변경은 `useMutation`을 통한 즉시 반영과 `supabase.channel`을 통한 실시간 동기화로 처리합니다.
+
+## 9. TanStack Query (React Query) Usage Standard
+
+- **Query Keys**: 커플 데이터는 `['..._data', couple?.id]`, 유저 데이터는 `['..._data', profile?.id]`.
+- **Domain Responsibility**: 각 기능별 데이터는 독립된 Query Key를 가져야 하며, 다른 도메인의 쿼리에 의존하지 않습니다.
+- **Invalidation**: `useMutation` 성공 시 관련 도메인의 쿼리 키만 `invalidateQueries`하여 영향 범위를 최소화합니다.
+- **Infinite Query**: 목록형 데이터는 `useInfiniteQuery`를 사용합니다.
+
+## 10. Database Migration Policy
+
+- **Immutable Past**: 이미 실행된 migration 파일은 절대로 수정하지 않습니다.
+- **Add-Only Strategy**: 모든 스키마 및 함수 변경은 항상 새로운 버전 번호의 파일을 추가하는 방식으로 진행합니다. (예: `2026021332_mega_app_init_data.sql`)
+- **Idempotency**: `create or replace function`을 사용하여 멱등성을 유지합니다.
+
+## 11. TypeScript & Code Quality
+
+- **No Emit Errors**: 모든 코드 수정 후에는 반드시 `npx tsc --noEmit`을 실행하여 타입 에러가 없는지 확인해야 합니다.
+- **Explicit Typing**: 쿼리 결과나 함수의 인자/반환값에 명시적인 인터페이스와 타입을 지정하여 코드 안정성을 높입니다.
+- **Unused Imports**: 사용하지 않는 Hook이나 라이브러리 임포트는 즉시 제거하여 깨끗한 코드 상태를 유지합니다.

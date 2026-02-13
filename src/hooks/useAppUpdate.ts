@@ -8,13 +8,15 @@ interface VersionData {
 export const useAppUpdate = () => {
   const [hasUpdate, setHasUpdate] = useState(false);
   const lastCheckTime = useRef<number>(0);
+  const isChecking = useRef<boolean>(false);
   const CHECK_INTERVAL = 1000 * 60 * 10; // 10분 간격
 
   const checkVersion = useCallback(async () => {
     const now = Date.now();
-    // 마지막 확인 후 10분이 지나지 않았으면 요청 생략
-    if (now - lastCheckTime.current < CHECK_INTERVAL) return;
+    // 마지막 확인 후 10분이 지나지 않았거나 이미 체크 중이면 요청 생략
+    if (now - lastCheckTime.current < CHECK_INTERVAL || isChecking.current) return;
 
+    isChecking.current = true;
     try {
       // 캐시를 방지하기 위해 타임스탬프 쿼리 추가
       const response = await fetch(`/version.json?t=${now}`, {
@@ -44,6 +46,8 @@ export const useAppUpdate = () => {
       }
     } catch (error) {
       console.error('Failed to check version:', error);
+    } finally {
+      isChecking.current = false;
     }
   }, []);
 

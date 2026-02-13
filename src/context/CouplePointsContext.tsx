@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, ReactNode } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCoupleContext } from './CoupleContext';
 
@@ -31,11 +32,8 @@ interface CouplePointsContextType {
 const CouplePointsContext = createContext<CouplePointsContextType | undefined>(undefined);
 
 export function CouplePointsProvider({ children }: { children: ReactNode }) {
-  const { couple } = useCoupleContext();
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [history, setHistory] = useState<PointLog[]>([]);
-  const [hasCheckedIn, setHasCheckedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { couple, profile, loading: coupleLoading } = useCoupleContext();
+  const queryClient = useQueryClient();
 
   const calculateLevel = (points: number): LevelInfo => {
     let level = 1;
@@ -56,142 +54,92 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const fetchPoints = useCallback(async () => {
-    if (!couple?.id) return;
-    try {
+  // React Query for Points Data
+  const { data: pointsData, isLoading: pointsLoading } = useQuery({
+    queryKey: ['couple_points', couple?.id],
+    queryFn: async () => {
+      if (!couple?.id) return { total: 0, history: [] };
       const [totalRes, historyRes] = await Promise.all([
         supabase.rpc('get_couple_total_points', { target_couple_id: couple.id }),
         supabase
           .from('point_history')
-          .select('*')
+          .select('id, created_at, type, points, description')
           .eq('couple_id', couple.id)
           .order('created_at', { ascending: false })
           .limit(50)
       ]);
+      if (totalRes.error) throw totalRes.error;
+      if (historyRes.error) throw historyRes.error;
+      return { total: Number(totalRes.data) || 0, history: historyRes.data as PointLog[] };
+    },
+    enabled: !!couple?.id && !coupleLoading,
+  });
 
-      if (totalRes.error) {
-        console.error('Error fetching total points:', totalRes.error);
-      } else {
-        setTotalPoints(Number(totalRes.data) || 0);
-      }
-
-      if (historyRes.error) {
-        console.error('Error fetching point history:', historyRes.error);
-      } else {
-        setHistory(historyRes.data || []);
-      }
-    } catch (err) {
-      console.error('Error fetching points:', err);
-    }
-  }, [couple?.id]);
-
-  const fetchAttendance = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || !couple) return;
-
-    try {
-      const now = new Date();
-      const kstDate = new Intl.DateTimeFormat('ko-KR', {
+  // React Query for Attendance Data
+  const { data: hasCheckedIn = false, isLoading: attendanceLoading } = useQuery({
+    queryKey: ['attendance', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id || !couple) return false;
+      const today = new Intl.DateTimeFormat('ko-KR', {
         timeZone: 'Asia/Seoul',
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
-      }).format(now).replace(/\. /g, '-').replace(/\./g, '');
+      }).format(new Date()).replace(/\. /g, '-').replace(/\./g, '');
 
       const { data, error } = await supabase
         .from('attendances')
         .select('id')
-        .eq('user_id', user.id)
-        .eq('check_in_date', kstDate)
+        .eq('user_id', profile.id)
+        .eq('check_in_date', today)
         .maybeSingle();
 
       if (error) throw error;
-      setHasCheckedIn(!!data);
-    } catch (err) {
-      console.error('Error checking attendance:', err);
-    }
-  }, [couple?.id]);
+      return !!data;
+    },
+    enabled: !!profile?.id && !!couple?.id && !coupleLoading,
+  });
 
-  const checkIn = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || !couple || hasCheckedIn) return false;
-
-    try {
+  const checkInMutation = useMutation({
+    mutationFn: async () => {
+      if (!profile?.id || !couple || hasCheckedIn) return false;
       const { error } = await supabase
         .from('attendances')
         .insert({
           couple_id: couple.id,
-          user_id: user.id
+          user_id: profile.id
         });
-
       if (error) throw error;
-      
-      // 즉시 상태 업데이트를 위한 동기화
-      await Promise.all([fetchAttendance(), fetchPoints()]);
       return true;
-    } catch (err) {
-      console.error('Error checking in:', err);
-      return false;
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance', profile?.id] });
+      queryClient.invalidateQueries({ queryKey: ['couple_points', couple?.id] });
+    },
+  });
 
-  const loadAll = useCallback(async () => {
-    setLoading(true);
-    await Promise.all([fetchPoints(), fetchAttendance()]);
-    setLoading(false);
-  }, [fetchPoints, fetchAttendance]);
-
-  useEffect(() => {
-    if (couple?.id) {
-      loadAll();
-
-      // Refetch on window focus or visibility change to ensure consistency
-      // Use silent refresh (not loadAll) to avoid UI flickering
-      const handleFocus = () => {
-        if (document.visibilityState === 'visible') {
-          Promise.all([fetchPoints(), fetchAttendance()]);
-        }
-      };
-
-      window.addEventListener('focus', handleFocus);
-      document.addEventListener('visibilitychange', handleFocus);
-
-      // Real-time subscriptions
-      const pointsChannel = supabase
-        .channel(`points-realtime-${couple.id}`)
-        .on('postgres_changes', { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'point_history',
-          filter: `couple_id=eq.${couple.id}` 
-        }, fetchPoints)
-        .subscribe();
-
-      const attendanceChannel = supabase
-        .channel(`attendance-realtime-${couple.id}`)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'attendances',
-          filter: `couple_id=eq.${couple.id}`
-        }, fetchAttendance)
-        .subscribe();
-
-      return () => {
-        window.removeEventListener('focus', handleFocus);
-        document.removeEventListener('visibilitychange', handleFocus);
-        supabase.removeChannel(pointsChannel);
-        supabase.removeChannel(attendanceChannel);
-      };
-    } else {
-      setTotalPoints(0);
-      setHistory([]);
-      setHasCheckedIn(false);
-      setLoading(false);
-    }
-  }, [couple?.id, fetchPoints, fetchAttendance, loadAll]);
-
+  const totalPoints = pointsData?.total || 0;
+  const history = pointsData?.history || [];
   const levelInfo = calculateLevel(totalPoints);
+
+  // Real-time subscriptions
+  useEffect(() => {
+    if (!couple?.id) return;
+
+    const pointsChannel = supabase
+      .channel(`points-realtime-${couple.id}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'point_history',
+        filter: `couple_id=eq.${couple.id}` 
+      }, () => queryClient.invalidateQueries({ queryKey: ['couple_points', couple.id] }))
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(pointsChannel);
+    };
+  }, [couple?.id, queryClient]);
 
   return (
     <CouplePointsContext.Provider value={{ 
@@ -199,10 +147,10 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
       history, 
       levelInfo, 
       hasCheckedIn, 
-      loading, 
-      refreshPoints: fetchPoints, 
-      refreshAttendance: fetchAttendance,
-      checkIn 
+      loading: pointsLoading || attendanceLoading, 
+      refreshPoints: async () => { await queryClient.invalidateQueries({ queryKey: ['couple_points'] }) }, 
+      refreshAttendance: async () => { await queryClient.invalidateQueries({ queryKey: ['attendance'] }) },
+      checkIn: () => checkInMutation.mutateAsync()
     }}>
       {children}
     </CouplePointsContext.Provider>

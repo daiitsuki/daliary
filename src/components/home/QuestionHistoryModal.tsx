@@ -163,7 +163,7 @@ export default function QuestionHistoryModal({
 
                   {hasMore && (
                     <button
-                      onClick={loadMore}
+                      onClick={() => loadMore()}
                       disabled={loading}
                       className="w-full py-4 bg-white border border-gray-100 rounded-[24px] text-xs font-bold text-gray-400 hover:text-rose-400 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                     >

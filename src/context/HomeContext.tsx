@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCouple } from '../hooks/useCouple';
 import { Profile } from '../types';
@@ -30,23 +31,71 @@ interface HomeContextType {
 const HomeContext = createContext<HomeContextType | undefined>(undefined);
 
 export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { couple, loading: coupleLoading } = useCouple();
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [hasLoaded, setHasLoaded] = useState(false);
-  
+  const { couple, profile, loading: coupleLoading } = useCouple();
+  const queryClient = useQueryClient();
   const [dDay, setDDay] = useState(0);
-  const [todayQuestion, setTodayQuestion] = useState<Question | null>(null);
-  const [partnerProfile, setPartnerProfile] = useState<Profile | null>(null);
-  const [myProfile, setMyProfile] = useState<Profile | null>(null);
-  const [myAnswer, setMyAnswer] = useState<Answer | null>(null);
-  const [partnerAnswer, setPartnerAnswer] = useState<Answer | null>(null);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setCurrentUserId(user.id);
-    });
-  }, []);
+  const currentUserId = profile?.id || null;
+
+  // React Query for Profiles (Members)
+  const { data: profiles = [], isLoading: profilesLoading } = useQuery({
+    queryKey: ['home_profiles', couple?.id],
+    queryFn: async () => {
+      if (!couple?.id) return [];
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, nickname, avatar_url, last_active_at')
+        .eq('couple_id', couple.id);
+      if (error) throw error;
+      return data as Profile[];
+    },
+    enabled: !!couple?.id && !coupleLoading,
+  });
+
+  // React Query for Daily Data (Question + Answers)
+  const { data: dailyData, isLoading: dailyLoading } = useQuery({
+    queryKey: ['daily_data', couple?.id],
+    queryFn: async () => {
+      if (!couple?.id) return null;
+      
+      const today = new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(new Date()).replace(/\. /g, '-').replace(/\./g, '');
+
+      const { data: question } = await supabase
+        .from('questions')
+        .select('id, content')
+        .eq('publish_date', today)
+        .maybeSingle();
+
+      if (!question) {
+        return { 
+          question: { id: 'dummy-q', content: '아직 오늘의 질문이 준비되지 않았어요. 새로운 질문을 기다려주세요!' },
+          answers: []
+        };
+      }
+
+      const { data: answers, error } = await supabase
+        .from('answers')
+        .select('id, content, writer_id, created_at')
+        .eq('couple_id', couple.id)
+        .eq('question_id', question.id);
+
+      if (error) throw error;
+
+      return { question, answers };
+    },
+    enabled: !!couple?.id && !coupleLoading,
+  });
+
+  const myProfile = (profiles as Profile[] | undefined)?.find(p => p.id === currentUserId) || null;
+  const partnerProfile = (profiles as Profile[] | undefined)?.find(p => p.id !== currentUserId) || null;
+  const todayQuestion = dailyData?.question || null;
+  const myAnswer = (dailyData?.answers as Answer[] | undefined)?.find(a => a.writer_id === currentUserId) || null;
+  const partnerAnswer = (dailyData?.answers as Answer[] | undefined)?.find(a => a.writer_id !== currentUserId) || null;
 
   const calculateDDay = useCallback(() => {
     if (couple?.anniversary_date) {
@@ -63,88 +112,16 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [couple?.anniversary_date]);
 
-  const fetchProfiles = useCallback(async () => {
-    if (!couple?.id || !currentUserId) return;
-    try {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('couple_id', couple.id);
-
-      if (profiles) {
-        let me = profiles.find(p => p.id === currentUserId) || null;
-        const partner = profiles.find(p => p.id !== currentUserId) || null;
-
-        // DB에 사진이 없는 경우 Google 프로필 사진과 자동 동기화
-        if (me && !me.avatar_url) {
-          const { data: { user } } = await supabase.auth.getUser();
-          const googleAvatar = user?.user_metadata?.avatar_url;
-          if (googleAvatar) {
-            me = { ...me, avatar_url: googleAvatar };
-            // 비동기로 DB 업데이트 (기다리지 않음)
-            supabase.from('profiles').update({ avatar_url: googleAvatar }).eq('id', currentUserId).then();
-          }
-        }
-
-        setMyProfile(me);
-        setPartnerProfile(partner);
-      }
-    } catch (err) {
-      console.error('Error fetching profiles:', err);
-    }
-  }, [couple?.id, currentUserId]);
-
-  const fetchDailyData = useCallback(async () => {
-    if (!couple?.id || !currentUserId) return;
-
-    try {
-      const today = new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'Asia/Seoul',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).format(new Date()).replace(/\. /g, '-').replace(/\./g, '');
-
-      const { data: question } = await supabase
-        .from('questions')
-        .select('*')
-        .eq('publish_date', today)
-        .maybeSingle();
-
-      if (question) {
-        setTodayQuestion(question as Question);
-        const { data: answers } = await supabase
-          .from('answers')
-          .select('*')
-          .eq('couple_id', couple.id)
-          .eq('question_id', question.id);
-
-        if (answers) {
-          setMyAnswer(answers.find(a => a.writer_id === currentUserId) || null);
-          setPartnerAnswer(answers.find(a => a.writer_id !== currentUserId) || null);
-        }
-      } else {
-        setTodayQuestion({ id: 'dummy-q', content: '아직 오늘의 질문이 준비되지 않았어요. 새로운 질문을 기다려주세요!' });
-      }
-    } catch (err) {
-      console.error('Error fetching daily data:', err);
-    } finally {
-      setDataLoading(false);
-      setHasLoaded(true);
-    }
-  }, [couple?.id, currentUserId]);
+  useEffect(() => {
+    calculateDDay();
+  }, [calculateDDay]);
 
   const refresh = useCallback(async () => {
-    // 로딩 상태를 최소화하기 위해 병렬로 실행하되, 데이터가 있을 때만 처리
-    await Promise.all([fetchProfiles(), fetchDailyData()]);
-  }, [fetchProfiles, fetchDailyData]);
-
-  useEffect(() => {
-    if (couple?.id && currentUserId && !hasLoaded) {
-      calculateDDay();
-      refresh().then(() => setHasLoaded(true));
-    }
-  }, [couple?.id, currentUserId, hasLoaded, calculateDDay, refresh]);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['home_profiles', couple?.id] }),
+      queryClient.invalidateQueries({ queryKey: ['daily_data', couple?.id] })
+    ]);
+  }, [queryClient, couple?.id]);
 
   // Realtime Sync
   useEffect(() => {
@@ -154,18 +131,18 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .channel(`home_sync_${couple.id}`)
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'answers', filter: `couple_id=eq.${couple.id}` }, 
-        fetchDailyData
+        () => queryClient.invalidateQueries({ queryKey: ['daily_data', couple.id] })
       )
       .on('postgres_changes', 
         { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `couple_id=eq.${couple.id}` }, 
-        fetchProfiles
+        () => queryClient.invalidateQueries({ queryKey: ['home_profiles', couple.id] })
       )
       .subscribe();
 
     return () => { 
       supabase.removeChannel(channel); 
     };
-  }, [couple?.id, fetchDailyData, fetchProfiles]);
+  }, [couple?.id, queryClient]);
 
   return (
     <HomeContext.Provider value={{
@@ -175,7 +152,7 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
       myProfile,
       myAnswer,
       partnerAnswer,
-      loading: coupleLoading || dataLoading,
+      loading: profilesLoading || dailyLoading,
       refresh,
       currentUserId
     }}>

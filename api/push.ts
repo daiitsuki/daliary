@@ -33,7 +33,7 @@ export default async function handler(req: any, res: any) {
     // 1. 해당 유저의 알림 설정 확인
     const { data: settings } = await supabase
       .from('notification_settings')
-      .select('*')
+      .select('is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up')
       .eq('user_id', record.user_id)
       .single();
 
