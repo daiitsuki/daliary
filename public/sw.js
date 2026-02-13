@@ -1,5 +1,15 @@
+self.addEventListener('install', function(event) {
+  console.log('[ServiceWorker] Install event');
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function(event) {
+  console.log('[ServiceWorker] Activate event');
+  event.waitUntil(clients.claim());
+});
+
 self.addEventListener('push', function(event) {
-  console.log('[ServiceWorker] Push event received');
+  console.log('[ServiceWorker] Push event received!!');
   
   let data = {};
   try {
@@ -8,14 +18,15 @@ self.addEventListener('push', function(event) {
       console.log('[ServiceWorker] Push data parsed:', data);
     } else {
       console.warn('[ServiceWorker] Push event has no data');
+      data = { title: 'Daliary', body: '새로운 소식이 있습니다.' };
     }
   } catch (err) {
     console.error('[ServiceWorker] Failed to parse push data:', err);
-    return;
+    data = { title: 'Daliary', body: '새로운 소식이 있습니다.' };
   }
 
   const options = {
-    body: data.body || '새로운 알림이 도착했습니다.',
+    body: data.body,
     icon: '/logo.png',
     badge: '/logo.png',
     data: data.data || { url: '/' },
@@ -24,10 +35,8 @@ self.addEventListener('push', function(event) {
     vibrate: [100, 50, 100],
   };
 
-  console.log('[ServiceWorker] Attempting to show notification:', data.title);
-
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Daliary', options)
+    self.registration.showNotification(data.title, options)
       .then(() => {
         console.log('[ServiceWorker] Notification displayed successfully');
       })
