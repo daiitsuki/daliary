@@ -135,10 +135,14 @@ export const useNotifications = (userId: string | null) => {
   };
 
   const registerPushSubscription = async () => {
-    if (!userId || typeof window === 'undefined' || !('serviceWorker' in navigator)) return false;
+    if (!userId || typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+      console.log('[Push] Subscription failed: Pre-conditions not met', { userId, hasSW: 'serviceWorker' in navigator });
+      return false;
+    }
 
     try {
       const registration = await navigator.serviceWorker.ready;
+      console.log('[Push] Service Worker ready');
       
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -146,16 +150,23 @@ export const useNotifications = (userId: string | null) => {
       });
       
       if (subscription) {
+        console.log('[Push] Subscription created:', subscription.toJSON());
         const { error } = await supabase.from('push_subscriptions').upsert({
           user_id: userId,
           subscription: subscription.toJSON(),
           updated_at: new Date().toISOString()
         });
-        return !error;
+        
+        if (error) {
+          console.error('[Push] Failed to save subscription to DB:', error);
+          return false;
+        }
+        console.log('[Push] Subscription saved to DB successfully');
+        return true;
       }
       return false;
     } catch (err) {
-      console.error('Push subscription error:', err);
+      console.error('[Push] Subscription error:', err);
       return false;
     }
   };

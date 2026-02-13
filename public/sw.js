@@ -1,19 +1,27 @@
 self.addEventListener('push', function(event) {
+  console.log('[ServiceWorker] Push received:', event);
+  
   if (event.data) {
     const data = event.data.json();
+    console.log('[ServiceWorker] Push data:', data);
+    
     const options = {
       body: data.body,
       icon: '/logo.png',
       badge: '/logo.png',
       data: data.data,
-      tag: data.tag || 'default', // Requirement 7: 같은 태그는 스택처럼 쌓이거나 덮어씌워짐
+      tag: data.tag || 'default',
       renotify: true,
       vibrate: [100, 50, 100],
     };
 
     event.waitUntil(
       self.registration.showNotification(data.title, options)
+        .then(() => console.log('[ServiceWorker] Notification shown'))
+        .catch(err => console.error('[ServiceWorker] Failed to show notification:', err))
     );
+  } else {
+    console.warn('[ServiceWorker] Push event received but no data');
   }
 });
 

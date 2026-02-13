@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Bell, Calendar, MessageSquare, MapPin, TrendingUp, CheckCircle2 } from "lucide-react";
-import { useNotifications, AppNotification } from "../../hooks/useNotifications";
+import { useNotifications } from "../../hooks/useNotifications";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 

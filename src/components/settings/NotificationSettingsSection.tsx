@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Bell, BellOff, AlertCircle, Settings as SettingsIcon, MessageSquare, Calendar, MapPin, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Bell, AlertCircle, Settings as SettingsIcon, MessageSquare, Calendar, MapPin, TrendingUp, CheckCircle2 } from "lucide-react";
 import { useNotifications, NotificationSettings } from "../../hooks/useNotifications";
 
 interface NotificationSettingsSectionProps {
