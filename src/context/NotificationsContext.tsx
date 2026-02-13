@@ -183,7 +183,11 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         queryClient.setQueryData(['notifications', profile.id], (prev: any) => [newNotif, ...(prev || []).slice(0, 19)]);
 
         if (Notification.permission === 'granted') {
-          new Notification(newNotif.title, { body: newNotif.content, icon: '/logo.png', tag: newNotif.type });
+          new Notification(newNotif.title, { 
+            body: newNotif.content, 
+            icon: window.location.origin + '/logo.png', 
+            tag: newNotif.type 
+          });
         }
       })
       .subscribe();

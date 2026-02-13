@@ -25,8 +25,8 @@ self.addEventListener('push', function(event) {
 
   const options = {
     body: data.body,
-    icon: '/logo.png',
-    badge: '/logo.png',
+    icon: self.location.origin + '/logo.png',
+    badge: self.location.origin + '/badge.png',
     data: data.data || { url: '/' },
     tag: data.tag || 'default',
     renotify: true,

@@ -5,8 +5,16 @@
       "destination": "/sw.js"
     },
     {
+      "source": "/version.json",
+      "destination": "/version.json"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
+    },
+    {
+      "source": "/(assets/.*)",
+      "destination": "/$1"
     },
     {
       "source": "/(.*)",

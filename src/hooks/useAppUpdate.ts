@@ -52,30 +52,30 @@ export const useAppUpdate = () => {
   }, []);
 
   const updateApp = () => {
-    // 새 버전을 로컬 스토리지에 저장하는 것은 
-    // 페이지가 새로고침되고 다시 checkVersion이 돌 때 처리하거나,
-    // 여기서 미리 fetch해서 저장할 수도 있지만,
-    // 가장 확실한 건 캐시를 날리고 리로드하는 것입니다.
-    
-    // 1. 버전 정보 갱신을 위해 fetch를 한번 더 하거나 그냥 리로드
-    // 리로드하면 다시 checkVersion이 돌면서 currentVersion을 갱신해야 하는데,
-    // 문제는 리로드 해도 구버전 JS가 로드될 수 있음.
-    
     // 확실한 방법: 최신 버전을 저장하고 리로드
     fetch(`/version.json?t=${new Date().getTime()}`, { cache: 'no-store' })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Version file not found');
+        return res.json();
+      })
       .then((data: VersionData) => {
         localStorage.setItem('app_version', data.version);
         
-        // PWA 캐시 삭제 시도 (선택적)
+        // 캐시 삭제 및 서비스 워커 업데이트
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(registrations => {
             for (let registration of registrations) {
-              registration.update();
+              registration.unregister(); // 업데이트를 위해 기존 SW 해제
             }
           });
         }
         
+        // 하드 리로드 (브라우저 캐시 무시 시도)
+        window.location.href = window.location.origin + '?u=' + data.version;
+      })
+      .catch(err => {
+        console.error('Update failed:', err);
+        // 실패하더라도 리로드는 시도
         window.location.reload();
       });
   };
