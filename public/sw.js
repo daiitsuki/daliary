@@ -1,10 +1,3 @@
-// Workbox manifest injection point
-// @ts-ignore
-const manifest = self.__WB_MANIFEST;
-if (manifest) {
-  // console.log('[ServiceWorker] Manifest found:', manifest);
-}
-
 console.log('[ServiceWorker] Script loaded at top level');
 
 self.addEventListener('install', function(event) {
