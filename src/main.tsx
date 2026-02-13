@@ -6,9 +6,13 @@ import './index.css'
 // 서비스 워커 등록
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('SW registered: ', registration);
-      // 새 서비스 워커가 발견되면 즉시 활성화
+    // 캐시 방지를 위해 타임스탬프 추가
+    navigator.serviceWorker.register(`/sw.js?v=${Date.now()}`).then(registration => {
+      console.log('SW registration successful with scope: ', registration.scope);
+      
+      // 즉시 업데이트 체크
+      registration.update();
+      
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
