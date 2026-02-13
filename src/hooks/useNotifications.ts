@@ -75,16 +75,9 @@ export const useNotifications = (userId: string | null) => {
         hasActiveSubscription = !!subscription;
       }
       
-      // 권한이 없거나 실제 구독 정보가 없는 경우 DB 상태와 무관하게 비활성화로 간주
+      // 권한이 없거나 실제 구독 정보가 없는 경우 DB 상태와 무관하게 UI에서는 비활성화로 간주할 수 있지만,
+      // DB를 직접 업데이트하는 것은 사이드 이펙트가 크므로 상태만 관리합니다.
       const isActuallyEnabled = data.is_enabled && isPermissionGranted && hasActiveSubscription;
-      
-      // DB 상태가 실제 상황과 다르면 업데이트 (특히 켜져있다고 나오는데 실제로는 못받는 경우)
-      if (data.is_enabled && !isActuallyEnabled) {
-        await supabase
-          .from('notification_settings')
-          .update({ is_enabled: false })
-          .eq('user_id', userId);
-      }
 
       setSettings({
         is_enabled: isActuallyEnabled,
@@ -142,27 +135,28 @@ export const useNotifications = (userId: string | null) => {
   };
 
   const registerPushSubscription = async () => {
-    if (!userId || typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+    if (!userId || typeof window === 'undefined' || !('serviceWorker' in navigator)) return false;
 
     try {
       const registration = await navigator.serviceWorker.ready;
       
-      // Requirement 4: 1개의 기기로만 받을 수 있도록 함
-      // 신규 구독 생성
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       });
       
       if (subscription) {
-        await supabase.from('push_subscriptions').upsert({
+        const { error } = await supabase.from('push_subscriptions').upsert({
           user_id: userId,
           subscription: subscription.toJSON(),
           updated_at: new Date().toISOString()
         });
+        return !error;
       }
+      return false;
     } catch (err) {
       console.error('Push subscription error:', err);
+      return false;
     }
   };
 
@@ -170,12 +164,23 @@ export const useNotifications = (userId: string | null) => {
     if (!userId) return;
 
     if (targetState) {
-      const granted = await requestPermission();
-      if (!granted && Notification.permission !== 'granted') {
-        return false; // Permission denied or ignored
+      // 1. 권한 요청
+      const permission = await Notification.requestPermission();
+      setPermissionStatus(permission);
+      
+      if (permission !== 'granted') {
+        return false;
+      }
+
+      // 2. 푸시 구독 등록 (성공해야만 다음 단계로)
+      const subscribed = await registerPushSubscription();
+      if (!subscribed) {
+        alert('푸시 알림 등록에 실패했습니다. 브라우저 설정을 확인해주세요.');
+        return false;
       }
     }
 
+    // 3. DB 설정 업데이트
     const { error } = await supabase
       .from('notification_settings')
       .upsert({ user_id: userId, is_enabled: targetState });
@@ -215,15 +220,13 @@ export const useNotifications = (userId: string | null) => {
             setNotifications(prev => [newNotif, ...prev.slice(0, 19)]);
             
             // 브라우저 알림 표시 (포그라운드)
-            // 세부 설정 확인 로직 추가
-            const settingKey = `notify_${newNotif.type}` as keyof NotificationSettings;
-            const isGranularEnabled = settings[settingKey] !== false; // 기본값 true
-
-            if (settings.is_enabled && isGranularEnabled && Notification.permission === 'granted') {
+            // settings 상태를 직접 참조하면 클로저 문제로 인해 이전 값을 참조할 수 있으므로,
+            // 실시간 수신 시에는 권한만 확인하거나 별도의 처리가 필요할 수 있습니다.
+            if (Notification.permission === 'granted') {
               new Notification(newNotif.title, {
                 body: newNotif.content,
                 icon: '/logo.png',
-                tag: newNotif.type // Requirement 7: 타입별 스택
+                tag: newNotif.type
               });
             }
           }
@@ -232,7 +235,7 @@ export const useNotifications = (userId: string | null) => {
 
       return () => { supabase.removeChannel(channel); };
     }
-  }, [userId, fetchSettings, fetchNotifications, settings]);
+  }, [userId, fetchSettings, fetchNotifications]); // settings 제거
 
   return {
     settings,
