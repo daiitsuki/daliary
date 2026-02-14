@@ -22,8 +22,10 @@ const HelpModal = ({ isOpen, onClose }: HelpModalProps) => {
     if (isOpen) {
       window.history.pushState({ modal: "map-help" }, "");
       
-      const handlePopState = () => {
-        onClose();
+      const handlePopState = (event: PopStateEvent) => {
+        if (event.state?.modal !== "map-help") {
+          onClose();
+        }
       };
       
       window.addEventListener("popstate", handlePopState);

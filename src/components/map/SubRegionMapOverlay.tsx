@@ -22,8 +22,10 @@ const SubRegionMapOverlay: React.FC<SubRegionMapOverlayProps> = ({
   useEffect(() => {
     window.history.pushState({ modal: "subregion-map" }, "");
     
-    const handlePopState = () => {
-      onBack();
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state?.modal !== "subregion-map") {
+        onBack();
+      }
     };
     
     window.addEventListener("popstate", handlePopState);

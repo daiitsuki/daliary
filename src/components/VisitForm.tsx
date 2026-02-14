@@ -69,8 +69,10 @@ const VisitForm = ({ placeId, placeName, placeAddress, onClose, onSuccess }: Vis
   useEffect(() => {
     window.history.pushState({ modal: "visit-form" }, "");
     
-    const handlePopState = () => {
-      onClose();
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state?.modal !== "visit-form") {
+        onClose();
+      }
     };
     
     window.addEventListener("popstate", handlePopState);

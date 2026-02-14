@@ -19,8 +19,10 @@ export default function ChangelogModal({
     if (isOpen) {
       window.history.pushState({ modal: "changelog" }, "");
       
-      const handlePopState = () => {
-        onClose();
+      const handlePopState = (event: PopStateEvent) => {
+        if (event.state?.modal !== "changelog") {
+          onClose();
+        }
       };
       
       window.addEventListener("popstate", handlePopState);

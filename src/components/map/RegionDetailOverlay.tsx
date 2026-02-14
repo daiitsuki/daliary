@@ -20,8 +20,10 @@ const RegionDetailOverlay = ({
   useEffect(() => {
     window.history.pushState({ modal: "region-detail" }, "");
     
-    const handlePopState = () => {
-      onBack();
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state?.modal !== "region-detail") {
+        onBack();
+      }
     };
     
     window.addEventListener("popstate", handlePopState);

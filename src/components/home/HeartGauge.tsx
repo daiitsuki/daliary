@@ -24,8 +24,10 @@ const HeartGauge = () => {
     if (showHistory) {
       window.history.pushState({ modal: "point-history" }, "");
       
-      const handlePopState = () => {
-        setShowHistory(false);
+      const handlePopState = (event: PopStateEvent) => {
+        if (event.state?.modal !== "point-history") {
+          setShowHistory(false);
+        }
       };
       
       window.addEventListener("popstate", handlePopState);

@@ -33,8 +33,10 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
     if (isOpen && imageUrl) {
       window.history.pushState({ modal: "image-viewer" }, "");
       
-      const handlePopState = () => {
-        onClose();
+      const handlePopState = (event: PopStateEvent) => {
+        if (event.state?.modal !== "image-viewer") {
+          onClose();
+        }
       };
       
       window.addEventListener("popstate", handlePopState);

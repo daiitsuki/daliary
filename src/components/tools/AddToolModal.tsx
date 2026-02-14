@@ -44,8 +44,10 @@ export default function AddToolModal({ isOpen, onClose, onAdd, initialData }: Ad
     if (isOpen) {
       window.history.pushState({ modal: "add-tool" }, "");
       
-      const handlePopState = () => {
-        onClose();
+      const handlePopState = (event: PopStateEvent) => {
+        if (event.state?.modal !== "add-tool") {
+          onClose();
+        }
       };
       
       window.addEventListener("popstate", handlePopState);

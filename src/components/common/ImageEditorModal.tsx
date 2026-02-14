@@ -35,8 +35,10 @@ const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
   useEffect(() => {
     window.history.pushState({ modal: "image-editor" }, "");
     
-    const handlePopState = () => {
-      onClose();
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state?.modal !== "image-editor") {
+        onClose();
+      }
     };
     
     window.addEventListener("popstate", handlePopState);

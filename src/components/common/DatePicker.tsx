@@ -128,8 +128,10 @@ const DatePicker = ({
     if (isOpen) {
       window.history.pushState({ modal: "date-picker" }, "");
       
-      const handlePopState = () => {
-        setIsOpen(false);
+      const handlePopState = (event: PopStateEvent) => {
+        if (event.state?.modal !== "date-picker") {
+          setIsOpen(false);
+        }
       };
       
       window.addEventListener("popstate", handlePopState);

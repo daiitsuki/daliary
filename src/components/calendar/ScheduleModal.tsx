@@ -65,8 +65,10 @@ const ScheduleModal = ({
     if (isOpen) {
       window.history.pushState({ modal: "schedule" }, "");
       
-      const handlePopState = () => {
-        onClose();
+      const handlePopState = (event: PopStateEvent) => {
+        if (event.state?.modal !== "schedule") {
+          onClose();
+        }
       };
       
       window.addEventListener("popstate", handlePopState);

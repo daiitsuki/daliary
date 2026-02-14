@@ -27,8 +27,10 @@ const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isO
     if (isOpen) {
       window.history.pushState({ modal: "notification" }, "");
       
-      const handlePopState = () => {
-        onClose();
+      const handlePopState = (event: PopStateEvent) => {
+        if (event.state?.modal !== "notification") {
+          onClose();
+        }
       };
       
       window.addEventListener("popstate", handlePopState);

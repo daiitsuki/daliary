@@ -49,8 +49,10 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({ visit, onClose, onU
     if (visit) {
       window.history.pushState({ modal: "visit-detail" }, "");
       
-      const handlePopState = () => {
-        onClose();
+      const handlePopState = (event: PopStateEvent) => {
+        if (event.state?.modal !== "visit-detail") {
+          onClose();
+        }
       };
       
       window.addEventListener("popstate", handlePopState);

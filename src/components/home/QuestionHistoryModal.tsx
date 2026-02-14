@@ -33,8 +33,10 @@ export default function QuestionHistoryModal({
     if (isOpen) {
       window.history.pushState({ modal: "question-history" }, "");
       
-      const handlePopState = () => {
-        onClose();
+      const handlePopState = (event: PopStateEvent) => {
+        if (event.state?.modal !== "question-history") {
+          onClose();
+        }
       };
       
       window.addEventListener("popstate", handlePopState);
