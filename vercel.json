@@ -13,8 +13,12 @@
       "destination": "/api/:path*"
     },
     {
-      "source": "/(assets/.*)",
+      "source": "/(logo.png|badge.png|manifest.json)",
       "destination": "/$1"
+    },
+    {
+      "source": "/assets/:path*",
+      "destination": "/assets/:path*"
     },
     {
       "source": "/(.*)",
