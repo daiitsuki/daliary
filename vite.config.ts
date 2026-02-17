@@ -10,6 +10,11 @@ export default defineConfig({
       'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
     },
   },
+  server: {
+    headers: {
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    },
+  },
   plugins: [
     react()
   ],

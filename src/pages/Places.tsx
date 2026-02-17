@@ -2,14 +2,15 @@ import { useSearchParams } from 'react-router-dom';
 import PlaceSearch from '../components/PlaceSearch';
 import RegionDashboard from '../components/RegionDashboard';
 import Wishlist from '../components/Wishlist';
-import { Search, Map as MapIcon, Star } from 'lucide-react';
+import TravelPlans from '../components/map/TravelPlans';
+import { Search, Map as MapIcon, Star, CalendarDays } from 'lucide-react';
 import { Place } from '../context/PlacesContext';
 import { motion, Variants } from 'framer-motion';
 
 export default function Places() {
   const [searchParams, setSearchParams] = useSearchParams();
   
-  const activeTab = (searchParams.get('tab') as 'dashboard' | 'search' | 'wishlist') || 'dashboard';
+  const activeTab = (searchParams.get('tab') as 'dashboard' | 'search' | 'wishlist' | 'plans') || 'dashboard';
 
   const setActiveTab = (tab: string) => {
     const newParams = new URLSearchParams(searchParams);
@@ -89,6 +90,15 @@ export default function Places() {
             <Star size={18} />
             가고 싶은 곳
           </button>
+          <button
+            onClick={() => setActiveTab('plans')}
+            className={`flex-1 py-4 text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
+              activeTab === 'plans' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
+            }`}
+          >
+            <CalendarDays size={18} />
+            여행 계획
+          </button>
         </div>
       </div>
 
@@ -122,6 +132,20 @@ export default function Places() {
           >
             <motion.div variants={itemVariants} className="h-full">
               <Wishlist onShowOnMap={handleShowOnMap} />
+            </motion.div>
+          </motion.div>
+        )}
+
+        {activeTab === 'plans' && (
+          <motion.div 
+            key="plans"
+            variants={containerVariants} 
+            initial="hidden" 
+            animate="visible" 
+            className="h-full"
+          >
+            <motion.div variants={itemVariants} className="h-full">
+              <TravelPlans />
             </motion.div>
           </motion.div>
         )}

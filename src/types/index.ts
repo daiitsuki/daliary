@@ -22,3 +22,30 @@ export interface VisitComment {
   created_at: string;
   writer?: Profile; // Joined data
 }
+
+export interface Trip {
+  id: string;
+  couple_id: string;
+  title: string;
+  start_date: string;
+  end_date: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TripPlan {
+  id: string;
+  trip_id: string;
+  day_number: number;
+  category: string;
+  start_time: string | null;
+  end_time: string | null;
+  memo: string | null;
+  place_name: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  order_index: number;
+  created_at?: string;
+  updated_at?: string;
+}

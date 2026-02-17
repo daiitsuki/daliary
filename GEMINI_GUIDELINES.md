@@ -48,17 +48,20 @@
 - **Stacking (Tagging)**: 동일한 유형의 알림이 단시간 내에 여러 번 발생할 경우, 알림이 난잡하게 쌓이지 않도록 `type` 필드를 `tag`로 활용하여 브라우저 수준에서 알림을 스택(Stack) 또는 그룹화하여 처리합니다.
 - **Permission UX**: 알림 권한이 거부되었을 경우 세팅 탭에서 사용자에게 브라우저 설정 변경 방법을 친절하게 안내해야 합니다.
 
-## 6. Modal Animation Standard
+## 6. Modal Animation & Implementation Standard
 
-모든 모달 컴포넌트는 기기 환경에 맞춰 일관된 애니메이션 경험을 제공해야 합니다.
+모든 모달 컴포넌트는 기기 환경에 맞춰 일관된 디자인과 인터랙션을 제공해야 합니다.
 
-- **Responsive Animation**: `window.innerWidth`를 감지하여 모바일과 데스크탑 애니메이션을 분기합니다.
-    - **Mobile (< 768px)**: 하단에서 위로 슬라이드되어 올라오는 애니메이션 (`y: "100%" -> 0`)을 적용합니다. `rounded-t-[32px]`를 사용하여 하단바 느낌을 줍니다.
-    - **Desktop (>= 768px)**: 중앙에서 페이드 인과 동시에 살짝 커지며 위로 올라오는 애니메이션 (`opacity: 0, scale: 0.95, y: 20 -> opacity: 1, scale: 1, y: 0`)을 적용합니다. `rounded-[32px]`를 사용하여 플로팅 카드 느낌을 줍니다.
-- **Backdrop**: 모든 모달은 `bg-black/50` 배경과 `backdrop-blur-sm` 효과를 가진 백드롭을 가져야 하며, 백드롭 클릭 시 모달이 닫히는 기능을 포함해야 합니다.
-- **Back Button Support**: 모달이 열릴 때 브라우저 히스토리에 상태를 추가(`history.pushState`)하여, 사용자가 기기의 뒤로가기 버튼을 눌렀을 때 페이지가 이동하는 대신 모달만 닫히도록 구현해야 합니다.
-- **Transitions**: `type: "tween"`, `ease: "easeOut"`, `duration: 0.2`~`0.25` 수준의 부드럽고 빠른 전환을 권장합니다.
-- **Portals**: 레이아웃 간섭을 방지하기 위해 모든 모달은 `createPortal`을 통해 `document.body` 최하단에 렌더링되어야 합니다.
+- **Design (Glassmorphism)**: 
+    - 컨테이너: `bg-white/90 backdrop-blur-xl border border-white/50 shadow-2xl`
+    - 헤더: `bg-white/40 backdrop-blur-md border-b border-white/20`
+- **Responsive Animation**: `isMobile` (window.innerWidth < 768px) 상태를 감지하여 애니메이션을 분기합니다.
+    - **Initial/Exit**: `isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 }`
+    - **Animate**: `isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 }`
+    - **Transition**: `type: "tween", ease: "easeOut", duration: 0.25` 수준의 부드럽고 빠른 전환을 권장합니다.
+- **Backdrop**: 모든 모달은 `bg-black/40` 배경과 `backdrop-blur-sm` 효과를 가진 백드롭을 가져야 하며, 백드롭 클릭 시 모달이 닫히는 기능을 포함해야 합니다.
+- **Back Button Support**: 모달이 열릴 때(`isOpen` 기준) 브라우저 히스토리에 상태를 추가(`history.pushState`)하여, 사용자가 기기의 뒤로가기 버튼을 눌렀을 때 페이지가 이동하는 대신 모달만 닫히도록 구현해야 합니다.
+- **Portals & AnimatePresence**: 레이아웃 간섭을 방지하기 위해 모든 모달은 `createPortal`을 통해 `document.body` 최하단에 렌더링되어야 하며, `AnimatePresence`를 통해 조건부 렌더링 시의 애니메이션을 보장해야 합니다.
 
 ## 7. Data Fetching & Performance Optimization
 
@@ -110,3 +113,37 @@
 - **No Emit Errors**: 모든 코드 수정 후에는 반드시 `npx tsc --noEmit`을 실행하여 타입 에러가 없는지 확인해야 합니다.
 - **Explicit Typing**: 쿼리 결과나 함수의 인자/반환값에 명시적인 인터페이스와 타입을 지정하여 코드 안정성을 높입니다.
 - **Unused Imports**: 사용하지 않는 Hook이나 라이브러리 임포트는 즉시 제거하여 깨끗한 코드 상태를 유지합니다.
+
+## 12. Travel Plans Data Structure
+
+여행 계획 기능은 다음과 같은 테이블 구조를 가집니다.
+
+### `trips` Table (여행 단위)
+- `id`: UUID (Primary Key)
+- `couple_id`: UUID (Foreign Key to `couples.id`)
+- `title`: TEXT (여행 제목, 예: "제주도 여행")
+- `start_date`: DATE (시작일)
+- `end_date`: DATE (종료일)
+- `created_at`: TIMESTAMPTZ
+- `updated_at`: TIMESTAMPTZ
+
+### `trip_plans` Table (여행 내 세부 계획)
+- `id`: UUID (Primary Key)
+- `trip_id`: UUID (Foreign Key to `trips.id`)
+- `day_number`: INTEGER (n일차, 1부터 시작)
+- `category`: TEXT (식당, 이동, 카페, 숙소, 기타 등)
+- `start_time`: TIME (시작 시간, 예: "14:00")
+- `end_time`: TIME (종료 시간, 예: "15:30")
+- `memo`: TEXT (간단한 메모)
+- `place_name`: TEXT (장소명)
+- `address`: TEXT (주소)
+- `lat`: DOUBLE PRECISION (위도)
+- `lng`: DOUBLE PRECISION (경도)
+- `order_index`: INTEGER (일차 내 정렬 순서)
+- `created_at`: TIMESTAMPTZ
+- `updated_at`: TIMESTAMPTZ
+
+### 12.1. 여행 계획 구현 참고 사항
+- **알림 트리거**: 여행 계획의 추가/수정/삭제 알림은 `trips` 테이블의 변경 사항을 감지하여 발송됩니다. 세부 계획(`trip_plans`)의 변경은 현재 트리거되어 있지 않으며, 필요 시 추가 구현이 필요합니다.
+- **날짜 계산**: 시작일과 종료일이 같은 경우 1일차 여행(당일치기)으로 처리됩니다.
+- **시간 선택**: `TimePicker` 컴포넌트는 `DatePicker`의 드롭다운 인터페이스 디자인을 계승하여 5분 단위 선택이 가능하도록 구현되었습니다.
