@@ -104,6 +104,7 @@ export const useTripPlans = (tripId?: string) => {
         .select('id, trip_id, day_number, category, start_time, end_time, memo, place_name, address, lat, lng, order_index, created_at, updated_at')
         .eq('trip_id', tripId)
         .order('day_number', { ascending: true })
+        .order('start_time', { ascending: true, nullsFirst: false })
         .order('order_index', { ascending: true });
       
       if (error) throw error;

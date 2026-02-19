@@ -84,11 +84,6 @@ const NotificationSettingsSection: React.FC<
       icon: <CheckCircle2 size={14} />,
     },
     {
-      key: "notify_visit_comment",
-      label: "방문 기록 댓글",
-      icon: <MessageCircle size={14} />,
-    },
-    {
       key: "notify_level_up",
       label: "레벨업 소식",
       icon: <TrendingUp size={14} />,

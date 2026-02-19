@@ -16,26 +16,6 @@ const RegionDetailOverlay = ({
   onBack,
   onVisitClick,
 }: RegionDetailOverlayProps) => {
-  // 뒤로가기 시 모달 닫기 로직
-  useEffect(() => {
-    window.history.pushState({ modal: "region-detail" }, "");
-    
-    const handlePopState = (event: PopStateEvent) => {
-      if (event.state?.modal !== "region-detail") {
-        onBack();
-      }
-    };
-    
-    window.addEventListener("popstate", handlePopState);
-    
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-      if (window.history.state?.modal === "region-detail") {
-        window.history.back();
-      }
-    };
-  }, [onBack]);
-
   const groupedVisits = useMemo(() => {
     return visits.reduce(
       (acc, v) => {

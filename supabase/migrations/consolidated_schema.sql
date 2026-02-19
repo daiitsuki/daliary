@@ -140,7 +140,8 @@ create table if not exists public.notification_settings (
     notify_schedule_change boolean default true,
     notify_place_added boolean default true,
     notify_visit_verified boolean default true,
-    notify_level_up boolean default true
+    notify_level_up boolean default true,
+    notify_trip_change boolean default true
 );
 
 -- PUSH SUBSCRIPTIONS
@@ -567,12 +568,12 @@ begin
   end if;
 
   -- 3. 필수 알림 기본 설정 (푸시 알림 초기화용)
-  select is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up
+  select is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up, notify_trip_change
   into v_notif_settings from public.notification_settings where user_id = v_user_id;
   
   if v_notif_settings is null then
     insert into public.notification_settings (user_id) values (v_user_id)
-    returning is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up
+    returning is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up, notify_trip_change
     into v_notif_settings;
   end if;
 

@@ -18,26 +18,6 @@ const SubRegionMapOverlay: React.FC<SubRegionMapOverlayProps> = ({
 }) => {
   const { subRegionStats, visits } = usePlaces();
 
-  // 뒤로가기 시 모달 닫기 로직
-  useEffect(() => {
-    window.history.pushState({ modal: "subregion-map" }, "");
-    
-    const handlePopState = (event: PopStateEvent) => {
-      if (event.state?.modal !== "subregion-map") {
-        onBack();
-      }
-    };
-    
-    window.addEventListener("popstate", handlePopState);
-    
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-      if (window.history.state?.modal === "subregion-map") {
-        window.history.back();
-      }
-    };
-  }, [onBack]);
-
   const stats = subRegionStats[region] || {};
 
   // 해당 시/도에 속하지만 시/군/구가 지정되지 않은 방문 기록 개수 확인

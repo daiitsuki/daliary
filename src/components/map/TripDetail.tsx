@@ -63,7 +63,14 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
   const plansByDay = useMemo(() => {
     const grouped: Record<number, TripPlan[]> = {};
     for (let i = 1; i <= daysCount; i++) {
-      grouped[i] = plans?.filter((p) => p.day_number === i) || [];
+      const dayPlans = plans?.filter((p) => p.day_number === i) || [];
+      // Sort by start_time. If no start_time, put it at the end ('99:99').
+      grouped[i] = [...dayPlans].sort((a, b) => {
+        const timeA = a.start_time || '99:99';
+        const timeB = b.start_time || '99:99';
+        if (timeA !== timeB) return timeA.localeCompare(timeB);
+        return (a.order_index || 0) - (b.order_index || 0);
+      });
     }
     return grouped;
   }, [plans, daysCount]);
