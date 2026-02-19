@@ -117,10 +117,21 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({ visit, onClose, onU
         // 기존 이미지 삭제
         if (visit.image_url) {
           try {
-            const urlParts = visit.image_url.split("/");
-            const oldFileName = `visits/${urlParts[urlParts.length - 1]}`;
-            if (oldFileName.includes("visits/")) {
-              await supabase.storage.from("diary-images").remove([oldFileName]);
+            const url = visit.image_url;
+            const bucketMatch = url.match(/\/storage\/v1\/object\/public\/([^\/]+)\/(.+)$/);
+            if (bucketMatch) {
+              const bucketName = bucketMatch[1];
+              const filePath = bucketMatch[2];
+              await supabase.storage.from(bucketName).remove([filePath]);
+            } else {
+              // Fallback for old manual matching if URL doesn't match standard pattern
+              const urlParts = visit.image_url.split("/");
+              const fileName = urlParts[urlParts.length - 1];
+              if (visit.image_url.includes("diary-images")) {
+                await supabase.storage.from("diary-images").remove([`visits/${fileName}`]);
+              } else if (visit.image_url.includes("visit-photos")) {
+                await supabase.storage.from("visit-photos").remove([fileName]);
+              }
             }
           } catch (err) {
             console.error("Old image deletion failed:", err);
@@ -131,12 +142,13 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({ visit, onClose, onU
         const options = { maxSizeMB: 0.5, maxWidthOrHeight: 800, useWebWorker: true };
         const compressedFile = await imageCompression(selectedFile, options);
         const fileExt = selectedFile.name.split(".").pop();
-        const fileName = `visits/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        // visit-photos 버킷 사용, visits/ 접두사 제거 (useVisitVerification과 동일)
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         
-        const { error: uploadError } = await supabase.storage.from("diary-images").upload(fileName, compressedFile);
+        const { error: uploadError } = await supabase.storage.from("visit-photos").upload(fileName, compressedFile);
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage.from("diary-images").getPublicUrl(fileName);
+        const { data: { publicUrl } } = supabase.storage.from("visit-photos").getPublicUrl(fileName);
         finalImageUrl = publicUrl;
       }
 
@@ -168,10 +180,40 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({ visit, onClose, onU
 
   const handleDelete = async () => {
     if (!confirm("이 방문 기록을 삭제하시겠습니까?")) return;
-    setLoading(true);
-    const success = await onDelete(visit.id);
-    if (success) onClose();
-    setLoading(false);
+    try {
+      setLoading(true);
+      
+      // Delete image from storage if it exists
+      if (visit.image_url) {
+        try {
+          const url = visit.image_url;
+          const bucketMatch = url.match(/\/storage\/v1\/object\/public\/([^\/]+)\/(.+)$/);
+          if (bucketMatch) {
+            const bucketName = bucketMatch[1];
+            const filePath = bucketMatch[2];
+            await supabase.storage.from(bucketName).remove([filePath]);
+          } else {
+            const urlParts = visit.image_url.split("/");
+            const fileName = urlParts[urlParts.length - 1];
+            if (visit.image_url.includes("diary-images")) {
+              await supabase.storage.from("diary-images").remove([`visits/${fileName}`]);
+            } else if (visit.image_url.includes("visit-photos")) {
+              await supabase.storage.from("visit-photos").remove([fileName]);
+            }
+          }
+        } catch (err) {
+          console.error("Image deletion failed during visit deletion:", err);
+        }
+      }
+
+      const success = await onDelete(visit.id);
+      if (success) onClose();
+    } catch (err) {
+      console.error(err);
+      alert("삭제 실패");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const modalVariants = {

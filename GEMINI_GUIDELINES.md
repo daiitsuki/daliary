@@ -1,5 +1,7 @@
 # Daliary Project Guidelines for Gemini
 
+> **Critical Note on Database Schema**: The authoritative source for the database schema is `supabase/consolidated_schema.sql`. Always refer to that file for the latest table definitions, functions, and policies. The summary below is for quick reference.
+
 이 문서는 Daliary 프로젝트의 디자인 철학, 코드 컨벤션 및 UI/UX 원칙을 정의합니다. Gemini는 향후 모든 수정 및 기능 추가 시 이 가이드를 최우선으로 참고해야 합니다.
 
 ## 1. Design System: Glassmorphism (Apple Style)
@@ -147,3 +149,33 @@
 - **알림 트리거**: 여행 계획의 추가/수정/삭제 알림은 `trips` 테이블의 변경 사항을 감지하여 발송됩니다. 세부 계획(`trip_plans`)의 변경은 현재 트리거되어 있지 않으며, 필요 시 추가 구현이 필요합니다.
 - **날짜 계산**: 시작일과 종료일이 같은 경우 1일차 여행(당일치기)으로 처리됩니다.
 - **시간 선택**: `TimePicker` 컴포넌트는 `DatePicker`의 드롭다운 인터페이스 디자인을 계승하여 5분 단위 선택이 가능하도록 구현되었습니다.
+
+## 13. Database Schema Reference (Consolidated)
+
+이 섹션은 2026년 2월 19일 기준 `supabase/consolidated_schema.sql`의 요약입니다. 모든 테이블은 RLS가 활성화되어 있습니다.
+
+### Core Tables
+*   **`couples`**: 커플 정보 (기념일, 초대 코드). `invite_code`는 고유값.
+*   **`profiles`**: 사용자 정보 (닉네임, 아바타). `auth.users`와 1:1 매핑되며 `couple_id`로 커플과 연결됩니다.
+
+### Feature Tables
+*   **`places`**: 찜한 장소 및 방문 기록의 기초 데이터. 카카오 장소 ID로 유니크 제약.
+*   **`visits`**: 실제 방문 인증 기록. `visit-photos` 스토리지 버킷의 이미지 URL을 저장합니다.
+*   **`visit_comments`**: 방문 기록에 대한 댓글.
+*   **`questions` & `answers`**: 매일의 질문 및 답변.
+*   **`schedules`**: 캘린더 일정. 카테고리(`me`, `partner`, `couple`)로 구분.
+*   **`attendances`**: 일일 출석 체크. `(user_id, check_in_date)` 복합 유니크 키.
+*   **`point_history`**: 커플 포인트 로그 (방문, 답변, 출석 등).
+
+### Notification System Tables
+*   **`notifications`**: 알림 이력. `is_read` 상태 관리.
+*   **`notification_settings`**: 사용자별 알림 수신 여부 (세분화된 필드 포함: `notify_question_answered` 등).
+*   **`push_subscriptions`**: 웹 푸시 구독 정보 (VAPID). 사용자당 1개의 기기만 유지.
+
+### Key Security Policies (RLS)
+*   **Couple Isolation**: 대부분의 테이블(`places`, `visits`, `schedules` 등)은 `couple_id = get_auth_couple_id()` 또는 서브쿼리를 통해 **내 커플의 데이터만** 조회/수정 가능하도록 격리되어 있습니다.
+*   **User Ownership**: `profiles`, `notification_settings` 등 개인화된 데이터는 `auth.uid() = user_id` 조건으로 본인만 접근 가능합니다.
+
+### Storage Buckets
+*   **`visit-photos`**: 방문 인증 사진 저장소.
+*   **`diary-images`**: 프로필 사진(아바타) 등 기타 이미지 저장소.

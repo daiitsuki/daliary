@@ -21,6 +21,8 @@ export interface NotificationSettings {
   notify_place_added: boolean;
   notify_visit_verified: boolean;
   notify_level_up: boolean;
+  notify_trip_change: boolean;
+  notify_visit_comment: boolean;
 }
 
 interface NotificationsContextType {
@@ -28,6 +30,7 @@ interface NotificationsContextType {
   notifications: AppNotification[];
   loading: boolean;
   permissionStatus: NotificationPermission;
+  isDeviceActive: boolean;
   toggleNotifications: (targetState: boolean) => Promise<boolean>;
   updateGranularSetting: (key: keyof NotificationSettings, value: boolean) => Promise<boolean>;
   requestPermission: () => Promise<boolean>;
@@ -57,6 +60,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>(
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   );
+  const [isDeviceActive, setIsDeviceActive] = useState(false);
 
   // 1. Notification Settings Query
   const { data: settings = initialSettings } = useQuery({
@@ -65,7 +69,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       if (!profile?.id) return null;
       const { data, error } = await supabase
         .from('notification_settings')
-        .select('is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up')
+        .select('is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up, notify_trip_change, notify_visit_comment')
         .eq('user_id', profile.id)
         .single();
       if (error) throw error;
@@ -92,6 +96,43 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     enabled: !!profile?.id && !coupleLoading,
   });
 
+  const checkDeviceActive = useCallback(async () => {
+    if (!profile?.id || typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        setIsDeviceActive(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('push_subscriptions')
+        .select('subscription')
+        .eq('user_id', profile.id)
+        .single();
+
+      if (error || !data) {
+        setIsDeviceActive(false);
+      } else {
+        const localEndpoint = subscription.endpoint;
+        const remoteEndpoint = (data.subscription as any)?.endpoint;
+        setIsDeviceActive(localEndpoint === remoteEndpoint);
+      }
+    } catch (err) {
+      console.error('[Push] Device check error:', err);
+      setIsDeviceActive(false);
+    }
+  }, [profile?.id]);
+
+  useEffect(() => {
+    checkDeviceActive();
+    window.addEventListener('focus', checkDeviceActive);
+    return () => window.removeEventListener('focus', checkDeviceActive);
+  }, [checkDeviceActive]);
+
   const registerPushSubscription = useCallback(async () => {
     if (!profile?.id || typeof window === 'undefined' || !('serviceWorker' in navigator)) return false;
 
@@ -108,7 +149,11 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
           subscription: subscription.toJSON(),
           updated_at: new Date().toISOString(),
         });
-        return !error;
+        
+        if (!error) {
+          setIsDeviceActive(true);
+          return true;
+        }
       }
       return false;
     } catch (err) {
@@ -120,6 +165,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const toggleNotifications = async (targetState: boolean) => {
     if (!profile?.id) return false;
 
+    // If turning ON, always re-register to ensure THIS device is active
     if (targetState) {
       const permission = await Notification.requestPermission();
       setPermissionStatus(permission);
@@ -130,6 +176,10 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         alert('푸시 알림 등록에 실패했습니다. 브라우저 설정을 확인해주세요.');
         return false;
       }
+    } else {
+      // If turning OFF, strictly speaking we are disabling it for the user globally
+      // Device active state can remain until another device takes it, or we can clear it.
+      // But typically "OFF" means OFF.
     }
 
     const { error } = await supabase
@@ -139,6 +189,8 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
     if (!error) {
       queryClient.setQueryData(['notification_settings', profile.id], (prev: any) => ({ ...prev, is_enabled: targetState }));
+      // Check active state again after toggle
+      checkDeviceActive();
       return true;
     }
     return false;
@@ -201,6 +253,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       notifications,
       loading: notificationsLoading,
       permissionStatus,
+      isDeviceActive,
       toggleNotifications,
       updateGranularSetting,
       requestPermission: async () => {

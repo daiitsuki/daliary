@@ -1,14 +1,18 @@
 -- ==========================================
--- 1. Extensions
+-- CONSOLIDATED SCHEMA (As of 2026-02-19)
+-- Includes all migrations up to 2026021802
 -- ==========================================
+
+-- 1. Extensions
 create extension if not exists "uuid-ossp";
+create extension if not exists "pg_net";
 
 -- ==========================================
 -- 2. Tables
 -- ==========================================
 
 -- COUPLES
-create table public.couples (
+create table if not exists public.couples (
   id uuid not null default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   anniversary_date date,
@@ -16,16 +20,17 @@ create table public.couples (
 );
 
 -- PROFILES
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid not null references auth.users(id) on delete cascade primary key,
   updated_at timestamptz default now(),
   nickname text,
   avatar_url text,
-  couple_id uuid references public.couples(id) on delete set null
+  couple_id uuid references public.couples(id) on delete set null,
+  last_active_at timestamptz default now()
 );
 
 -- PLACES
-create table public.places (
+create table if not exists public.places (
   id uuid not null default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
@@ -40,7 +45,7 @@ create table public.places (
 );
 
 -- VISITS
-create table public.visits (
+create table if not exists public.visits (
   id uuid not null default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   place_id uuid not null references public.places(id) on delete cascade,
@@ -52,7 +57,7 @@ create table public.visits (
 );
 
 -- VISIT COMMENTS
-create table public.visit_comments (
+create table if not exists public.visit_comments (
   id uuid not null default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   visit_id uuid not null references public.visits(id) on delete cascade,
@@ -61,7 +66,7 @@ create table public.visit_comments (
 );
 
 -- QUESTIONS
-create table public.questions (
+create table if not exists public.questions (
   id uuid not null default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   content text not null,
@@ -69,7 +74,7 @@ create table public.questions (
 );
 
 -- ANSWERS
-create table public.answers (
+create table if not exists public.answers (
   id uuid not null default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
@@ -80,7 +85,7 @@ create table public.answers (
 );
 
 -- POINT HISTORY
-create table public.point_history (
+create table if not exists public.point_history (
   id uuid not null default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   couple_id uuid not null references public.couples(id) on delete cascade,
@@ -90,7 +95,7 @@ create table public.point_history (
 );
 
 -- ATTENDANCES
-create table public.attendances (
+create table if not exists public.attendances (
   id uuid not null default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   couple_id uuid not null references public.couples(id) on delete cascade,
@@ -100,7 +105,7 @@ create table public.attendances (
 );
 
 -- TOOLS
-create table public.tools (
+create table if not exists public.tools (
   id uuid not null default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   couple_id uuid not null references public.couples(id) on delete cascade,
@@ -111,7 +116,7 @@ create table public.tools (
 );
 
 -- SCHEDULES
-create table public.schedules (
+create table if not exists public.schedules (
   id uuid not null default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
@@ -125,11 +130,81 @@ create table public.schedules (
   category text not null default 'couple' check (category in ('me', 'partner', 'couple'))
 );
 
+-- NOTIFICATION SETTINGS
+create table if not exists public.notification_settings (
+    user_id uuid primary key references public.profiles(id) on delete cascade,
+    is_enabled boolean default false,
+    updated_at timestamptz default now(),
+    notify_question_answered boolean default true,
+    notify_question_request boolean default true,
+    notify_schedule_change boolean default true,
+    notify_place_added boolean default true,
+    notify_visit_verified boolean default true,
+    notify_level_up boolean default true
+);
+
+-- PUSH SUBSCRIPTIONS
+create table if not exists public.push_subscriptions (
+    user_id uuid primary key references public.profiles(id) on delete cascade,
+    subscription jsonb not null,
+    created_at timestamptz default now(),
+    updated_at timestamptz default now()
+);
+
+-- NOTIFICATIONS
+create table if not exists public.notifications (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid not null references public.profiles(id) on delete cascade,
+    couple_id uuid not null references public.couples(id) on delete cascade,
+    type text not null,
+    title text not null,
+    content text not null,
+    is_read boolean default false,
+    metadata jsonb default '{}'::jsonb,
+    created_at timestamptz default now()
+);
+
+-- TRIPS
+create table if not exists public.trips (
+    id uuid primary key default gen_random_uuid(),
+    couple_id uuid not null references public.couples(id) on delete cascade,
+    title text not null,
+    start_date date not null,
+    end_date date not null,
+    created_at timestamptz default now(),
+    updated_at timestamptz default now()
+);
+
+-- TRIP PLANS
+create table if not exists public.trip_plans (
+    id uuid primary key default gen_random_uuid(),
+    trip_id uuid not null references public.trips(id) on delete cascade,
+    day_number integer not null,
+    category text not null,
+    start_time time,
+    end_time time,
+    memo text,
+    place_name text,
+    address text,
+    lat double precision,
+    lng double precision,
+    order_index integer not null default 0,
+    created_at timestamptz default now(),
+    updated_at timestamptz default now()
+);
+
 -- ==========================================
--- 3. Functions & RPCs (Security & Logic)
+-- 3. Indexes
+-- ==========================================
+create index if not exists idx_point_history_couple_id on public.point_history(couple_id);
+create index if not exists idx_notifications_user_id_created_at on public.notifications(user_id, created_at desc);
+create index if not exists idx_notifications_couple_id on public.notifications(couple_id);
+
+-- ==========================================
+-- 4. Functions & RPCs
 -- ==========================================
 
--- Helper: Get Auth Couple ID (Optimized)
+-- Helper: Get Auth Couple ID
 create or replace function public.get_auth_couple_id()
 returns uuid language sql security definer stable 
 set search_path = public
@@ -207,8 +282,15 @@ begin
 end;
 $$;
 
--- Action: Verify Visit
-create or replace function public.verify_visit(p_place_id uuid, p_visited_at date, p_image_url text, p_comment text, p_region text, p_sub_region text default null)
+-- Action: Verify Visit (Updated with sub_region)
+create or replace function public.verify_visit(
+  p_place_id uuid,
+  p_visited_at date,
+  p_image_url text,
+  p_comment text,
+  p_region text,
+  p_sub_region text default null
+)
 returns void language plpgsql security definer 
 set search_path = public
 as $$
@@ -256,7 +338,7 @@ begin
 end;
 $$;
 
--- Trigger Function: Add Points (Consolidated)
+-- Trigger Function: Add Points (Updated)
 create or replace function public.add_couple_points()
 returns trigger language plpgsql security definer 
 set search_path = public
@@ -314,87 +396,209 @@ begin
 end;
 $$ language plpgsql;
 
--- Trigger Function: Notifications
-CREATE OR REPLACE FUNCTION public.handle_notification_trigger()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_partner_id UUID;
-    v_partner_nickname TEXT;
-    v_my_nickname TEXT;
-    v_couple_id UUID;
-    v_title TEXT;
-    v_content TEXT;
-    v_type TEXT;
-BEGIN
-    -- Handle DELETE operation
-    IF (TG_OP = 'DELETE') THEN
-        IF (TG_TABLE_NAME = 'schedules') THEN
-            SELECT nickname, couple_id INTO v_my_nickname, v_couple_id 
-            FROM public.profiles WHERE id = auth.uid();
-            SELECT id, nickname INTO v_partner_id, v_partner_nickname 
-            FROM public.profiles 
-            WHERE couple_id = v_couple_id AND id != auth.uid()
-            LIMIT 1;
-            IF v_partner_id IS NOT NULL THEN
-                v_type := 'schedule_change';
-                v_title := '일정 소식';
-                v_content := v_my_nickname || '님이 ' || to_char(OLD.start_date, 'MM') || '월 일정을 삭제했어요!';
-                INSERT INTO public.notifications (user_id, couple_id, type, title, content)
-                VALUES (v_partner_id, v_couple_id, v_type, v_title, v_content);
-            END IF;
-        END IF;
-        RETURN OLD;
-    END IF;
+-- Trigger Function: Handle Updated At (Trips)
+create or replace function public.handle_updated_at()
+returns trigger as $$
+begin
+    new.updated_at = now();
+    return new;
+end;
+$$ language plpgsql;
 
-    -- Handle INSERT/UPDATE operations
-    SELECT nickname, couple_id INTO v_my_nickname, v_couple_id 
-    FROM public.profiles WHERE id = auth.uid();
-    SELECT id, nickname INTO v_partner_id, v_partner_nickname 
-    FROM public.profiles 
-    WHERE couple_id = v_couple_id AND id != auth.uid()
-    LIMIT 1;
-    IF v_partner_id IS NULL THEN RETURN NEW; END IF;
+-- Trigger Function: Notification Settings for New User
+create or replace function public.handle_new_user_notification_settings()
+returns trigger as $$
+begin
+    insert into public.notification_settings (user_id, is_enabled)
+    values (new.id, false);
+    return new;
+end;
+$$ language plpgsql security definer;
 
-    IF (TG_TABLE_NAME = 'answers') THEN
+-- Trigger Function: Notifications (Comprehensive including Trips)
+create or replace function public.handle_notification_trigger()
+returns trigger as $$
+declare
+    v_partner_id uuid;
+    v_my_nickname text;
+    v_couple_id uuid;
+    v_title text;
+    v_content text;
+    v_type text;
+begin
+    -- Get current user info
+    select nickname, couple_id into v_my_nickname, v_couple_id 
+    from public.profiles where id = auth.uid();
+
+    -- Find partner ID
+    select id into v_partner_id 
+    from public.profiles 
+    where couple_id = v_couple_id and id != auth.uid()
+    limit 1;
+
+    if v_partner_id is null then return coalesce(new, old); end if;
+
+    -- CASE 1: Answers
+    if (tg_table_name = 'answers') then
         v_type := 'question_answered';
         v_title := '오늘의 질문 답변 완료';
         v_content := v_my_nickname || '님이 오늘의 질문에 답변했어요!';
-        INSERT INTO public.notifications (user_id, couple_id, type, title, content)
-        VALUES (v_partner_id, v_couple_id, v_type, v_title, v_content);
-    ELSIF (TG_TABLE_NAME = 'schedules') THEN
+        
+        insert into public.notifications (user_id, couple_id, type, title, content)
+        values (v_partner_id, v_couple_id, v_type, v_title, v_content);
+
+    -- CASE 2: Schedules
+    elsif (tg_table_name = 'schedules') then
         v_type := 'schedule_change';
         v_title := '일정 소식';
-        IF (TG_OP = 'INSERT') THEN
-            v_content := v_my_nickname || '님이 ' || to_char(NEW.start_date, 'MM') || '월 일정을 추가했어요!';
-        ELSIF (TG_OP = 'UPDATE') THEN
-            v_content := v_my_nickname || '님이 ' || to_char(NEW.start_date, 'MM') || '월 일정을 수정했어요!';
-        END IF;
-        INSERT INTO public.notifications (user_id, couple_id, type, title, content)
-        VALUES (v_partner_id, v_couple_id, v_type, v_title, v_content);
-    ELSIF (TG_TABLE_NAME = 'places' AND NEW.status = 'wishlist') THEN
+        if (tg_op = 'INSERT') then
+            v_content := v_my_nickname || '님이 ' || to_char(new.start_date, 'MM') || '월 일정을 추가했어요!';
+        elsif (tg_op = 'UPDATE') then
+            v_content := v_my_nickname || '님이 ' || to_char(new.start_date, 'MM') || '월 일정을 수정했어요!';
+        elsif (tg_op = 'DELETE') then
+            v_content := v_my_nickname || '님이 ' || to_char(old.start_date, 'MM') || '월 일정을 삭제했어요!';
+        end if;
+
+        insert into public.notifications (user_id, couple_id, type, title, content)
+        values (v_partner_id, v_couple_id, v_type, v_title, v_content);
+
+    -- CASE 3: Places
+    elsif (tg_table_name = 'places' and new.status = 'wishlist') then
         v_type := 'place_added';
         v_title := '새로운 장소';
         v_content := v_my_nickname || '님이 새로운 가고 싶은 곳을 추가했어요!';
-        INSERT INTO public.notifications (user_id, couple_id, type, title, content)
-        VALUES (v_partner_id, v_couple_id, v_type, v_title, v_content);
-    ELSIF (TG_TABLE_NAME = 'visits') THEN
+
+        insert into public.notifications (user_id, couple_id, type, title, content)
+        values (v_partner_id, v_couple_id, v_type, v_title, v_content);
+
+    -- CASE 4: Visits
+    elsif (tg_table_name = 'visits') then
         v_type := 'visit_verified';
         v_title := '방문 인증 완료';
-        v_content := NEW.region || '의 방문 인증이 완료되었어요!';
-        INSERT INTO public.notifications (user_id, couple_id, type, title, content)
-        VALUES (v_partner_id, v_couple_id, v_type, v_title, v_content);
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+        v_content := new.region || '의 방문 인증이 완료되었어요!';
+
+        insert into public.notifications (user_id, couple_id, type, title, content)
+        values (v_partner_id, v_couple_id, v_type, v_title, v_content);
+
+    -- CASE 5: Level Up
+    elsif (tg_table_name = 'point_history' and new.type = 'level_up') then
+        v_type := 'level_up';
+        v_title := '레벨 업! 🎉';
+        v_content := '커플 레벨이 올랐어요! 축하합니다!';
+
+        insert into public.notifications (user_id, couple_id, type, title, content)
+        values (v_partner_id, v_couple_id, v_type, v_title, v_content);
+        insert into public.notifications (user_id, couple_id, type, title, content)
+        values (auth.uid(), v_couple_id, v_type, v_title, v_content);
+
+    -- CASE 6: Trips (NEW)
+    elsif (tg_table_name = 'trips') then
+        v_type := 'trip_change';
+        v_title := '여행 계획 소식';
+        declare
+            v_date_range text;
+            v_target_row record;
+        begin
+            v_target_row := coalesce(new, old);
+            v_date_range := to_char(v_target_row.start_date, 'MM.DD') || '~' || to_char(v_target_row.end_date, 'MM.DD');
+            
+            if (tg_op = 'INSERT') then
+                v_content := v_my_nickname || '님이 ' || v_date_range || '의 여행 계획을 추가했어요!';
+            elsif (tg_op = 'UPDATE') then
+                v_content := v_my_nickname || '님이 ' || v_date_range || '의 여행 계획을 수정했어요!';
+            elsif (tg_op = 'DELETE') then
+                v_content := v_my_nickname || '님이 ' || v_date_range || '의 여행 계획을 삭제했어요!';
+            end if;
+
+            insert into public.notifications (user_id, couple_id, type, title, content)
+            values (v_partner_id, v_couple_id, v_type, v_title, v_content);
+        end;
+    end if;
+
+    return coalesce(new, old);
+end;
+$$ language plpgsql security definer;
+
+-- Helper: Request Push Notification (Vercel Hook)
+create or replace function public.request_push_notification()
+returns trigger as $$
+begin
+  perform
+    net.http_post(
+      url := 'https://daliary.vercel.app/api/push', 
+      headers := jsonb_build_object('Content-Type', 'application/json'),
+      body := jsonb_build_object('record', row_to_json(new))
+    );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Helper: Get App Init Data (Updated)
+create or replace function public.get_app_init_data()
+returns json language plpgsql security definer 
+set search_path = public
+as $$
+declare
+  v_user_id uuid;
+  v_profile record;
+  v_couple record;
+  v_member_count int;
+  v_notif_settings record;
+  v_result json;
+begin
+  v_user_id := auth.uid();
+  if v_user_id is null then return null; end if;
+
+  -- 1. 필수 프로필 정보
+  select id, nickname, avatar_url, couple_id, last_active_at into v_profile 
+  from public.profiles where id = v_user_id;
+  
+  if v_profile.id is null then return null; end if;
+
+  -- 2. 필수 커플 연결 정보
+  if v_profile.couple_id is not null then
+    select id, created_at, anniversary_date, invite_code into v_couple 
+    from public.couples where id = v_profile.couple_id;
+
+    select count(*) into v_member_count from public.profiles where couple_id = v_profile.couple_id;
+  else
+    v_couple := null;
+    v_member_count := 0;
+  end if;
+
+  -- 3. 필수 알림 기본 설정 (푸시 알림 초기화용)
+  select is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up
+  into v_notif_settings from public.notification_settings where user_id = v_user_id;
+  
+  if v_notif_settings is null then
+    insert into public.notification_settings (user_id) values (v_user_id)
+    returning is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up
+    into v_notif_settings;
+  end if;
+
+  v_result := json_build_object(
+    'profile', row_to_json(v_profile),
+    'couple', row_to_json(v_couple),
+    'is_couple_formed', (v_member_count >= 2),
+    'notification_settings', row_to_json(v_notif_settings)
+  );
+
+  return v_result;
+end;
+$$;
+
 
 -- ==========================================
--- 4. Triggers
+-- 5. Triggers
 -- ==========================================
 
 -- Auth
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users for each row execute procedure public.handle_new_user();
+
+-- Notification Settings
+drop trigger if exists on_auth_user_created_notification on public.profiles;
+create trigger on_auth_user_created_notification after insert on public.profiles for each row execute procedure public.handle_new_user_notification_settings();
 
 -- Points
 drop trigger if exists tr_add_points_on_answer on public.answers;
@@ -413,6 +617,7 @@ drop trigger if exists tr_add_points_on_visit_comment on public.visit_comments;
 create trigger tr_add_points_on_visit_comment after insert on public.visit_comments for each row execute procedure add_couple_points();
 
 -- Schedules Timestamp
+drop trigger if exists set_updated_at on public.schedules;
 create trigger set_updated_at before update on public.schedules for each row execute procedure update_updated_at_column();
 
 -- Notifications
@@ -428,8 +633,22 @@ create trigger tr_notify_place after insert on public.places for each row execut
 drop trigger if exists tr_notify_visit on public.visits;
 create trigger tr_notify_visit after insert on public.visits for each row execute procedure handle_notification_trigger();
 
+drop trigger if exists tr_notify_trip on public.trips;
+create trigger tr_notify_trip after insert or update or delete on public.trips for each row execute procedure handle_notification_trigger();
+
+-- Push Webhook
+drop trigger if exists tr_request_push_notification on public.notifications;
+create trigger tr_request_push_notification after insert on public.notifications for each row execute procedure public.request_push_notification();
+
+-- Trips Timestamps
+drop trigger if exists tr_trips_updated_at on public.trips;
+create trigger tr_trips_updated_at before update on public.trips for each row execute procedure handle_updated_at();
+
+drop trigger if exists tr_trip_plans_updated_at on public.trip_plans;
+create trigger tr_trip_plans_updated_at before update on public.trip_plans for each row execute procedure handle_updated_at();
+
 -- ==========================================
--- 5. Security & RLS Policies
+-- 6. Security & RLS Policies
 -- ==========================================
 
 -- Enable RLS
@@ -444,6 +663,11 @@ alter table public.point_history enable row level security;
 alter table public.attendances enable row level security;
 alter table public.tools enable row level security;
 alter table public.schedules enable row level security;
+alter table public.notification_settings enable row level security;
+alter table public.push_subscriptions enable row level security;
+alter table public.notifications enable row level security;
+alter table public.trips enable row level security;
+alter table public.trip_plans enable row level security;
 
 -- COUPLES
 create policy "Users can view their own couple" on public.couples for select using ( id = get_auth_couple_id() );
@@ -514,12 +738,63 @@ create policy "Couples can insert their own tools" on public.tools for insert wi
 create policy "Couples can update their own tools" on public.tools for update using ( couple_id = get_auth_couple_id() );
 create policy "Couples can delete their own tools" on public.tools for delete using ( couple_id = get_auth_couple_id() );
 
--- SCHEDULES
+-- SCHEDULES (Updated Policies)
 create policy "Couples can view their own schedules" on public.schedules
   for select using ( couple_id = get_auth_couple_id() );
 create policy "Users can insert schedules for their couple" on public.schedules
   for insert with check ( (select auth.uid()) = writer_id and couple_id = get_auth_couple_id() );
-create policy "Writers can update their schedules" on public.schedules
-  for update using ( (select auth.uid()) = writer_id );
-create policy "Writers can delete their schedules" on public.schedules
-  for delete using ( (select auth.uid()) = writer_id );
+create policy "Couples can update their schedules" on public.schedules
+  for update using ( couple_id = get_auth_couple_id() );
+create policy "Couples can delete their schedules" on public.schedules
+  for delete using ( couple_id = get_auth_couple_id() );
+
+-- NOTIFICATION SETTINGS
+create policy "Users can view own notification settings" on public.notification_settings
+    for select using (auth.uid() = user_id);
+create policy "Users can insert/update own notification settings" on public.notification_settings
+    for all using (auth.uid() = user_id);
+
+-- PUSH SUBSCRIPTIONS (Optimized Policies)
+create policy "Users can manage their own push subscriptions" on public.push_subscriptions
+    for all
+    using ((select auth.uid()) = user_id)
+    with check ((select auth.uid()) = user_id);
+
+-- NOTIFICATIONS (Updated Policies)
+create policy "Users can view own notifications" on public.notifications
+    for select using (auth.uid() = user_id);
+create policy "Users can update own notifications (mark as read)" on public.notifications
+    for update using (auth.uid() = user_id);
+create policy "Users can delete own notifications" on public.notifications
+    for delete using (auth.uid() = user_id);
+create policy "Users can insert notifications" on public.notifications
+    for insert with check (
+        user_id = (select auth.uid())
+        or exists (
+            select 1 from public.profiles recipient
+            where recipient.id = user_id
+            and recipient.couple_id = (
+                select couple_id from public.profiles where id = (select auth.uid())
+            )
+        )
+    );
+
+-- TRIPS
+create policy "Users can view their couple's trips" on public.trips for select
+    using (couple_id in (select couple_id from public.profiles where id = auth.uid()));
+create policy "Users can insert their couple's trips" on public.trips for insert
+    with check (couple_id in (select couple_id from public.profiles where id = auth.uid()));
+create policy "Users can update their couple's trips" on public.trips for update
+    using (couple_id in (select couple_id from public.profiles where id = auth.uid()));
+create policy "Users can delete their couple's trips" on public.trips for delete
+    using (couple_id in (select couple_id from public.profiles where id = auth.uid()));
+
+-- TRIP PLANS
+create policy "Users can view their couple's trip plans" on public.trip_plans for select
+    using (trip_id in (select id from public.trips where couple_id in (select couple_id from public.profiles where id = auth.uid())));
+create policy "Users can insert their couple's trip plans" on public.trip_plans for insert
+    with check (trip_id in (select id from public.trips where couple_id in (select couple_id from public.profiles where id = auth.uid())));
+create policy "Users can update their couple's trip plans" on public.trip_plans for update
+    using (trip_id in (select id from public.trips where couple_id in (select couple_id from public.profiles where id = auth.uid())));
+create policy "Users can delete their couple's trip plans" on public.trip_plans for delete
+    using (trip_id in (select id from public.trips where couple_id in (select couple_id from public.profiles where id = auth.uid())));

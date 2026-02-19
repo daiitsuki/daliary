@@ -40,16 +40,18 @@ export default function CoupleSettingsSection({
           <Calendar size={20} className="text-rose-400" />
           <span className="font-bold text-sm">처음 만난 날</span>
         </div>
-        <DatePicker 
-          value={anniversary} 
-          onChange={handleDateChange} 
+        <DatePicker
+          value={anniversary}
+          onChange={handleDateChange}
           variant="dropdown"
         />
       </div>
 
       {!isCoupleFormed && (
         <div className="bg-white p-5 rounded-[24px] border border-gray-100">
-          <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">초대 코드</p>
+          <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2">
+            초대 코드
+          </p>
           <p className="font-mono text-lg font-bold text-gray-700 tracking-widest bg-gray-50 p-3 rounded-xl text-center">
             {couple?.invite_code || "------"}
           </p>
