@@ -6,11 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 interface ChangelogModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onActivateDevMode?: () => void;
 }
 
 export default function ChangelogModal({
   isOpen,
   onClose,
+  onActivateDevMode,
 }: ChangelogModalProps) {
   const [showAll, setShowAll] = useState(false);
 
@@ -150,13 +152,25 @@ export default function ChangelogModal({
                     이전 내역 더보기
                   </button>
                 ) : showAll && hasMore ? (
-                  <button
-                    onClick={() => setShowAll(false)}
-                    className="w-full py-3 flex items-center justify-center gap-2 text-xs font-bold text-gray-500 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-                  >
-                    <ChevronUp size={16} />
-                    목록 접기
-                  </button>
+                  <div className="flex flex-col items-center gap-2">
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem("dev_mode_active", "true");
+                        if (onActivateDevMode) onActivateDevMode();
+                        alert("개발자 모드가 활성화되었습니다.");
+                      }}
+                      className="text-[10px] text-gray-300 hover:text-gray-400 transition-colors"
+                    >
+                      개발자 모드 활성화하기
+                    </button>
+                    <button
+                      onClick={() => setShowAll(false)}
+                      className="w-full py-3 flex items-center justify-center gap-2 text-xs font-bold text-gray-500 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                    >
+                      <ChevronUp size={16} />
+                      목록 접기
+                    </button>
+                  </div>
                 ) : null}
               </div>
             </div>

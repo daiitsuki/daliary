@@ -17,6 +17,7 @@ import CalendarSettingsSection from "../components/settings/CalendarSettingsSect
 import AppInfoSection from "../components/settings/AppInfoSection";
 import DangerZoneSection from "../components/settings/DangerZoneSection";
 import NotificationSettingsSection from "../components/settings/NotificationSettingsSection";
+import DeveloperModeSection from "../components/settings/DeveloperModeSection";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -45,6 +46,7 @@ export default function Settings() {
   const [anniversary, setAnniversary] = useState("");
   const [loading, setLoading] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
+  const [isDevMode, setIsDevMode] = useState(() => sessionStorage.getItem("dev_mode_active") === "true");
   
   // 이미지 편집 관련 상태
   const [editingImage, setEditingImage] = useState<string | null>(null);
@@ -292,6 +294,12 @@ export default function Settings() {
             onDisconnect={handleDisconnect}
           />
         </motion.div>
+
+        {isDevMode && (
+          <motion.div variants={itemVariants}>
+            <DeveloperModeSection />
+          </motion.div>
+        )}
       </motion.main>
 
       {loading && (
@@ -313,6 +321,7 @@ export default function Settings() {
       <ChangelogModal
         isOpen={showChangelog}
         onClose={() => setShowChangelog(false)}
+        onActivateDevMode={() => setIsDevMode(true)}
       />
     </div>
   );

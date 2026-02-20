@@ -23,15 +23,15 @@ const HeartGauge = () => {
   useEffect(() => {
     if (showHistory) {
       window.history.pushState({ modal: "point-history" }, "");
-      
+
       const handlePopState = (event: PopStateEvent) => {
         if (event.state?.modal !== "point-history") {
           setShowHistory(false);
         }
       };
-      
+
       window.addEventListener("popstate", handlePopState);
-      
+
       return () => {
         window.removeEventListener("popstate", handlePopState);
         if (window.history.state?.modal === "point-history") {
@@ -59,7 +59,7 @@ const HeartGauge = () => {
     {
       icon: <Heart size={18} className="text-rose-400" />,
       title: "오늘의 질문 답변",
-      points: 10,
+      points: 30,
       desc: "서로에게 답하는 매일의 질문",
     },
     {
@@ -89,8 +89,11 @@ const HeartGauge = () => {
       >
         {/* Background Decorative Element */}
         <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-rose-50/50 rounded-full blur-3xl" />
-        
-        <div onClick={() => handleOpenModal("history")} className="relative z-10">
+
+        <div
+          onClick={() => handleOpenModal("history")}
+          className="relative z-10"
+        >
           <div className="flex justify-between items-end mb-4">
             <div className="flex items-center gap-3.5">
               <div className="bg-gradient-to-br from-rose-50 to-rose-100/50 p-3 rounded-[18px] shadow-sm">
@@ -100,7 +103,7 @@ const HeartGauge = () => {
                 <p
                   className={`text-[9px] font-bold uppercase tracking-[0.15em] leading-none mb-1.5 ${hasCheckedIn ? "text-rose-400" : "text-gray-300"}`}
                 >
-                  {hasCheckedIn ? "● ACTIVE STATUS" : "○ READY TO CHECK"}
+                  {hasCheckedIn ? "● 출석체크 완료" : "○ 출석체크 안함"}
                 </p>
                 <h3 className="text-base font-bold text-gray-800 tracking-tight">
                   Level {levelInfo.level}
@@ -109,7 +112,8 @@ const HeartGauge = () => {
             </div>
             <div className="text-right flex flex-col items-end">
               <p className="text-lg font-bold text-rose-500 mb-0.5 tracking-tighter">
-                {Math.round(levelInfo.progress)}<span className="text-[10px] ml-0.5">%</span>
+                {Math.round(levelInfo.progress)}
+                <span className="text-[10px] ml-0.5">%</span>
               </p>
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                 {levelInfo.currentExp} / {levelInfo.nextLevelExp} PT
@@ -129,8 +133,13 @@ const HeartGauge = () => {
 
           <div className="mt-4 flex items-center justify-between">
             <p className="text-[11px] text-gray-500 font-medium">
-              누적 <span className="text-rose-400 font-bold">{totalPoints}</span> PT · 다음 레벨까지{" "}
-              <span className="text-gray-800 font-bold">{levelInfo.nextLevelExp - levelInfo.currentExp}</span> PT
+              누적{" "}
+              <span className="text-rose-400 font-bold">{totalPoints}</span> PT
+              · 다음 레벨까지{" "}
+              <span className="text-gray-800 font-bold">
+                {levelInfo.nextLevelExp - levelInfo.currentExp}
+              </span>{" "}
+              PT
             </p>
             <div className="bg-gray-50 p-1.5 rounded-full group-hover:bg-rose-50 transition-colors">
               <ChevronRight
@@ -215,7 +224,7 @@ const HeartGauge = () => {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-6 pt-0 custom-scrollbar">
                 {activeTab === "history" ? (
                   <div className="space-y-4">
                     {history.length === 0 ? (
@@ -262,40 +271,51 @@ const HeartGauge = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="bg-rose-50/50 rounded-2xl p-4 mb-2">
-                      <p className="text-[12px] text-rose-400 font-bold leading-relaxed">
-                        포인트를 모아 레벨을 올리고,
-                        <br />
-                        우리만의 소중한 추억을 더 예쁘게 기록해보세요!
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-br from-rose-50/50 to-orange-50/30 rounded-3xl p-5 border border-rose-100/50">
+                      <p className="text-[12px] text-rose-500 font-bold leading-relaxed flex items-center gap-2">
+                        <Sparkles size={14} />
+                        포인트를 모아 레벨을 올리고, 우리의 추억을 기록해보세요!
                       </p>
                     </div>
-                    {pointRules.map((rule, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="flex items-center justify-between p-4 rounded-2xl bg-white border border-gray-100 shadow-sm"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="bg-rose-50 p-2.5 rounded-xl">
-                            {rule.icon}
+
+                    <div className="bg-gray-50/50 rounded-[32px] border border-gray-100/50 overflow-hidden">
+                      {pointRules.map((rule, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className={`flex items-center justify-between p-5 transition-colors hover:bg-white/50 ${
+                            index !== pointRules.length - 1
+                              ? "border-b border-gray-100/50"
+                              : ""
+                          }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-gray-50">
+                              {rule.icon}
+                            </div>
+                            <div>
+                              <p className="text-[13px] font-black text-gray-800 mb-0.5">
+                                {rule.title}
+                              </p>
+                              <p className="text-[10px] text-gray-400 font-bold leading-none">
+                                {rule.desc}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[13px] font-bold text-gray-800 mb-0.5">
-                              {rule.title}
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-bold">
-                              {rule.desc}
-                            </p>
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-sm font-black text-rose-500">
+                              +{rule.points}
+                            </span>
+                            <span className="text-[8px] font-black text-rose-200 uppercase tracking-tighter">
+                              Points
+                            </span>
                           </div>
-                        </div>
-                        <span className="text-sm font-black text-rose-500 whitespace-nowrap">
-                          +{rule.points} PT
-                        </span>
-                      </motion.div>
-                    ))}
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

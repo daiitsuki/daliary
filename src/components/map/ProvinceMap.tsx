@@ -169,9 +169,10 @@ const ProvinceMap: React.FC<ProvinceMapProps> = ({ region, stats, onSubRegionCli
     const count = stats[name] || 0;
     if (count === 0) return '#f9fafb';
     
-    // 방문 횟수에 따른 농도 계산 (1회: 0.1, 100회 이상: 1.0)
-    // 1회 방문 시 너무 안보이지 않도록 기본 투명도를 0.1(10%)부터 시작하고, 100회까지 1.0(100%)으로 증가
-    const intensity = Math.min(0.1 + (count - 1) * (0.9 / 99), 1.0);
+    // 1~10회: 10% (0.1), 11회부터는 횟수% (예: 11회=0.11), 100회 이상: 100% (1.0)
+    const intensity = count <= 10 
+      ? 0.1 
+      : Math.min(count / 100, 1.0);
     
     // 로즈색(#fb7185)을 기반으로 투명도 적용
     return `rgba(251, 113, 133, ${intensity})`;

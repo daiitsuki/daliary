@@ -12,7 +12,7 @@ import RegionDetailOverlay from "./map/RegionDetailOverlay";
 import HelpModal from "./map/HelpModal";
 import RegionCardList from "./map/RegionCardList";
 import SubRegionMapOverlay from "./map/SubRegionMapOverlay";
-import KoreaMap from "./map/KoreaMap";
+import DetailedKoreaMap from "./map/DetailedKoreaMap";
 
 // Animation Variants
 const containerVariants: Variants = {
@@ -43,7 +43,7 @@ type SortOption = 'default' | 'most-visited' | 'least-visited' | 'recent';
  * 메인 RegionDashboard 컴포넌트
  */
 const RegionDashboard = () => {
-  const { stats, visits, updateVisit, deleteVisit } = usePlaces();
+  const { stats, subRegionStats, visits, updateVisit, deleteVisit, loading: placesLoading } = usePlaces();
   const [searchParams, setSearchParams] = useSearchParams();
   
   const selectedRegion = searchParams.get("region");
@@ -53,19 +53,29 @@ const RegionDashboard = () => {
     null,
   );
   const [showHelp, setShowHelp] = useState(false);
-  const [viewMode, setViewMode] = useState<"map" | "list">("list");
+
+  // 뷰 모드 관련 상태 및 로컬 스토리지 저장
+  const VIEW_MODE_KEY = 'daliary_region_view_mode';
+  const [viewMode, setViewMode] = useState<"map" | "list">(() => {
+    const saved = localStorage.getItem(VIEW_MODE_KEY);
+    return (saved as "map" | "list") || "list";
+  });
 
   // 정렬 관련 상태
-  const LOCAL_STORAGE_KEY = 'daliary_region_sort';
+  const SORT_STORAGE_KEY = 'daliary_region_sort';
   const [sortOption, setSortOption] = useState<SortOption>(() => {
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const saved = localStorage.getItem(SORT_STORAGE_KEY);
     return (saved as SortOption) || 'default';
   });
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, sortOption);
+    localStorage.setItem(SORT_STORAGE_KEY, sortOption);
   }, [sortOption]);
+
+  useEffect(() => {
+    localStorage.setItem(VIEW_MODE_KEY, viewMode);
+  }, [viewMode]);
 
   const sortOptions = [
     { id: 'default', label: '기본 순' },
@@ -131,6 +141,17 @@ const RegionDashboard = () => {
     setSearchParams(newParams);
   };
 
+  const handleMapRegionSelect = (region: string, subRegion?: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("region", region);
+    if (subRegion) {
+      newParams.set("subRegion", subRegion);
+    } else {
+      newParams.delete("subRegion");
+    }
+    setSearchParams(newParams);
+  };
+
   const handleBack = () => {
     if (selectedSubRegion) {
       setSelectedSubRegion(null);
@@ -160,19 +181,29 @@ const RegionDashboard = () => {
 
         {/* Control Bar (Sort & View Toggle) */}
         <motion.div variants={itemVariants} className="px-6 py-2 flex items-center justify-between bg-white shrink-0 relative z-30">
-          {/* Sort Dropdown (Left) */}
+          {/* Sort Dropdown (Left) - Only visible in list mode */}
           <div className="relative">
-            <button
-              onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all active:scale-95"
-            >
-              <ArrowUpDown size={14} className="text-gray-400" />
-              <span className="text-xs font-bold text-gray-700">{currentSortLabel}</span>
-              <ChevronDown size={14} className={`text-gray-400 transition-transform ${isSortDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
+            <AnimatePresence>
+              {viewMode === "list" && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                >
+                  <button
+                    onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+                    className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all active:scale-95"
+                  >
+                    <ArrowUpDown size={14} className="text-gray-400" />
+                    <span className="text-xs font-bold text-gray-700">{currentSortLabel}</span>
+                    <ChevronDown size={14} className={`text-gray-400 transition-transform ${isSortDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <AnimatePresence>
-              {isSortDropdownOpen && (
+              {isSortDropdownOpen && viewMode === "list" && (
                 <>
                   <div 
                     className="fixed inset-0 z-20" 
@@ -231,9 +262,18 @@ const RegionDashboard = () => {
         </motion.div>
 
         <motion.div variants={itemVariants} className="flex-1 w-full min-h-0 overflow-hidden relative">
-          {viewMode === "map" ? (
-            <div className="h-full flex items-center justify-center p-4">
-              <KoreaMap stats={stats} onRegionClick={setSelectedRegion} />
+          {placesLoading ? (
+            <div className="h-full flex flex-col items-center justify-center gap-4">
+              <div className="w-10 h-10 border-4 border-rose-100 border-t-rose-500 rounded-full animate-spin" />
+              <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Loading Records...</p>
+            </div>
+          ) : viewMode === "map" ? (
+            <div className="h-full">
+              <DetailedKoreaMap 
+                stats={stats}
+                subRegionStats={subRegionStats} 
+                onRegionSelect={handleMapRegionSelect} 
+              />
             </div>
           ) : (
             <RegionCardList stats={stats} visits={visits} onRegionClick={setSelectedRegion} sortOption={sortOption} />
