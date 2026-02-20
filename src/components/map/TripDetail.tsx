@@ -170,7 +170,14 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
                           {CATEGORY_LABELS[plan.category]}
                         </span>
                       </div>
-                      <h3 className="font-black text-gray-800 text-sm mb-1 truncate">{plan.place_name || '장소명 없음'}</h3>
+                      {(() => {
+                        const isUndecided = !plan.place_name || plan.place_name === '미정';
+                        return (
+                          <h3 className={`font-black text-sm mb-1 truncate ${isUndecided ? 'text-gray-300' : 'text-gray-800'}`}>
+                            {plan.place_name || '미정'}
+                          </h3>
+                        );
+                      })()}
                       {plan.address && (
                         <div className="flex items-center gap-1 text-gray-400 mb-2">
                           <MapPin size={10} />
