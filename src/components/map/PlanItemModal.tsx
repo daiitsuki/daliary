@@ -10,6 +10,7 @@ import {
   Coffee,
   Bed,
   MoreHorizontal,
+  Camera,
 } from "lucide-react";
 import TimePicker from "../common/TimePicker";
 import { useTripPlans } from "../../hooks/useTrips";
@@ -30,6 +31,7 @@ const CATEGORIES = [
   { id: "transport", label: "이동", icon: Car },
   { id: "cafe", label: "카페", icon: Coffee },
   { id: "accommodation", label: "숙소", icon: Bed },
+  { id: "activity", label: "체험", icon: Camera },
   { id: "etc", label: "기타", icon: MoreHorizontal },
 ];
 

@@ -12,7 +12,8 @@ import {
   Car,
   Coffee,
   Bed,
-  MoreHorizontal
+  MoreHorizontal,
+  Camera
 } from 'lucide-react';
 import PlanItemModal from './PlanItemModal';
 import { motion } from 'framer-motion';
@@ -27,6 +28,7 @@ const CATEGORY_ICONS: Record<string, any> = {
   transport: Car,
   cafe: Coffee,
   accommodation: Bed,
+  activity: Camera,
   etc: MoreHorizontal,
 };
 
@@ -35,6 +37,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   transport: '이동',
   cafe: '카페',
   accommodation: '숙소',
+  activity: '체험',
   etc: '기타',
 };
 
@@ -43,6 +46,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   transport: 'text-blue-500 bg-blue-50',
   cafe: 'text-amber-500 bg-amber-50',
   accommodation: 'text-indigo-500 bg-indigo-50',
+  activity: 'text-rose-500 bg-rose-50',
   etc: 'text-gray-500 bg-gray-50',
 };
 
