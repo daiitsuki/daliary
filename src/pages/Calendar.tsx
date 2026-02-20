@@ -158,12 +158,12 @@ const Calendar = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/30 pb-24">
+    <div className="flex-1 overflow-y-auto lg:overflow-hidden custom-scrollbar bg-gray-50/30 pb-24 lg:pb-0 lg:flex lg:flex-col lg:h-full">
       <motion.div 
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-6xl mx-auto px-4 py-6 lg:py-10"
+        className="w-full max-w-[1600px] mx-auto px-4 py-6 lg:py-10 lg:h-full lg:flex lg:flex-col"
       >
         <motion.div variants={itemVariants}>
           <CalendarHeader
@@ -177,8 +177,8 @@ const Calendar = () => {
           />
         </motion.div>
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start mt-6">
-          <motion.div variants={itemVariants} className="w-full lg:flex-1">
+        <div className="flex flex-col lg:flex-row gap-8 items-start mt-6 lg:flex-1 lg:min-h-0">
+          <motion.div variants={itemVariants} className="w-full lg:flex-1 lg:h-full lg:overflow-y-auto custom-scrollbar lg:pb-24">
             <CalendarGrid
               currentDate={currentDate}
               direction={direction}
@@ -190,7 +190,7 @@ const Calendar = () => {
             />
           </motion.div>
 
-          <motion.div variants={itemVariants} className="w-full lg:w-[380px] shrink-0">
+          <motion.div variants={itemVariants} className="w-full lg:w-[380px] shrink-0 lg:h-full">
             <ScheduleList
               schedules={visibleSchedules}
               selectedDate={selectedDate}

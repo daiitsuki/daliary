@@ -44,7 +44,7 @@ export default function Home() {
         content: inputAnswer,
       });
       if (error) throw error;
-      
+
       setInputAnswer("");
       // 데이터 즉시 갱신
       await refresh();
@@ -119,7 +119,9 @@ export default function Home() {
                 <h3 className="text-gray-800 text-lg font-black mb-1">
                   초대 코드를 공유해보세요!
                 </h3>
-                <p className="text-gray-400 text-[11px] font-bold mb-6 uppercase tracking-widest">둘만의 다이어리를 시작할 시간</p>
+                <p className="text-gray-400 text-[11px] font-bold mb-6 uppercase tracking-widest">
+                  둘만의 다이어리를 시작할 시간
+                </p>
                 <button
                   onClick={copyInviteCode}
                   className="bg-rose-50/50 rounded-[22px] px-6 py-4 flex items-center justify-center space-x-3 mx-auto hover:bg-rose-50 transition-all w-full group border border-rose-100/30"
@@ -136,11 +138,6 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* Quick Links Section */}
-          <motion.div variants={itemVariants}>
-            <QuickLinksSection />
-          </motion.div>
-
           <motion.div variants={itemVariants}>
             <DailyQuestionSection
               todayQuestion={todayQuestion}
@@ -155,6 +152,11 @@ export default function Home() {
               couple={couple}
               myProfile={myProfile}
             />
+          </motion.div>
+
+          {/* Quick Links Section */}
+          <motion.div variants={itemVariants}>
+            <QuickLinksSection />
           </motion.div>
         </main>
       </motion.div>

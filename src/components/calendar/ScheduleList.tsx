@@ -22,83 +22,78 @@ interface ScheduleListProps {
   today: Date;
 }
 
-const ScheduleCard = ({
+const ScheduleRow = ({
   schedule,
   onClick,
-  isSelected,
+  isLast,
   myProfile,
   partnerProfile,
   isToday,
 }: {
   schedule: Schedule;
   onClick: () => void;
-  isSelected: boolean;
+  isLast: boolean;
   myProfile: Profile | null;
   partnerProfile: Profile | null;
   isToday?: boolean;
 }) => (
   <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -10 }}
-    transition={{ duration: 0.2 }}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
     onClick={onClick}
-    className={`bg-white p-5 rounded-[28px] shadow-sm border transition-all flex items-center justify-between group cursor-pointer hover:shadow-md ${
-      isSelected
-        ? "border-rose-200 ring-1 ring-rose-50 shadow-rose-50/50"
-        : isToday
-          ? "border-rose-100 bg-rose-50/30"
-          : "border-gray-50"
+    className={`group relative flex items-center gap-4 p-4 cursor-pointer transition-all hover:bg-gray-50 ${
+      !isLast ? "border-b border-gray-100" : ""
     }`}
   >
-    <div className="flex items-center gap-4">
-      <div
-        className="w-1.5 h-12 rounded-full"
-        style={{ backgroundColor: schedule.color }}
-      />
-      <div>
-        <div className="flex items-center gap-2">
-          <h4 className="text-[14px] sm:text-[15px] font-bold text-gray-800 group-hover:text-rose-500 transition-colors line-clamp-1">
-            {schedule.title}
-          </h4>
-          {isToday && (
-            <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-md border border-rose-100 uppercase">
-              Today
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-[10px] text-gray-400 font-black bg-white/50 px-2 py-0.5 rounded-lg uppercase border border-gray-100/50">
-            {schedule.id.startsWith("holiday-")
-              ? "공휴일"
-              : schedule.category === "me"
-                ? myProfile?.nickname || "나"
-                : schedule.category === "partner"
-                  ? partnerProfile?.nickname || "상대방"
-                  : "우리"}
+    {/* Color Indicator */}
+    <div
+      className="w-1 h-10 rounded-full shrink-0 transition-transform group-hover:scale-y-110"
+      style={{ backgroundColor: schedule.color }}
+    />
+
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2 mb-1">
+        <h4 className="text-[15px] font-bold text-gray-800 truncate group-hover:text-rose-500 transition-colors">
+          {schedule.title}
+        </h4>
+        {isToday && (
+          <span className="shrink-0 text-[10px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
+            TODAY
           </span>
-          <p className="text-[11px] text-gray-400 font-bold">
-            {(() => {
-              if (schedule.start_date === schedule.end_date) {
-                return schedule.start_date.slice(5).replace("-", ".");
-              }
-              const start = new Date(schedule.start_date);
-              const end = new Date(schedule.end_date);
-              const diffTime = Math.abs(end.getTime() - start.getTime());
-              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-              return `${schedule.start_date.slice(5).replace("-", ".")} - ${schedule.end_date.slice(5).replace("-", ".")} (${diffDays}일간)`;
-            })()}
-          </p>
-        </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 text-xs">
+        {/* Category Badge */}
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200/50">
+          {schedule.id.startsWith("holiday-")
+            ? "공휴일"
+            : schedule.category === "me"
+              ? myProfile?.nickname || "나"
+              : schedule.category === "partner"
+                ? partnerProfile?.nickname || "상대방"
+                : "우리"}
+        </span>
+
+        {/* Date Info */}
+        <span className="text-gray-400 font-medium text-[11px] truncate">
+          {(() => {
+            if (schedule.start_date === schedule.end_date) {
+              return schedule.start_date.slice(5).replace("-", ".");
+            }
+            const start = new Date(schedule.start_date);
+            const end = new Date(schedule.end_date);
+            const diffTime = Math.abs(end.getTime() - start.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            return `${schedule.start_date.slice(5).replace("-", ".")} - ${schedule.end_date.slice(5).replace("-", ".")} (${diffDays}일간)`;
+          })()}
+        </span>
       </div>
     </div>
+
     <ChevronRight
-      size={18}
-      className={`transition-all ${
-        isSelected
-          ? "text-rose-300 translate-x-1"
-          : "text-gray-200 group-hover:text-rose-300 group-hover:translate-x-1"
-      }`}
+      size={16}
+      className="text-gray-300 group-hover:text-rose-400 group-hover:translate-x-0.5 transition-all"
     />
   </motion.div>
 );
@@ -132,17 +127,18 @@ const ScheduleList = ({
   );
 
   return (
-    <div className="w-full lg:w-[380px] shrink-0">
-      <div className="sticky top-6">
-        <div className="flex items-center justify-between mb-6 px-2">
+    <div className="w-full lg:w-[380px] shrink-0 lg:h-full lg:flex lg:flex-col pb-24 lg:pb-0">
+      <div className="lg:static lg:h-full lg:flex lg:flex-col">
+        {/* Header Section */}
+        <div className="flex items-center justify-between mb-6 px-2 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-2 h-6 bg-rose-400 rounded-full" />
             <h2 className="text-lg sm:text-xl font-black text-gray-800 tracking-tight">
               {isSearchActive
                 ? "검색 결과"
                 : isDateSelected
-                  ? `${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일 일정`
-                  : `${month + 1}월 전체 일정`}
+                  ? `${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일`
+                  : `${month + 1}월 일정`}
             </h2>
           </div>
           <div className="flex items-center gap-2">
@@ -158,7 +154,8 @@ const ScheduleList = ({
           </div>
         </div>
 
-        <div className="space-y-4 max-h-[500px] lg:max-h-[calc(100vh-250px)] overflow-y-auto custom-scrollbar pr-2 pb-10">
+        {/* List Content */}
+        <div className="space-y-4 max-h-[500px] lg:max-h-none lg:flex-1 overflow-y-auto custom-scrollbar pr-2 pb-24">
           {(isDateSelected || isSearchActive) && (
             <div className="px-2 pb-2">
               <button
@@ -195,69 +192,82 @@ const ScheduleList = ({
               </motion.div>
             ) : (
               <motion.div
-                key="list"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-4"
+                key={isDateSelected || isSearchActive ? "filtered" : "all"}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
               >
                 {!isDateSelected &&
                 !isSearchActive &&
                 todaySchedules.length > 0 ? (
                   <>
-                    <div className="flex items-center gap-2 px-2 pb-1">
-                      <span className="text-[11px] font-bold text-gray-400">
-                        오늘 일정
-                      </span>
-                    </div>
-                    {todaySchedules.map((s) => (
-                      <ScheduleCard
-                        key={s.id}
-                        schedule={s}
-                        onClick={() => onEditSchedule(s)}
-                        isSelected={false}
-                        myProfile={myProfile}
-                        partnerProfile={partnerProfile}
-                        isToday={true}
-                      />
-                    ))}
-                    {otherSchedules.length > 0 && (
-                      <div className="flex items-center gap-2 px-2 pt-4 pb-1">
-                        <span className="text-[11px] font-bold text-gray-400">
-                          전체 일정
+                    {/* Today Group */}
+                    <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
+                      <div className="px-5 py-3 border-b border-gray-50 bg-rose-50/30 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        <span className="text-xs font-bold text-gray-500">
+                          오늘의 일정
                         </span>
                       </div>
+                      <div>
+                        {todaySchedules.map((s, i) => (
+                          <ScheduleRow
+                            key={s.id}
+                            schedule={s}
+                            onClick={() => onEditSchedule(s)}
+                            isLast={i === todaySchedules.length - 1}
+                            myProfile={myProfile}
+                            partnerProfile={partnerProfile}
+                            isToday={true}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Other Schedules Group */}
+                    {otherSchedules.length > 0 && (
+                      <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="px-5 py-3 border-b border-gray-50 bg-gray-50/30 flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                          <span className="text-xs font-bold text-gray-500">
+                            전체 일정
+                          </span>
+                        </div>
+                        <div>
+                          {otherSchedules.map((s, i) => (
+                            <ScheduleRow
+                              key={s.id}
+                              schedule={s}
+                              onClick={() => onEditSchedule(s)}
+                              isLast={i === otherSchedules.length - 1}
+                              myProfile={myProfile}
+                              partnerProfile={partnerProfile}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     )}
-                    {otherSchedules.map((s) => (
-                      <ScheduleCard
+                  </>
+                ) : (
+                  /* Single List (Date Selected or Search) */
+                  <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
+                    {schedules.map((s, i) => (
+                      <ScheduleRow
                         key={s.id}
                         schedule={s}
                         onClick={() => onEditSchedule(s)}
-                        isSelected={false}
+                        isLast={i === schedules.length - 1}
                         myProfile={myProfile}
                         partnerProfile={partnerProfile}
+                        isToday={
+                          formatDate(today) >= s.start_date &&
+                          formatDate(today) <= s.end_date
+                        }
                       />
                     ))}
-                  </>
-                ) : (
-                  schedules.map((s) => (
-                    <ScheduleCard
-                      key={s.id}
-                      schedule={s}
-                      onClick={() => onEditSchedule(s)}
-                      isSelected={
-                        isDateSelected &&
-                        formatDate(selectedDate) >= s.start_date &&
-                        formatDate(selectedDate) <= s.end_date
-                      }
-                      myProfile={myProfile}
-                      partnerProfile={partnerProfile}
-                      isToday={
-                        formatDate(today) >= s.start_date &&
-                        formatDate(today) <= s.end_date
-                      }
-                    />
-                  ))
+                  </div>
                 )}
               </motion.div>
             )}
