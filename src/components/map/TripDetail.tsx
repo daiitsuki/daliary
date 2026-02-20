@@ -126,7 +126,7 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
       </div>
 
       {/* Plans List */}
-      <div className="flex-1 overflow-y-auto p-4 pb-32 space-y-6 relative bg-gray-50/30">
+      <div className="flex-1 overflow-y-auto p-4 pb-32 space-y-6 relative bg-gray-50/30 custom-scrollbar">
         {isPlansLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-rose-100 border-t-rose-500 mb-4"></div>
