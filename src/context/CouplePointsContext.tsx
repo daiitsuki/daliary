@@ -65,7 +65,7 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
     queryFn: async () => {
       if (!couple?.id) return { total: 0, current: 0, history: [] };
       const [summaryRes, historyRes] = await Promise.all([
-        supabase.rpc('get_couple_points_summary', { target_couple_id: couple.id }),
+        supabase.rpc('get_couple_points_summary', { target_couple_id: couple.id }).single(),
         supabase
           .from('point_history')
           .select('id, created_at, type, points, description')

@@ -206,3 +206,16 @@
 - **UI/UX**:
     - 포인트 상점은 `PointHistoryModal.tsx` 내 '포인트 상점' 탭에 위치합니다.
     - 보유한 아이템은 '설정 > 보관함' (`InventorySection.tsx`)에서 확인할 수 있습니다.
+
+## 15. PostgreSQL Function Standards
+
+데이터 일관성과 SQL 가독성을 위해 RPC 및 트리거 함수 작성 시 다음 원칙을 준수합니다.
+
+- **Return Types**:
+    - 여러 컬럼이나 필드를 반환하고 다른 SQL 문(`SELECT ... FROM`)에서 사용될 가능성이 있는 경우, `RETURNS json` 대신 `RETURNS TABLE(...)`을 사용합니다.
+    - 복잡하고 동적인 구조가 필요한 경우에만 `RETURNS json`을 사용합니다.
+- **Error Handling**:
+    - 비즈니스 로직 위반 시 `RAISE EXCEPTION`을 사용하여 프론트엔드에서 에러를 인지할 수 있게 합니다.
+    - RPC 내부에서는 `get_auth_couple_id()`와 같은 헬퍼 함수를 적극 활용하여 권한 검사를 수행합니다.
+- **Atomic Operations**:
+    - 포인트 차감과 아이템 지급과 같이 연계된 작업은 반드시 하나의 RPC 함수 내에서 트랜잭션으로 처리하여 데이터 무결성을 보장합니다.
