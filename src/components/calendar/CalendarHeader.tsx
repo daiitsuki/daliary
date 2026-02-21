@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import MonthYearPicker from "./MonthYearPicker";
 
 interface CalendarHeaderProps {
   currentDate: Date;
   onMonthChange: (offset: number) => void;
+  onJumpToDate: (year: number, month: number) => void;
   onGoToday: () => void;
   isSearchActive: boolean;
   setIsSearchActive: (active: boolean) => void;
@@ -14,12 +17,14 @@ interface CalendarHeaderProps {
 const CalendarHeader = ({
   currentDate,
   onMonthChange,
+  onJumpToDate,
   onGoToday,
   isSearchActive,
   setIsSearchActive,
   searchQuery,
   setSearchQuery,
 }: CalendarHeaderProps) => {
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -33,14 +38,19 @@ const CalendarHeader = ({
           >
             <ChevronLeft size={20} strokeWidth={3} />
           </button>
-          <div className="px-4 min-w-[120px] text-center flex flex-col">
+          
+          <button
+            onClick={() => setIsPickerOpen(true)}
+            className="px-4 min-w-[120px] text-center flex flex-col hover:bg-gray-50 rounded-2xl transition-colors active:scale-95"
+          >
             <span className="text-[10px] font-black text-rose-400 leading-none mb-1">
               {year}
             </span>
             <span className="text-xl font-black text-gray-800 leading-none">
               {month + 1}월
             </span>
-          </div>
+          </button>
+
           <button
             onClick={() => onMonthChange(1)}
             className="p-3 text-gray-300 hover:text-rose-400 transition-colors"
@@ -94,6 +104,13 @@ const CalendarHeader = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <MonthYearPicker
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        currentDate={currentDate}
+        onSelect={onJumpToDate}
+      />
     </div>
   );
 };

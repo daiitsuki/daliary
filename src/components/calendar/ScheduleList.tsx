@@ -36,67 +36,83 @@ const ScheduleRow = ({
   myProfile: Profile | null;
   partnerProfile: Profile | null;
   isToday?: boolean;
-}) => (
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    onClick={onClick}
-    className={`group relative flex items-center gap-4 p-4 cursor-pointer transition-all hover:bg-gray-50 ${
-      !isLast ? "border-b border-gray-100" : ""
-    }`}
-  >
-    {/* Color Indicator */}
-    <div
-      className="w-1 h-10 rounded-full shrink-0 transition-transform group-hover:scale-y-110"
-      style={{ backgroundColor: schedule.color }}
-    />
+}) => {
+  const isClickable =
+    !schedule.id.startsWith("holiday-") &&
+    !schedule.id.startsWith("anniversary-");
 
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center gap-2 mb-1">
-        <h4 className="text-[15px] font-bold text-gray-800 truncate group-hover:text-rose-500 transition-colors">
-          {schedule.title}
-        </h4>
-        {isToday && (
-          <span className="shrink-0 text-[10px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
-            TODAY
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      onClick={isClickable ? onClick : undefined}
+      className={`group relative flex items-center gap-4 p-4 transition-all ${
+        isClickable ? "cursor-pointer hover:bg-gray-50" : "cursor-default"
+      } ${!isLast ? "border-b border-gray-100" : ""}`}
+    >
+      {/* Color Indicator */}
+      <div
+        className={`w-1 h-10 rounded-full shrink-0 transition-transform ${
+          isClickable ? "group-hover:scale-y-110" : ""
+        }`}
+        style={{ backgroundColor: schedule.color }}
+      />
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <h4
+            className={`text-[15px] font-bold text-gray-800 truncate transition-colors ${
+              isClickable ? "group-hover:text-rose-500" : ""
+            }`}
+          >
+            {schedule.title}
+          </h4>
+          {isToday && (
+            <span className="shrink-0 text-[10px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
+              TODAY
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 text-xs">
+          {/* Category Badge */}
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200/50">
+            {schedule.id.startsWith("holiday-")
+              ? "공휴일"
+              : schedule.id.startsWith("anniversary-")
+                ? "기념일"
+                : schedule.category === "me"
+                  ? myProfile?.nickname || "나"
+                  : schedule.category === "partner"
+                    ? partnerProfile?.nickname || "상대방"
+                    : "우리"}
           </span>
-        )}
+
+          {/* Date Info */}
+          <span className="text-gray-400 font-medium text-[11px] truncate">
+            {(() => {
+              if (schedule.start_date === schedule.end_date) {
+                return schedule.start_date.slice(5).replace("-", ".");
+              }
+              const start = new Date(schedule.start_date);
+              const end = new Date(schedule.end_date);
+              const diffTime = Math.abs(end.getTime() - start.getTime());
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+              return `${schedule.start_date.slice(5).replace("-", ".")} - ${schedule.end_date.slice(5).replace("-", ".")} (${diffDays}일간)`;
+            })()}
+          </span>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 text-xs">
-        {/* Category Badge */}
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200/50">
-          {schedule.id.startsWith("holiday-")
-            ? "공휴일"
-            : schedule.category === "me"
-              ? myProfile?.nickname || "나"
-              : schedule.category === "partner"
-                ? partnerProfile?.nickname || "상대방"
-                : "우리"}
-        </span>
-
-        {/* Date Info */}
-        <span className="text-gray-400 font-medium text-[11px] truncate">
-          {(() => {
-            if (schedule.start_date === schedule.end_date) {
-              return schedule.start_date.slice(5).replace("-", ".");
-            }
-            const start = new Date(schedule.start_date);
-            const end = new Date(schedule.end_date);
-            const diffTime = Math.abs(end.getTime() - start.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-            return `${schedule.start_date.slice(5).replace("-", ".")} - ${schedule.end_date.slice(5).replace("-", ".")} (${diffDays}일간)`;
-          })()}
-        </span>
-      </div>
-    </div>
-
-    <ChevronRight
-      size={16}
-      className="text-gray-300 group-hover:text-rose-400 group-hover:translate-x-0.5 transition-all"
-    />
-  </motion.div>
-);
+      {isClickable && (
+        <ChevronRight
+          size={16}
+          className="text-gray-300 group-hover:text-rose-400 group-hover:translate-x-0.5 transition-all"
+        />
+      )}
+    </motion.div>
+  );
+};
 
 const ScheduleList = ({
   schedules,
@@ -127,7 +143,7 @@ const ScheduleList = ({
   );
 
   return (
-    <div className="w-full lg:w-[380px] shrink-0 lg:h-full lg:flex lg:flex-col pb-24 lg:pb-0">
+    <div className="w-full lg:w-[380px] shrink-0 lg:h-full lg:flex lg:flex-col ">
       <div className="lg:static lg:h-full lg:flex lg:flex-col">
         {/* Header Section */}
         <div className="flex items-center justify-between mb-6 px-2 shrink-0">

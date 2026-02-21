@@ -17,10 +17,14 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
   dDay,
   couple,
 }) => {
-  const [viewerState, setViewerState] = useState<{ isOpen: boolean; url: string | null; title: string }>({
+  const [viewerState, setViewerState] = useState<{
+    isOpen: boolean;
+    url: string | null;
+    title: string;
+  }>({
     isOpen: false,
     url: null,
-    title: ""
+    title: "",
   });
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
@@ -30,7 +34,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
   };
 
   const closeViewer = () => {
-    setViewerState(prev => ({ ...prev, isOpen: false }));
+    setViewerState((prev) => ({ ...prev, isOpen: false }));
   };
 
   const getLastActiveLabel = (dateString?: string) => {
@@ -54,7 +58,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
   return (
     <header className="px-6 pt-10 pb-6 flex flex-col items-center sticky top-0 bg-white/70 backdrop-blur-lg z-20">
-      <button 
+      <button
         onClick={() => setIsHistoryOpen(true)}
         className="absolute right-6 top-10 p-2 hover:bg-gray-100 rounded-full transition-colors group"
       >
@@ -64,9 +68,11 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
       <div className="flex items-center justify-center space-x-10 mb-2">
         {/* My Profile */}
         <div className="flex flex-col items-center">
-          <div 
-            onClick={() => openViewer(myProfile?.avatar_url, myProfile?.nickname || "나")}
-            className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-50 border border-rose-100 overflow-hidden shadow-sm transition-transform active:scale-95 flex items-center justify-center ${myProfile?.avatar_url ? 'cursor-pointer hover:scale-105' : ''}`}
+          <div
+            onClick={() =>
+              openViewer(myProfile?.avatar_url, myProfile?.nickname || "나")
+            }
+            className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-50 border border-rose-100 overflow-hidden shadow-sm transition-transform active:scale-95 flex items-center justify-center ${myProfile?.avatar_url ? "cursor-pointer hover:scale-105" : ""}`}
           >
             {myProfile?.avatar_url ? (
               <img
@@ -84,18 +90,23 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
         </div>
 
         {/* Heart & D-Day */}
-        <div className="flex flex-col items-center px-2">
-          <Heart className="text-rose-300 fill-rose-300/20 mb-0.5" size={20} />
-          <span className="text-rose-500 font-bold text-base md:text-lg tracking-tighter">
-            {couple ? `D+${dDay}` : "D-Day"}
+        <div className="flex gap-x-0.5 justify-center items-center px-2">
+          <Heart className="text-rose-400 fill-rose-400" size={16} />
+          <span className="text-rose-500 text-base tracking-tighter">
+            {couple ? `${dDay}` : "D-Day"}
           </span>
         </div>
 
         {/* Partner Profile */}
         <div className="flex flex-col items-center">
-          <div 
-            onClick={() => openViewer(partnerProfile?.avatar_url, partnerProfile?.nickname || "상대방")}
-            className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-50 border border-gray-100 overflow-hidden shadow-sm transition-transform active:scale-95 relative flex items-center justify-center ${partnerProfile?.avatar_url ? 'cursor-pointer hover:scale-105' : ''}`}
+          <div
+            onClick={() =>
+              openViewer(
+                partnerProfile?.avatar_url,
+                partnerProfile?.nickname || "상대방",
+              )
+            }
+            className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-50 border border-gray-100 overflow-hidden shadow-sm transition-transform active:scale-95 relative flex items-center justify-center ${partnerProfile?.avatar_url ? "cursor-pointer hover:scale-105" : ""}`}
           >
             {partnerProfile?.avatar_url ? (
               <img
@@ -131,7 +142,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
         </div>
       </div>
 
-      <NotificationHistoryModal 
+      <NotificationHistoryModal
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
         userId={myProfile?.id || null}

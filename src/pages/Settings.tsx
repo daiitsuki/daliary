@@ -5,7 +5,6 @@ import { useCouple } from "../hooks/useCouple";
 import imageCompression from "browser-image-compression";
 import { Loader2 } from "lucide-react";
 import { Profile } from "../types";
-import ChangelogModal from "../components/ChangelogModal";
 import { motion, Variants } from "framer-motion";
 import ImageEditorModal from "../components/common/ImageEditorModal";
 
@@ -13,11 +12,13 @@ import ImageEditorModal from "../components/common/ImageEditorModal";
 import SettingsHeader from "../components/settings/SettingsHeader";
 import ProfileSection from "../components/settings/ProfileSection";
 import CoupleSettingsSection from "../components/settings/CoupleSettingsSection";
+import InventorySection from "../components/settings/InventorySection";
 import CalendarSettingsSection from "../components/settings/CalendarSettingsSection";
 import AppInfoSection from "../components/settings/AppInfoSection";
 import DangerZoneSection from "../components/settings/DangerZoneSection";
 import NotificationSettingsSection from "../components/settings/NotificationSettingsSection";
 import DeveloperModeSection from "../components/settings/DeveloperModeSection";
+import ChangelogModal from "../components/ChangelogModal";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -272,6 +273,10 @@ export default function Settings() {
             isCoupleFormed={isCoupleFormed}
             onSave={handleSave}
           />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <InventorySection />
         </motion.div>
 
         <motion.div variants={itemVariants}>

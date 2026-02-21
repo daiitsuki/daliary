@@ -45,8 +45,8 @@
 - **Device Policy**: 알림은 보안 및 효율성을 위해 사용자당 가장 최근에 설정한 **기기 1대**로만 전송됩니다. (`push_subscriptions` 테이블의 PK가 `user_id`)
 - **History Management**: 알림 내역(`notifications` 테이블)은 서버 부하 및 클라이언트 성능을 위해 사용자별로 **최대 20개**까지만 유지 및 표시합니다.
 - **Trigger Architecture**: 
-    - 답변 완료, 일정 변경, 장소 추가, 방문 인증 등 주요 액션은 PostgreSQL 트리거(`handle_notification_trigger`)를 통해 자동 생성됩니다.
-    - 본인에게는 알림을 보내지 않으며, 상대방의 `user_id`를 찾아 알림을 생성합니다.
+    - 답변 완료, 일정 변경, 장소 추가, 방문 인증, **아이템 구매** 등 주요 액션은 PostgreSQL 트리거(`handle_notification_trigger`)를 통해 자동 생성됩니다.
+    - 본인에게는 알림을 보내지 않으며, 상대방의 `user_id`를 찾아 알림을 생성합니다. (단, 레벨 업 알림은 쌍방에게 발송됩니다.)
 - **Stacking (Tagging)**: 동일한 유형의 알림이 단시간 내에 여러 번 발생할 경우, 알림이 난잡하게 쌓이지 않도록 `type` 필드를 `tag`로 활용하여 브라우저 수준에서 알림을 스택(Stack) 또는 그룹화하여 처리합니다.
 - **Permission UX**: 알림 권한이 거부되었을 경우 세팅 탭에서 사용자에게 브라우저 설정 변경 방법을 친절하게 안내해야 합니다.
 
@@ -179,3 +179,30 @@
 ### Storage Buckets
 *   **`visit-photos`**: 방문 인증 사진 저장소.
 *   **`diary-images`**: 프로필 사진(아바타) 등 기타 이미지 저장소.
+
+## 14. Point Management System
+
+포인트 시스템은 '레벨 계산용 누적 포인트'와 '상점 이용용 현재 잔액'을 분리하여 관리합니다.
+
+### 14.1. Point Types
+- **Cumulative Points (누적 포인트)**: 
+    - 사용자가 획득한 모든 포인트의 총합 (양수 값만 합산).
+    - 커플 레벨 및 경험치 게이지 계산에 사용됩니다.
+    - 포인트를 소모하더라도 이 수치는 줄어들지 않습니다.
+- **Current Points (현재 잔액)**:
+    - 획득한 포인트에서 사용한 포인트를 뺀 최종 잔액 (전체 합계).
+    - 향후 포인트 상점에서 상품 구매 시 소모되는 수치입니다.
+
+### 14.3. Item System & Point Shop
+- **System Logic**:
+    - 포인트는 커플이 공유하며, 아이템 또한 커플이 공유하여 보유합니다 (`couple_items` 테이블).
+    - 아이템 구매 시 `purchase_item` RPC를 통해 원자적으로 포인트 차감 및 아이템 지급이 이루어집니다.
+    - 아이템 사용 시 `use_item` RPC를 통해 수량을 차감합니다.
+- **Available Items**:
+    - **지난 질문 답변 티켓 (`past_question_ticket`)**: 
+        - 가격: 230 PT
+        - 용도: 답변 기간이 지난 과거의 질문에 답변을 남길 수 있게 해줍니다.
+        - 보상: 답변 완료 시 일반 질문과 동일하게 30 PT를 획득합니다.
+- **UI/UX**:
+    - 포인트 상점은 `PointHistoryModal.tsx` 내 '포인트 상점' 탭에 위치합니다.
+    - 보유한 아이템은 '설정 > 보관함' (`InventorySection.tsx`)에서 확인할 수 있습니다.

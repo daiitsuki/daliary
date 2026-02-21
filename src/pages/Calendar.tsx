@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { motion, Variants } from "framer-motion";
 import { useSchedules, Schedule, ScheduleInput } from "../hooks/useSchedules";
 import { useHolidays } from "../hooks/useHolidays";
+import { useAnniversaries } from "../hooks/useAnniversaries";
 import { useHomeData } from "../hooks/useHomeData";
 import CalendarHeader from "../components/calendar/CalendarHeader";
 import CalendarGrid from "../components/calendar/CalendarGrid";
@@ -30,12 +31,13 @@ const itemVariants: Variants = {
 const Calendar = () => {
   const { schedules, addSchedule, updateSchedule, deleteSchedule } = useSchedules();
   const { holidaySchedules } = useHolidays();
+  const { anniversarySchedules } = useAnniversaries();
   const { myProfile, partnerProfile } = useHomeData();
 
   const allSchedules = useMemo(() => {
-    const combined = [...schedules, ...holidaySchedules];
+    const combined = [...schedules, ...holidaySchedules, ...anniversarySchedules];
     return combined.sort((a, b) => a.start_date.localeCompare(b.start_date));
-  }, [schedules, holidaySchedules]);
+  }, [schedules, holidaySchedules, anniversarySchedules]);
 
   // 1. Date & View States
   const getKSTToday = useCallback(() => {
@@ -90,6 +92,18 @@ const Calendar = () => {
     setIsSearchActive(false);
   };
 
+  const handleJumpToDate = (y: number, m: number) => {
+    const targetDate = new Date(y, m, 1);
+    const currentMonthDate = new Date(year, month, 1);
+    
+    if (targetDate.getTime() === currentMonthDate.getTime()) return;
+    
+    setDirection(targetDate > currentMonthDate ? 1 : -1);
+    setCurrentDate(targetDate);
+    setIsDateSelected(false);
+    setIsSearchActive(false);
+  };
+
   const handleGoToday = () => {
     const today = getKSTToday();
     const currentMonthTime = new Date(year, month, 1).getTime();
@@ -130,7 +144,7 @@ const Calendar = () => {
   };
 
   const openEditModal = (s: Schedule) => {
-    if (s.id.startsWith("holiday-")) return;
+    if (s.id.startsWith("holiday-") || s.id.startsWith("anniversary-")) return;
     setEditingSchedule(s);
     setShowModal(true);
   };
@@ -169,6 +183,7 @@ const Calendar = () => {
           <CalendarHeader
             currentDate={currentDate}
             onMonthChange={handleMonthChange}
+            onJumpToDate={handleJumpToDate}
             onGoToday={handleGoToday}
             isSearchActive={isSearchActive}
             setIsSearchActive={setIsSearchActive}

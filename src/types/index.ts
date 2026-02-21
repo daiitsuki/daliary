@@ -49,3 +49,10 @@ export interface TripPlan {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface CoupleItem {
+  couple_id: string;
+  item_type: string;
+  quantity: number;
+  updated_at: string;
+}

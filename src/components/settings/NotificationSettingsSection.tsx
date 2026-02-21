@@ -8,9 +8,9 @@ import {
   TrendingUp,
   CheckCircle2,
   Plane,
-  MessageCircle,
   ChevronDown,
   ChevronUp,
+  ShoppingBag,
 } from "lucide-react";
 import { useNotifications } from "../../hooks/useNotifications";
 import { NotificationSettings } from "../../context/NotificationsContext";
@@ -87,6 +87,11 @@ const NotificationSettingsSection: React.FC<
       key: "notify_level_up",
       label: "레벨업 소식",
       icon: <TrendingUp size={14} />,
+    },
+    {
+      key: "notify_item_purchased",
+      label: "아이템 구매",
+      icon: <ShoppingBag size={14} />,
     },
   ];
 

@@ -22,6 +22,7 @@ export interface NotificationSettings {
   notify_visit_verified: boolean;
   notify_level_up: boolean;
   notify_trip_change: boolean;
+  notify_item_purchased: boolean;
 }
 
 interface NotificationsContextType {
@@ -68,7 +69,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       if (!profile?.id) return null;
       const { data, error } = await supabase
         .from('notification_settings')
-        .select('is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up, notify_trip_change')
+        .select('is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up, notify_trip_change, notify_item_purchased')
         .eq('user_id', profile.id)
         .single();
       if (error) throw error;

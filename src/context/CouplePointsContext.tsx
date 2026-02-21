@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCoupleContext } from './CoupleContext';
+import { CoupleItem } from '../types';
 
 export interface PointLog {
   id: string;
@@ -19,14 +20,18 @@ interface LevelInfo {
 }
 
 interface CouplePointsContextType {
-  totalPoints: number;
+  totalPoints: number; // This is cumulative points for Level
+  currentPoints: number; // This is the spendable balance
   history: PointLog[];
+  items: CoupleItem[];
   levelInfo: LevelInfo | null;
   hasCheckedIn: boolean;
   loading: boolean;
   refreshPoints: () => Promise<void>;
   refreshAttendance: () => Promise<void>;
   checkIn: () => Promise<boolean>;
+  purchaseItem: (itemType: string, price: number, description: string) => Promise<{ success: boolean; error?: string }>;
+  useItem: (itemType: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const CouplePointsContext = createContext<CouplePointsContextType | undefined>(undefined);
@@ -58,9 +63,9 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
   const { data: pointsData, isLoading: pointsLoading } = useQuery({
     queryKey: ['couple_points', couple?.id],
     queryFn: async () => {
-      if (!couple?.id) return { total: 0, history: [] };
-      const [totalRes, historyRes] = await Promise.all([
-        supabase.rpc('get_couple_total_points', { target_couple_id: couple.id }),
+      if (!couple?.id) return { total: 0, current: 0, history: [] };
+      const [summaryRes, historyRes] = await Promise.all([
+        supabase.rpc('get_couple_points_summary', { target_couple_id: couple.id }),
         supabase
           .from('point_history')
           .select('id, created_at, type, points, description')
@@ -68,9 +73,32 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
           .order('created_at', { ascending: false })
           .limit(50)
       ]);
-      if (totalRes.error) throw totalRes.error;
+      if (summaryRes.error) throw summaryRes.error;
       if (historyRes.error) throw historyRes.error;
-      return { total: Number(totalRes.data) || 0, history: historyRes.data as PointLog[] };
+
+      const summary = summaryRes.data as { cumulative_points: number; current_points: number };
+      
+      return { 
+        total: summary.cumulative_points || 0, 
+        current: summary.current_points || 0,
+        history: historyRes.data as PointLog[] 
+      };
+    },
+    enabled: !!couple?.id && !coupleLoading,
+  });
+
+  // React Query for Items Data
+  const { data: items = [], isLoading: itemsLoading } = useQuery({
+    queryKey: ['couple_items', couple?.id],
+    queryFn: async () => {
+      if (!couple?.id) return [];
+      const { data, error } = await supabase
+        .from('couple_items')
+        .select('*')
+        .eq('couple_id', couple.id);
+      
+      if (error) throw error;
+      return data as CoupleItem[];
     },
     enabled: !!couple?.id && !coupleLoading,
   });
@@ -118,7 +146,39 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const purchaseItem = async (itemType: string, price: number, description: string) => {
+    const { data, error } = await supabase.rpc('purchase_item', {
+      p_item_type: itemType,
+      p_price: price,
+      p_description: description
+    });
+
+    if (error) return { success: false, error: error.message };
+    
+    const result = data as { success: boolean; error?: string };
+    if (result.success) {
+      queryClient.invalidateQueries({ queryKey: ['couple_points', couple?.id] });
+      queryClient.invalidateQueries({ queryKey: ['couple_items', couple?.id] });
+    }
+    return result;
+  };
+
+  const useItem = async (itemType: string) => {
+    const { data, error } = await supabase.rpc('use_item', {
+      p_item_type: itemType
+    });
+
+    if (error) return { success: false, error: error.message };
+    
+    const result = data as { success: boolean; error?: string };
+    if (result.success) {
+      queryClient.invalidateQueries({ queryKey: ['couple_items', couple?.id] });
+    }
+    return result;
+  };
+
   const totalPoints = pointsData?.total || 0;
+  const currentPoints = pointsData?.current || 0;
   const history = pointsData?.history || [];
   const levelInfo = calculateLevel(totalPoints);
 
@@ -134,6 +194,12 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
         table: 'point_history',
         filter: `couple_id=eq.${couple.id}` 
       }, () => queryClient.invalidateQueries({ queryKey: ['couple_points', couple.id] }))
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'couple_items',
+        filter: `couple_id=eq.${couple.id}`
+      }, () => queryClient.invalidateQueries({ queryKey: ['couple_items', couple.id] }))
       .subscribe();
 
     return () => {
@@ -144,13 +210,17 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
   return (
     <CouplePointsContext.Provider value={{ 
       totalPoints, 
+      currentPoints,
       history, 
+      items,
       levelInfo, 
       hasCheckedIn, 
-      loading: pointsLoading || attendanceLoading, 
+      loading: pointsLoading || attendanceLoading || itemsLoading, 
       refreshPoints: async () => { await queryClient.invalidateQueries({ queryKey: ['couple_points'] }) }, 
       refreshAttendance: async () => { await queryClient.invalidateQueries({ queryKey: ['attendance'] }) },
-      checkIn: () => checkInMutation.mutateAsync()
+      checkIn: () => checkInMutation.mutateAsync(),
+      purchaseItem,
+      useItem
     }}>
       {children}
     </CouplePointsContext.Provider>

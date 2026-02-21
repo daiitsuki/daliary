@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import { ArrowLeft, ImageIcon, MapPin, Calendar, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { VisitWithPlace } from "../../context/PlacesContext";
