@@ -46,15 +46,14 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ message: `User disabled notifications for ${record.type}` });
     }
 
-    // 2. 유저의 Push 구독 정보 조회
-    const { data: pushSub } = await supabase
+    // 2. 유저의 모든 Push 구독 정보 조회
+    const { data: pushSubs } = await supabase
       .from('push_subscriptions')
-      .select('subscription')
-      .eq('user_id', record.user_id)
-      .single();
+      .select('subscription, endpoint')
+      .eq('user_id', record.user_id);
 
-    if (!pushSub || !pushSub.subscription) {
-      return res.status(200).json({ message: 'No push subscription found' });
+    if (!pushSubs || pushSubs.length === 0) {
+      return res.status(200).json({ message: 'No push subscriptions found' });
     }
 
     // 3. 실제 Push 발송
@@ -68,12 +67,34 @@ export default async function handler(req: any, res: any) {
       }
     });
 
-    await webpush.sendNotification(
-      pushSub.subscription as any,
-      payload
+    const results = await Promise.allSettled(
+      pushSubs.map(async (sub) => {
+        try {
+          await webpush.sendNotification(
+            sub.subscription as any,
+            payload
+          );
+          return { success: true, endpoint: sub.endpoint };
+        } catch (error: any) {
+          // 4. 만료된 구독 정보 처리 (410 Gone 또는 404 Not Found)
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            await supabase
+              .from('push_subscriptions')
+              .delete()
+              .eq('user_id', record.user_id)
+              .eq('endpoint', sub.endpoint);
+          }
+          throw error;
+        }
+      })
     );
 
-    return res.status(200).json({ success: true });
+    const successCount = results.filter(r => r.status === 'fulfilled').length;
+    return res.status(200).json({ 
+      success: true, 
+      sent_to: successCount, 
+      total: pushSubs.length 
+    });
   } catch (error: any) {
     console.error('Push Error:', error);
     return res.status(500).json({ error: error.message });

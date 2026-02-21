@@ -110,16 +110,15 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
       const { data, error } = await supabase
         .from('push_subscriptions')
-        .select('subscription')
+        .select('endpoint')
         .eq('user_id', profile.id)
-        .single();
+        .eq('endpoint', subscription.endpoint)
+        .maybeSingle();
 
       if (error || !data) {
         setIsDeviceActive(false);
       } else {
-        const localEndpoint = subscription.endpoint;
-        const remoteEndpoint = (data.subscription as any)?.endpoint;
-        setIsDeviceActive(localEndpoint === remoteEndpoint);
+        setIsDeviceActive(true);
       }
     } catch (err) {
       console.error('[Push] Device check error:', err);
@@ -146,6 +145,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       if (subscription) {
         const { error } = await supabase.from('push_subscriptions').upsert({
           user_id: profile.id,
+          endpoint: subscription.endpoint,
           subscription: subscription.toJSON(),
           updated_at: new Date().toISOString(),
         });
@@ -162,11 +162,37 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   }, [profile?.id]);
 
+  const unregisterPushSubscription = useCallback(async () => {
+    if (!profile?.id || typeof window === 'undefined' || !('serviceWorker' in navigator)) return false;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      
+      if (subscription) {
+        const { error } = await supabase
+          .from('push_subscriptions')
+          .delete()
+          .eq('user_id', profile.id)
+          .eq('endpoint', subscription.endpoint);
+        
+        if (!error) {
+          setIsDeviceActive(false);
+          return true;
+        }
+      }
+      return false;
+    } catch (err) {
+      console.error('[Push] Unsubscription error:', err);
+      return false;
+    }
+  }, [profile?.id]);
+
   const toggleNotifications = async (targetState: boolean) => {
     if (!profile?.id) return false;
 
-    // If turning ON, always re-register to ensure THIS device is active
     if (targetState) {
+      // 1. Register THIS device
       const permission = await Notification.requestPermission();
       setPermissionStatus(permission);
       if (permission !== 'granted') return false;
@@ -176,24 +202,23 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         alert('푸시 알림 등록에 실패했습니다. 브라우저 설정을 확인해주세요.');
         return false;
       }
+
+      // 2. Ensure global setting is also ON
+      if (!settings?.is_enabled) {
+        await supabase
+          .from('notification_settings')
+          .update({ is_enabled: true })
+          .eq('user_id', profile.id);
+        queryClient.setQueryData(['notification_settings', profile.id], (prev: any) => ({ ...prev, is_enabled: true }));
+      }
     } else {
-      // If turning OFF, strictly speaking we are disabling it for the user globally
-      // Device active state can remain until another device takes it, or we can clear it.
-      // But typically "OFF" means OFF.
+      // Unregister only THIS device
+      await unregisterPushSubscription();
     }
 
-    const { error } = await supabase
-      .from('notification_settings')
-      .update({ is_enabled: targetState })
-      .eq('user_id', profile.id);
-
-    if (!error) {
-      queryClient.setQueryData(['notification_settings', profile.id], (prev: any) => ({ ...prev, is_enabled: targetState }));
-      // Check active state again after toggle
-      checkDeviceActive();
-      return true;
-    }
-    return false;
+    // Refresh active state
+    checkDeviceActive();
+    return true;
   };
 
   const updateGranularSetting = async (key: keyof NotificationSettings, value: boolean) => {

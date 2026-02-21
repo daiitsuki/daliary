@@ -42,7 +42,8 @@
 알림 기능은 브라우저 Push API와 Supabase 실시간 연동, 그리고 Vercel 서버리스 함수를 기반으로 하며 다음의 원칙을 따릅니다.
 
 - **Background Push**: 앱이 닫혀 있을 때도 알림을 보내기 위해 Vercel 서버리스 함수(`/api/push.ts`)와 Web Push API(VAPID)를 사용합니다. Supabase Webhook이 `notifications` 테이블의 신규 행을 감지하여 Vercel API를 호출합니다.
-- **Device Policy**: 알림은 보안 및 효율성을 위해 사용자당 가장 최근에 설정한 **기기 1대**로만 전송됩니다. (`push_subscriptions` 테이블의 PK가 `user_id`)
+- **Multi-Device Support**: 사용자가 로그인한 **모든 기기(브라우저)**에서 알림을 받을 수 있도록 지원합니다. 사용자가 기기별로 알림을 활성화하면 해당 기기의 고유한 `endpoint`가 등록됩니다.
+- **Auto-Cleanup Logic**: 알림 발송 시 만료된 구독 정보(사용자가 알림 권한을 취소했거나 브라우저 데이터 삭제로 인해 `410 Gone` 또는 `404 Not Found` 에러 발생 시)는 DB에서 자동으로 삭제하여 최신 상태를 유지합니다.
 - **History Management**: 알림 내역(`notifications` 테이블)은 서버 부하 및 클라이언트 성능을 위해 사용자별로 **최대 20개**까지만 유지 및 표시합니다.
 - **Trigger Architecture**: 
     - 답변 완료, 일정 변경, 장소 추가, 방문 인증, **아이템 구매** 등 주요 액션은 PostgreSQL 트리거(`handle_notification_trigger`)를 통해 자동 생성됩니다.

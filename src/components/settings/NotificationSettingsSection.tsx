@@ -35,15 +35,13 @@ const NotificationSettingsSection: React.FC<
 
   if (!settings) return null;
 
-  // The toggle is visually ON only if:
-  // 1. Global setting is enabled AND
-  // 2. This specific device is the active receiver
-  const isToggleOn = settings.is_enabled && isDeviceActive;
+  // The toggle reflects whether THIS device is registered.
+  // It's per-device: ON only if this device has active subscription.
+  const isToggleOn = isDeviceActive;
 
   const handleToggle = async () => {
     setIsProcessing(true);
-    // If it's visually ON, turn it OFF.
-    // If it's visually OFF (either disabled globally OR active on another device), turn it ON (steal active status).
+    // Toggle the device-specific registration.
     await toggleNotifications(!isToggleOn);
     setIsProcessing(false);
   };
@@ -113,7 +111,7 @@ const NotificationSettingsSection: React.FC<
             <div>
               <h3 className="text-[15px] font-bold text-gray-800">알림 설정</h3>
               <p className="text-[11px] text-gray-400 font-medium">
-                중요한 소식을 놓치지 마세요
+                이 기기에서 알림 받기
               </p>
             </div>
           </div>
@@ -131,18 +129,6 @@ const NotificationSettingsSection: React.FC<
             />
           </button>
         </div>
-
-        {/* Device Active Warning */}
-        {settings.is_enabled && !isDeviceActive && (
-          <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex gap-3 animate-in fade-in slide-in-from-top-1 duration-300">
-            <AlertCircle size={16} className="text-gray-400 shrink-0 mt-0.5" />
-            <p className="text-[11px] text-gray-500 leading-relaxed">
-              현재 알림이{" "}
-              <span className="font-bold text-gray-700">다른 기기</span>에서
-              활성화되어 있습니다. 여기서 알림을 받으려면 위 버튼을 켜주세요.
-            </p>
-          </div>
-        )}
 
         {/* Permission Warning */}
         {permissionStatus === "denied" && isToggleOn && (
