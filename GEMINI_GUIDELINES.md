@@ -219,3 +219,33 @@
     - RPC 내부에서는 `get_auth_couple_id()`와 같은 헬퍼 함수를 적극 활용하여 권한 검사를 수행합니다.
 - **Atomic Operations**:
     - 포인트 차감과 아이템 지급과 같이 연계된 작업은 반드시 하나의 RPC 함수 내에서 트랜잭션으로 처리하여 데이터 무결성을 보장합니다.
+
+## 16. PostgreSQL Trigger Best Practices
+
+트리거 함수가 여러 테이블에 공유될 때 발생할 수 있는 런타임 에러를 방지하기 위해 다음 원칙을 준수합니다.
+
+- **Defensive Column Access**:
+    - 트리거 함수 내에서 `NEW` 또는 `OLD` 레코드의 특정 컬럼에 접근할 때는, 반드시 해당 컬럼이 존재하는 테이블인지 `TG_TABLE_NAME`을 통해 먼저 확인해야 합니다.
+    - 예: `IF (TG_TABLE_NAME = 'places' AND NEW.status = 'wishlist')` 대신 `IF (TG_TABLE_NAME = 'places') THEN IF (NEW.status = 'wishlist') THEN ...` 구조를 사용하여, `status` 컬럼이 없는 다른 테이블(예: `point_history`)에서 트리거가 실행될 때 `record "new" has no field "status"` 에러가 발생하는 것을 방지합니다.
+- **Minimal Logic**:
+    - 트리거 함수는 가능한 가볍게 유지하며, 복잡한 비즈니스 로직은 RPC 또는 전용 서비스 함수로 분리하는 것을 권장합니다.
+
+## 17. Game System & Rewards
+
+사용자가 즐길 수 있는 미니게임과 그에 따른 보상 체계입니다.
+
+### 17.1. Game Score Management
+- **Table**: `game_scores`
+- **Fields**: `user_id`, `couple_id`, `game_type`, `high_score`, `last_reward_date`
+- **Logic**: 최고 점수는 개인별로 기록하며, 보상 수령 여부는 `last_reward_date`를 통해 일 단위로 체크합니다.
+
+### 17.2. 2048 Challenge
+- **Game Type**: `'2048'`
+- **Reward Condition**: 게임 플레이 중 2048 타일을 처음 생성했을 때 (일 1회 한정).
+- **Reward Amount**: 100 PT (커플 포인트)
+- **Controls**: PC(방향키), Mobile(스와이프 제스처).
+- **Theme**: Rose/Amber 그라데이션과 Glassmorphism 스타일을 유지하되, 타일별로 고유한 색상(Rose 계열)을 부여하여 시각적 즐거움을 제공합니다.
+
+### 17.3. Implementation Pattern
+- **Hook**: `useGameScore(gameType)`을 사용하여 점수 조회 및 결과 기록(`record_game_result` RPC 호출)을 관리합니다.
+- **RPC**: `record_game_result(p_game_type, p_score, p_reached_target)`는 원자적으로 최고 점수 갱신과 포인트 지급을 처리합니다.

@@ -11,6 +11,7 @@ import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import Places from './pages/Places';
 import Calendar from './pages/Calendar';
+import Games from './pages/Games';
 import ProtectedRoute from './components/ProtectedRoute';
 import BottomNav from './components/BottomNav';
 
@@ -62,8 +63,9 @@ function App() {
                             <Route element={<ProtectedRoute />}>
                               <Route path="/" element={<Navigate to="/home" replace />} />
                               <Route path="/home" element={<Home />} />
-                              <Route path="/places" element={<Places />} />
                               <Route path="/calendar" element={<Calendar />} />
+                              <Route path="/games" element={<Games />} />
+                              <Route path="/places" element={<Places />} />
                               <Route path="/settings" element={<Settings />} />
                               <Route path="/onboarding" element={<Onboarding />} />
                               <Route path="*" element={<Navigate to="/home" replace />} />

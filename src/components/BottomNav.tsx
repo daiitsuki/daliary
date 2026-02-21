@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Settings, Map, Calendar } from "lucide-react";
+import { Home, Settings, Map, Calendar, Gamepad2 } from "lucide-react";
 
 export default function BottomNav() {
   const navigate = useNavigate();
@@ -63,6 +63,30 @@ export default function BottomNav() {
                   <Calendar size={20} className="md:w-7 md:h-7" strokeWidth={isActive("/calendar") ? 2.5 : 2} />
 
                   <span className="text-[9px] mt-0.5 font-bold tracking-tight md:hidden">일정</span>
+
+                </button>
+
+          
+
+                <button
+
+                  onClick={() => navigate("/games")}
+
+                  className={`relative flex flex-col items-center px-4 py-1.5 md:px-5 md:py-2.5 rounded-full transition-all duration-500 ${
+
+                    isActive("/games")
+
+                      ? "text-rose-500 bg-white/40 shadow-[0_2px_10px_rgba(0,0,0,0.05),0_1px_0_rgba(255,255,255,0.8)_inset] scale-110"
+
+                      : "text-gray-500 hover:text-gray-800 hover:bg-white/20 hover:scale-105"
+
+                  }`}
+
+                >
+
+                  <Gamepad2 size={20} className="md:w-7 md:h-7" strokeWidth={isActive("/games") ? 2.5 : 2} />
+
+                  <span className="text-[9px] mt-0.5 font-bold tracking-tight md:hidden">게임</span>
 
                 </button>
 
