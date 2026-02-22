@@ -52,7 +52,7 @@ export const usePlaceSearch = () => {
     });
   }, []);
 
-  const savePlace = async (place: KakaoPlace) => {
+  const savePlace = async (place: KakaoPlace, status: 'wishlist' | 'visited' = 'wishlist') => {
     if (!couple?.id) {
       const msg = '커플 연결이 필요합니다.';
       setError(msg);
@@ -68,7 +68,7 @@ export const usePlaceSearch = () => {
         address: place.road_address_name || place.address_name,
         lat: parseFloat(place.y),
         lng: parseFloat(place.x),
-        status: 'wishlist'
+        status: status
       }).select().single();
 
       if (dbError) {

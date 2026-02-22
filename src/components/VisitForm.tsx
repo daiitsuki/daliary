@@ -3,17 +3,20 @@ import { useVisitVerification } from '../hooks/useVisitVerification';
 import { KOREA_REGIONS, SUB_REGIONS, METROPOLITAN_CITIES } from '../constants/regions';
 import { Camera, X, MapPin, Check, ChevronRight, Calendar } from 'lucide-react';
 import DatePicker from './common/DatePicker';
+import { usePlaceSearch, KakaoPlace } from '../hooks/usePlaceSearch';
 
 interface VisitFormProps {
-  placeId: string;
+  placeId?: string;
+  kakaoPlace?: KakaoPlace;
   placeName: string;
   placeAddress?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const VisitForm = ({ placeId, placeName, placeAddress, onClose, onSuccess }: VisitFormProps) => {
+const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddress, onClose, onSuccess }: VisitFormProps) => {
   const { verifyVisit, isSubmitting, error } = useVisitVerification();
+  const { savePlace } = usePlaceSearch();
   
   const [region, setRegion] = useState('');
   const [subRegion, setSubRegion] = useState('');
@@ -22,6 +25,15 @@ const VisitForm = ({ placeId, placeName, placeAddress, onClose, onSuccess }: Vis
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Cleanup for object URL
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   useEffect(() => {
     if (placeAddress) {
@@ -89,6 +101,12 @@ const VisitForm = ({ placeId, placeName, placeAddress, onClose, onSuccess }: Vis
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
+      
+      // Revoke old URL if exists
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     }
@@ -96,17 +114,34 @@ const VisitForm = ({ placeId, placeName, placeAddress, onClose, onSuccess }: Vis
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await verifyVisit({
-      placeId,
-      date: new Date(date),
-      file: selectedFile,
-      region,
-      subRegion: subRegion || undefined
-    });
+    
+    let targetPlaceId = initialPlaceId;
 
-    if (success) {
-      alert('방문 인증이 완료되었습니다!');
-      onSuccess();
+    try {
+      // If no placeId but we have kakaoPlace, save it first
+      if (!targetPlaceId && kakaoPlace) {
+        const savedPlace = await savePlace(kakaoPlace, 'visited');
+        targetPlaceId = savedPlace.id;
+      }
+
+      if (!targetPlaceId) {
+        throw new Error('장소 정보가 없습니다.');
+      }
+
+      const success = await verifyVisit({
+        placeId: targetPlaceId,
+        date: new Date(date),
+        file: selectedFile,
+        region,
+        subRegion: subRegion || undefined
+      });
+
+      if (success) {
+        alert('방문 인증이 완료되었습니다!');
+        onSuccess();
+      }
+    } catch (err: any) {
+      alert(err.message || '인증 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -137,7 +172,7 @@ const VisitForm = ({ placeId, placeName, placeAddress, onClose, onSuccess }: Vis
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8 overscroll-contain">
           <form id="visit-form" onSubmit={handleSubmit} className="space-y-8">
             
             {/* 1. Date Selection */}
@@ -158,15 +193,20 @@ const VisitForm = ({ placeId, placeName, placeAddress, onClose, onSuccess }: Vis
                 <Camera className="w-4 h-4 text-rose-400" /> 인증 사진
               </label>
               <div 
-                className={`group relative w-full aspect-video md:h-52 bg-gray-50 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
+                className={`group relative w-full aspect-video bg-gray-50 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
                   previewUrl ? 'border-rose-200 bg-rose-50/30' : 'border-gray-200 hover:border-rose-300 hover:bg-rose-50/10'
                 }`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {previewUrl ? (
                   <>
-                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <img 
+                      key={previewUrl}
+                      src={previewUrl} 
+                      alt="Preview" 
+                      className="absolute inset-0 w-full h-full object-cover" 
+                    />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                       <span className="bg-white/90 text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
                         사진 변경하기
                       </span>

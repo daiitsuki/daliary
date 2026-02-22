@@ -115,7 +115,7 @@ export default function Games() {
                       타일을 합쳐서 2048을 완성하세요!
                       <br />
                       매일 최대{" "}
-                      <span className="text-rose-500 font-bold">200포인트</span>
+                      <span className="text-rose-500 font-bold">100포인트</span>
                       를 획득할 수 있습니다.
                     </p>
                   </div>

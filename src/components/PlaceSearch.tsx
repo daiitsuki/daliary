@@ -28,7 +28,6 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
   } | null>(null);
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
   const [isVisitFormOpen, setIsVisitFormOpen] = useState(false);
-  const [savedPlaceId, setSavedPlaceId] = useState<string | null>(null);
 
   // 1. 현재 위치 가져오기
   useEffect(() => {
@@ -238,16 +237,9 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
               <Plus size={16} /> Wishlist
             </button>
             <button
-              onClick={async () => {
-                try {
-                  const place = await savePlace(selectedPlace);
-                  setSavedPlaceId(place.id);
-                  setIsVisitFormOpen(true);
-                } catch (e: any) {
-                  alert(e.message || "오류가 발생했습니다.");
-                }
+              onClick={() => {
+                setIsVisitFormOpen(true);
               }}
-              disabled={isSaving}
               className="flex items-center justify-center gap-2 py-3 bg-rose-500 text-white rounded-xl text-xs font-black shadow-lg shadow-rose-100"
             >
               <CheckCircle size={16} /> 방문 인증
@@ -256,9 +248,9 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
         )}
       </div>
 
-      {isVisitFormOpen && savedPlaceId && selectedPlace && (
+      {isVisitFormOpen && selectedPlace && (
         <VisitForm
-          placeId={savedPlaceId}
+          kakaoPlace={selectedPlace}
           placeName={selectedPlace.place_name}
           placeAddress={selectedPlace.road_address_name || selectedPlace.address_name}
           onClose={() => setIsVisitFormOpen(false)}
