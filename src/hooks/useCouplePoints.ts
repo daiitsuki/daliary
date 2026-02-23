@@ -1,7 +1,7 @@
 import { useCouplePointsContext } from '../context/CouplePointsContext';
 
 export const useCouplePoints = () => {
-  const { totalPoints, currentPoints, history, levelInfo, loading, refreshPoints } = useCouplePointsContext();
+  const { totalPoints, currentPoints, history, levelInfo, loading, refreshPoints, refreshItems } = useCouplePointsContext();
   
   return { 
     totalPoints, 
@@ -9,6 +9,7 @@ export const useCouplePoints = () => {
     history, 
     levelInfo, 
     loading, 
-    refresh: refreshPoints 
+    refresh: refreshPoints,
+    refreshItems 
   };
 };

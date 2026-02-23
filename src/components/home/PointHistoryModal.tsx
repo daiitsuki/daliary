@@ -1,16 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   PlusCircle,
+  MinusCircle,
   CheckCircle2,
   MapPin,
   MessageSquare,
   Heart,
   ShoppingBag,
   Ticket,
+  Clock,
 } from "lucide-react";
-import { PointLog, useCouplePointsContext } from "../../context/CouplePointsContext";
+import {
+  PointLog,
+  useCouplePointsContext,
+} from "../../context/CouplePointsContext";
+import { supabase } from "../../lib/supabase";
 
 interface PointHistoryModalProps {
   isOpen: boolean;
@@ -32,6 +38,13 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
   );
   const { purchaseItem } = useCouplePointsContext();
   const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUserId(data.user?.id || null);
+    });
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -54,6 +67,25 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
       };
     }
   }, [isOpen, initialTab, onClose]);
+
+  // Check if ticket was purchased today by current user
+  const isTicketPurchasedToday = useMemo(() => {
+    if (!currentUserId) return false;
+    const today = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Asia/Seoul",
+    }); // YYYY-MM-DD
+
+    return history.some((log) => {
+      const logDate = new Date(log.created_at).toLocaleDateString("en-CA", {
+        timeZone: "Asia/Seoul",
+      });
+      return (
+        log.type === "purchase_blind_timer_ticket" &&
+        logDate === today &&
+        (log as any).user_id === currentUserId
+      );
+    });
+  }, [history, currentUserId]);
 
   const pointRules = [
     {
@@ -95,10 +127,24 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
       price: 230,
       description: "답변하지 못한 지난 질문에 답변할 수 있습니다.",
       icon: <Ticket className="text-rose-400" />,
+      limit: null,
+    },
+    {
+      id: "blind_timer_ticket",
+      name: "블라인드 타이머 입장권",
+      price: 100,
+      description: "블라인드 타이머 게임에 입장할 수 있습니다.",
+      icon: <Ticket className="text-violet-400" />,
+      limit: "1일 1매",
+      isSoldOut: isTicketPurchasedToday,
     },
   ];
 
-  const handlePurchase = async (itemId: string, price: number, name: string) => {
+  const handlePurchase = async (
+    itemId: string,
+    price: number,
+    name: string,
+  ) => {
     if (currentPoints < price) {
       alert("포인트가 부족합니다.");
       return;
@@ -114,7 +160,11 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
       if (result.success) {
         alert("구매가 완료되었습니다! 설정 > 보관함에서 확인하실 수 있습니다.");
       } else {
-        alert(result.error || "구매 중 오류가 발생했습니다.");
+        if (result.error === "DAILY_LIMIT_REACHED") {
+          alert("이 아이템은 하루에 한 번만 구매하실 수 있습니다.");
+        } else {
+          alert(result.error || "구매 중 오류가 발생했습니다.");
+        }
       }
     } catch (error) {
       console.error("Purchase error:", error);
@@ -152,7 +202,7 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
                 : { opacity: 0, scale: 0.95, y: 20 }
             }
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg bg-white rounded-t-[32px] md:rounded-[32px] shadow-2xl flex flex-col max-h-[85vh] md:max-h-[70vh] overflow-hidden"
+            className="relative w-full max-w-lg bg-white rounded-t-[32px] md:rounded-[32px] shadow-2xl flex flex-col h-[85vh] md:h-[70vh] overflow-hidden"
           >
             <div className="px-6 py-5 border-b border-gray-50 bg-white sticky top-0 z-10">
               <div className="flex items-center justify-between mb-4">
@@ -209,7 +259,7 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
 
             <div className="flex-1 overflow-y-auto p-6 pt-0 custom-scrollbar">
               {activeTab === "history" ? (
-                <div className="space-y-4 pt-4">
+                <div className="space-y-4 pt-4 pb-10">
                   {history.length === 0 ? (
                     <div className="py-24 text-center">
                       <p className="text-gray-400 text-sm font-bold italic">
@@ -227,7 +277,14 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
                       >
                         <div className="flex items-center gap-4">
                           <div className="bg-white p-2.5 rounded-xl shadow-sm">
-                            <PlusCircle size={18} className="text-rose-400" />
+                            {log.points > 0 ? (
+                              <PlusCircle size={18} className="text-rose-400" />
+                            ) : (
+                              <MinusCircle
+                                size={18}
+                                className="text-gray-400"
+                              />
+                            )}
                           </div>
                           <div>
                             <p className="text-[13px] font-bold text-gray-800 mb-0.5">
@@ -256,7 +313,7 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
                   )}
                 </div>
               ) : activeTab === "guide" ? (
-                <div className="space-y-6 pt-4">
+                <div className="space-y-6 pt-4 pb-10">
                   <div className="bg-gray-50/50 rounded-[32px] border border-gray-100/50 overflow-hidden">
                     {pointRules.map((rule, index) => (
                       <motion.div
@@ -296,12 +353,12 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
                   </div>
                 </div>
               ) : (
-                /* Point Shop Tab */
-                <div className="space-y-6 pt-4">
+                /* Point Shop Tab - Reverted to Original Layout with Synced Animation */
+                <div className="space-y-6 pt-4 pb-10">
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.05 }}
+                    transition={{ delay: 0 }}
                     className="bg-gradient-to-br from-rose-400 to-rose-500 rounded-[28px] p-6 text-white shadow-lg shadow-rose-100 relative overflow-hidden"
                   >
                     <div className="absolute right-[-10%] bottom-[-20%] opacity-10">
@@ -312,8 +369,8 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
                         현재 포인트
                       </p>
                       <h4 className="text-3xl font-black flex items-baseline gap-1">
-                        {currentPoints}{" "}
-                        <span className="text-sm opacity-90">PT</span>
+                        {currentPoints.toLocaleString()}{" "}
+                        <span className="text-sm opacity-90 font-bold">PT</span>
                       </h4>
                     </div>
                   </motion.div>
@@ -322,47 +379,62 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
                     {shopItems.map((item, index) => (
                       <motion.div
                         key={item.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 + index * 0.05 }}
-                        className="bg-white rounded-[28px] border border-gray-100 p-5 flex items-center justify-between shadow-sm"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: (index + 1) * 0.05 }}
+                        className="bg-white rounded-[32px] border border-gray-100 p-5 flex flex-col gap-5 shadow-sm relative overflow-hidden"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-400">
+                          <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-400 shrink-0">
                             {item.icon}
                           </div>
                           <div>
-                            <h4 className="text-[14px] font-black text-gray-800">
-                              {item.name}
-                            </h4>
-                            <p className="text-[11px] text-gray-400 font-bold">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <h4 className="text-[14px] font-black text-gray-800">
+                                {item.name}
+                              </h4>
+                              {item.limit && (
+                                <span className="bg-amber-100 text-amber-600 text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">
+                                  {item.limit}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-gray-400 font-bold leading-tight">
                               {item.description}
                             </p>
                           </div>
                         </div>
                         <button
-                          onClick={() => handlePurchase(item.id, item.price, item.name)}
-                          disabled={isPurchasing === item.id}
-                          className={`px-4 py-2 rounded-xl text-xs font-black transition-all active:scale-95 ${
-                            currentPoints >= item.price
-                              ? "bg-rose-500 text-white shadow-md shadow-rose-100 hover:bg-rose-600"
-                              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          onClick={() =>
+                            handlePurchase(item.id, item.price, item.name)
+                          }
+                          disabled={isPurchasing === item.id || item.isSoldOut}
+                          className={`w-full py-3.5 rounded-2xl text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                            item.isSoldOut
+                              ? "bg-gray-100 text-gray-400 border border-gray-100 cursor-not-allowed"
+                              : currentPoints >= item.price
+                                ? "bg-rose-500 text-white shadow-md shadow-rose-100 hover:bg-rose-600"
+                                : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-50"
                           }`}
                         >
                           {isPurchasing === item.id ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : item.isSoldOut ? (
+                            <span className="flex items-center gap-1.5 text-gray-400">
+                              <Clock size={14} /> 구매 완료
+                            </span>
                           ) : (
-                            `${item.price} PT`
+                            `${item.price.toLocaleString()} PT  |  구매하기`
                           )}
                         </button>
                       </motion.div>
                     ))}
 
                     <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                      className="py-8 text-center bg-gray-50/50 rounded-[32px] border border-dashed border-gray-200"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: (shopItems.length + 1) * 0.05 }}
+                      className="py-10 text-center bg-gray-50/50 rounded-[32px] border border-dashed border-gray-200"
                     >
                       <p className="text-[11px] text-gray-400 font-bold leading-relaxed">
                         새로운 아이템들이 곧 추가될 예정이에요!

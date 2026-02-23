@@ -18,6 +18,11 @@ export default function InventorySection() {
       icon: <Ticket className="text-rose-400" size={18} />,
       description: "답변하지 못한 지난 질문에 답변할 수 있습니다.",
     },
+    blind_timer_ticket: {
+      name: "블라인드 타이머 입장권",
+      icon: <Ticket className="text-violet-400" size={18} />,
+      description: "블라인드 타이머 게임에 입장할 수 있습니다.",
+    },
   };
 
   const ownedItems = items.filter((item) => item.quantity > 0);

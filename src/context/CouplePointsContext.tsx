@@ -29,6 +29,7 @@ interface CouplePointsContextType {
   loading: boolean;
   refreshPoints: () => Promise<void>;
   refreshAttendance: () => Promise<void>;
+  refreshItems: () => Promise<void>;
   checkIn: () => Promise<boolean>;
   purchaseItem: (itemType: string, price: number, description: string) => Promise<{ success: boolean; error?: string }>;
   useItem: (itemType: string) => Promise<{ success: boolean; error?: string }>;
@@ -68,7 +69,7 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
         supabase.rpc('get_couple_points_summary', { target_couple_id: couple.id }).single(),
         supabase
           .from('point_history')
-          .select('id, created_at, type, points, description')
+          .select('id, created_at, type, points, description, user_id')
           .eq('couple_id', couple.id)
           .order('created_at', { ascending: false })
           .limit(50)
@@ -218,6 +219,7 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
       loading: pointsLoading || attendanceLoading || itemsLoading, 
       refreshPoints: async () => { await queryClient.invalidateQueries({ queryKey: ['couple_points'] }) }, 
       refreshAttendance: async () => { await queryClient.invalidateQueries({ queryKey: ['attendance'] }) },
+      refreshItems: async () => { await queryClient.invalidateQueries({ queryKey: ['couple_items'] }) },
       checkIn: () => checkInMutation.mutateAsync(),
       purchaseItem,
       useItem

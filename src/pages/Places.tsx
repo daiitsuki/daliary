@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PlaceSearch from '../components/PlaceSearch';
 import RegionDashboard from '../components/RegionDashboard';
@@ -9,6 +10,7 @@ import { motion, Variants } from 'framer-motion';
 
 export default function Places() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [targetPlace, setTargetPlace] = useState<Place | null>(null);
   
   const activeTab = (searchParams.get('tab') as 'dashboard' | 'search' | 'wishlist' | 'plans') || 'dashboard';
 
@@ -20,21 +22,17 @@ export default function Places() {
       newParams.delete('region');
       newParams.delete('subRegion');
     }
+    // 직접 탭 클릭 시에는 targetPlace 초기화
+    setTargetPlace(null);
     setSearchParams(newParams);
   };
 
-  const handleShowOnMap = (_place: Place) => {
+  const handleShowOnMap = (place: Place) => {
+    setTargetPlace(place);
     const newParams = new URLSearchParams(searchParams);
     newParams.set('tab', 'search');
-    // targetPlace는 state로 관리하거나 URL에 넣을 수 있는데, 
-    // 여기서는 PlaceSearch 컴포넌트 내부 state로 전달하기 위해 
-    // 단순 탭 이동만 처리하거나 추가 로직이 필요할 수 있습니다.
-    // 기존 로직 유지를 위해 아래 targetPlace state는 남겨둡니다.
     setSearchParams(newParams);
   };
-
-  // targetPlace는 복잡한 객체라 URL에 넣기보다는 임시 state로 유지
-  const targetPlace = null; 
 
   // Stagger Animation Variants (홈 탭과 동일한 스타일)
   const containerVariants: Variants = {

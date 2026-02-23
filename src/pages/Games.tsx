@@ -1,7 +1,8 @@
 import { useSearchParams } from "react-router-dom";
 import { motion, Variants } from "framer-motion";
-import { Gamepad2, Sparkles, Play, Check } from "lucide-react";
+import { Gamepad2, Sparkles, Play, Check, Timer } from "lucide-react";
 import Game2048 from "../components/games/Game2048";
+import BlindTimerGame from "../components/games/BlindTimerGame";
 import { useGameScore } from "../hooks/useGameScore";
 
 export default function Games() {
@@ -48,6 +49,10 @@ export default function Games() {
 
   if (selectedGame === "2048") {
     return <Game2048 onBack={handleBack} />;
+  }
+
+  if (selectedGame === "blind-timer") {
+    return <BlindTimerGame onBack={handleBack} />;
   }
 
   return (
@@ -130,8 +135,47 @@ export default function Games() {
                 </div>
               </div>
 
+              {/* Blind Timer Game Card */}
+              <div className="group relative">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-[28px] blur opacity-10 transition duration-500"></div>
+                <div className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-lg transition-all flex flex-col h-full overflow-hidden">
+                  <div className="flex items-start justify-between mb-8">
+                    <div className="w-16 h-16 bg-violet-50 rounded-[20px] flex items-center justify-center text-3xl font-black text-violet-500 border border-violet-100 shadow-inner transition-transform duration-500">
+                      <Timer size={32} />
+                    </div>
+                    <div className="bg-violet-50 text-violet-600 text-[9px] font-black px-3 py-1.5 rounded-lg border border-violet-100 flex items-center gap-1 shadow-sm">
+                      <Sparkles size={10} fill="currentColor" />
+                      <span>UP TO 500 PT</span>
+                    </div>
+                  </div>
+
+                  <div className="flex-1">
+                    <h3 className="text-lg font-black text-gray-900 mb-1.5">
+                      Blind Timer
+                    </h3>
+                    <p className="text-gray-500 text-xs leading-relaxed mb-10 font-medium">
+                      보이지 않는 타이머를 멈춰라!
+                      <br />
+                      정확도에 따라 최대{" "}
+                      <span className="text-violet-500 font-bold">
+                        500포인트
+                      </span>
+                      를 획득하세요.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => handleSelectGame("blind-timer")}
+                    className="w-full bg-violet-500 text-white py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md shadow-violet-100 active:scale-[0.98]"
+                  >
+                    <Play size={16} fill="currentColor" />
+                    플레이
+                  </button>
+                </div>
+              </div>
+
               {/* Empty Cards for Future Games */}
-              {[1, 2].map((i) => (
+              {[1].map((i) => (
                 <div
                   key={i}
                   className="bg-white/40 border-2 border-dashed border-gray-200 rounded-[28px] p-8 flex flex-col items-center justify-center text-center"

@@ -1,7 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Map, MapMarker, CustomOverlayMap } from "react-kakao-maps-sdk";
 import { usePlaceSearch, KakaoPlace } from "../hooks/usePlaceSearch";
-import { Search, MapPin, Plus, CheckCircle, Navigation } from "lucide-react";
+import {
+  Search,
+  MapPin,
+  Plus,
+  CheckCircle,
+  Navigation,
+  ExternalLink,
+} from "lucide-react";
 import VisitForm from "./VisitForm";
 import { Place, usePlaces } from "../context/PlacesContext";
 
@@ -10,13 +17,8 @@ interface PlaceSearchProps {
 }
 
 const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
-  const {
-    searchPlaces,
-    results,
-    savePlace,
-    isSearching,
-    isSaving,
-  } = usePlaceSearch();
+  const { searchPlaces, results, savePlace, isSearching, isSaving } =
+    usePlaceSearch();
   const { refresh } = usePlaces();
 
   const [keyword, setKeyword] = useState("");
@@ -28,6 +30,51 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
   } | null>(null);
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
   const [isVisitFormOpen, setIsVisitFormOpen] = useState(false);
+
+  // 모바일 패널 높이 조절을 위한 상태 (기본 45%)
+  const [panelHeight, setPanelHeight] = useState(45);
+  const isDragging = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 네이버 지도 열기 함수 (장소명만 검색)
+  const openNaverMap = (name: string) => {
+    const query = encodeURIComponent(name);
+    window.open(`https://map.naver.com/v5/search/${query}`, "_blank");
+  };
+
+  // 패널 높이 조절 로직 (모바일용)
+  const handleTouchStart = () => {
+    isDragging.current = true;
+    document.body.style.overflow = "hidden"; // 드래그 중 스크롤 방지
+  };
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging.current || !containerRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const touchY = e.touches[0].clientY;
+    const relativeY = touchY - containerRect.top;
+    const heightPercentage = 100 - (relativeY / containerRect.height) * 100;
+
+    // 최소 40% ~ 최대 85% 사이로 제한
+    if (heightPercentage >= 40 && heightPercentage <= 85) {
+      setPanelHeight(heightPercentage);
+    }
+  }, []);
+
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+    document.body.style.overflow = "";
+  };
+
+  useEffect(() => {
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd);
+    return () => {
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [handleTouchMove]);
 
   // 1. 현재 위치 가져오기
   useEffect(() => {
@@ -94,9 +141,17 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full w-full bg-white overflow-hidden relative">
+    <div
+      ref={containerRef}
+      className="flex flex-col md:flex-row h-full w-full bg-white overflow-hidden relative"
+    >
       {/* 지도 영역: 모바일 상단, PC 우측 */}
-      <div className="order-1 md:order-2 flex-1 relative h-[55%] md:h-full min-h-0 bg-gray-100 z-10">
+      <div
+        className="order-1 md:order-2 flex-1 relative min-h-0 bg-gray-100 z-10"
+        style={{
+          height: window.innerWidth < 768 ? `${100 - panelHeight}%` : "100%",
+        }}
+      >
         <Map
           center={center}
           level={3}
@@ -121,15 +176,24 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
                 lat: parseFloat(selectedPlace.y),
                 lng: parseFloat(selectedPlace.x),
               }}
-              yAnchor={1.3}
+              yAnchor={1.2}
             >
-              <div className="flex flex-col items-center pointer-events-none animate-in fade-in zoom-in duration-300">
-                <div className="px-3 py-1.5 bg-rose-500 rounded-lg shadow-xl mb-1 border-2 border-white pointer-events-auto">
-                  <span className="text-[10px] font-black text-white whitespace-nowrap">
+              <div
+                onClick={() => openNaverMap(selectedPlace.place_name)}
+                className="group relative flex flex-col items-center cursor-pointer pointer-events-auto active:scale-95 transition-all duration-200 animate-float"
+              >
+                {/* Pin Body */}
+                <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.15)] border-2 border-rose-500 mb-[-2px] whitespace-nowrap">
+                  <div className="p-1 bg-rose-50 rounded-lg">
+                    <MapPin size={12} className="text-rose-500 fill-rose-500" />
+                  </div>
+                  <span className="text-xs font-black text-rose-500 pr-1">
                     {selectedPlace.place_name}
                   </span>
+                  <ExternalLink size={10} className="text-rose-300" />
                 </div>
-                <div className="w-2 h-2 bg-rose-500 rounded-full border border-white shadow-lg"></div>
+                {/* Pin Tip */}
+                <div className="w-3 h-3 bg-white rotate-45 border-r-2 border-b-2 border-rose-500 shadow-[4px_4px_10px_rgba(0,0,0,0.05)]"></div>
               </div>
             </CustomOverlayMap>
           )}
@@ -137,15 +201,24 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
           {targetPlace && !selectedPlace && (
             <CustomOverlayMap
               position={{ lat: targetPlace.lat, lng: targetPlace.lng }}
-              yAnchor={1.3}
+              yAnchor={1.2}
             >
-              <div className="flex flex-col items-center pointer-events-none animate-in fade-in zoom-in duration-300">
-                <div className="px-3 py-1.5 bg-white rounded-lg shadow-xl mb-1 border-2 border-rose-500 pointer-events-auto">
-                  <span className="text-[10px] font-black text-rose-500 whitespace-nowrap">
+              <div
+                onClick={() => openNaverMap(targetPlace.name)}
+                className="group relative flex flex-col items-center cursor-pointer pointer-events-auto active:scale-95 transition-all duration-200 animate-float"
+              >
+                {/* Pin Body */}
+                <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.15)] border-2 border-rose-500 mb-[-2px] whitespace-nowrap">
+                  <div className="p-1 bg-rose-50 rounded-lg">
+                    <MapPin size={12} className="text-rose-500 fill-rose-500" />
+                  </div>
+                  <span className="text-xs font-black text-rose-500 pr-1">
                     {targetPlace.name}
                   </span>
+                  <ExternalLink size={10} className="text-rose-300" />
                 </div>
-                <div className="w-2 h-2 bg-rose-500 rounded-full border border-white shadow-lg animate-bounce"></div>
+                {/* Pin Tip */}
+                <div className="w-3 h-3 bg-white rotate-45 border-r-2 border-b-2 border-rose-500 shadow-[4px_4px_10px_rgba(0,0,0,0.05)]"></div>
               </div>
             </CustomOverlayMap>
           )}
@@ -162,7 +235,18 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
       </div>
 
       {/* 사이드바 영역: 모바일 하단, PC 좌측 */}
-      <div className="order-2 md:order-1 w-full md:w-[360px] flex flex-col bg-white border-t md:border-t-0 md:border-r border-gray-100 z-20 h-[45%] md:h-full min-h-0">
+      <div
+        className="order-2 md:order-1 w-full md:w-[360px] flex flex-col bg-white border-t md:border-t-0 md:border-r border-gray-100 z-20 min-h-0"
+        style={{ height: window.innerWidth < 768 ? `${panelHeight}%` : "100%" }}
+      >
+        {/* 모바일 전용 드래그 핸들 */}
+        <div
+          className="md:hidden flex flex-col items-center py-2 cursor-ns-resize shrink-0"
+          onTouchStart={handleTouchStart}
+        >
+          <div className="w-12 h-1 bg-gray-300 rounded-full mb-1"></div>
+        </div>
+
         <div className="p-4 border-b border-gray-50 bg-white shrink-0">
           <form onSubmit={handleSearch} className="relative">
             <input
@@ -189,7 +273,7 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
               <MapPin className="w-10 h-10 mb-3 opacity-30" />
               <p className="text-xs font-medium text-gray-400">
                 함께 가고 싶은 장소나
-                <div className="pb-2" />
+                <br />
                 다녀온 장소를 검색하세요
               </p>
             </div>
@@ -252,7 +336,9 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
         <VisitForm
           kakaoPlace={selectedPlace}
           placeName={selectedPlace.place_name}
-          placeAddress={selectedPlace.road_address_name || selectedPlace.address_name}
+          placeAddress={
+            selectedPlace.road_address_name || selectedPlace.address_name
+          }
           onClose={() => setIsVisitFormOpen(false)}
           onSuccess={() => {
             setIsVisitFormOpen(false);

@@ -45,7 +45,8 @@ const DeveloperModeSection: React.FC = () => {
         </h2>
       </div>
 
-      <div className="bg-white p-5 rounded-[24px] border border-gray-100 space-y-4">
+      <div className="bg-white p-5 rounded-[24px] border border-gray-100 space-y-4 shadow-sm">
+        {/* Test Notification */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-gray-50 rounded-xl">

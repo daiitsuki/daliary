@@ -204,6 +204,10 @@
         - 가격: 230 PT
         - 용도: 답변 기간이 지난 과거의 질문에 답변을 남길 수 있게 해줍니다.
         - 보상: 답변 완료 시 일반 질문과 동일하게 30 PT를 획득합니다.
+    - **블라인드 타이머 입장권 (`blind_timer_ticket`)**:
+        - 가격: 100 PT
+        - 용도: 블라인드 타이머 게임에 입장할 수 있습니다.
+        - 제한: 1일 1회 구매 가능 (일일 도전 횟수 제한).
 - **UI/UX**:
     - 포인트 상점은 `PointHistoryModal.tsx` 내 '포인트 상점' 탭에 위치합니다.
     - 보유한 아이템은 '설정 > 보관함' (`InventorySection.tsx`)에서 확인할 수 있습니다.
@@ -250,3 +254,43 @@
 ### 17.3. Implementation Pattern
 - **Hook**: `useGameScore(gameType)`을 사용하여 점수 조회 및 결과 기록(`record_game_result` RPC 호출)을 관리합니다.
 - **RPC**: `record_game_result(p_game_type, p_score, p_reached_target)`는 원자적으로 최고 점수 갱신과 포인트 지급을 처리합니다.
+
+### 17.4. Blind Timer Challenge
+- **Game Type**: `'blind_timer'`
+- **Concept**: 입장권을 사용하여 사라지는 타이머를 목표 시간(15.0~20.0초 랜덤)에 정확히 멈추는 게임.
+- **Entry**: `blind_timer_ticket` 1장 소모 (100 PT, 1일 1회 구매 제한).
+- **Rewards** (Rebalanced 2026.02.23):
+    - Perfect (< 0.005s): 500 PT
+    - Great (≤ 0.05s): 300 PT
+    - Good (≤ 0.20s): 150 PT
+    - Normal (≤ 0.50s): 100 PT
+    - Bad (≤ 1.00s): 50 PT
+- **Verification**:
+    - **Server-side Timing**: `started_at`과 `stopped_at`의 차이를 계산하여 서버 타임과 클라이언트 보고 타임(`diff + target`)을 대조.
+    - **Target Validation**: 세션 생성 시 서버에서 할당된 목표 시간(`target_time`) 사용.
+- **Implementation**:
+    - `start_blind_timer_game`: 티켓 소모 및 세션 생성 (목표 시간 랜덤 할당).
+    - `claim_blind_timer_reward`: 결과 검증 및 보상 지급.
+- **Maintenance**: 
+    - `pg_cron`을 통해 매일 새벽 3시(KST)에 만료되거나 오래된(7일 이상) 세션을 자동 삭제합니다. (`cleanup_game_sessions` 태스크).
+
+## 18. Future Development Considerations
+
+- (현재 대기 중인 향후 과제가 없습니다.)
+
+## 19. Developer Mode & Debug Tools (Reference)
+
+향후 개발 및 테스트 시 필요한 디버그 도구들에 대한 기록입니다.
+
+### 19.1. Debug Points Acquisition (Deprecated from UI)
+테스트를 위해 대량의 포인트를 즉시 획득해야 할 경우 다음 RPC를 활용할 수 있습니다.
+- **RPC**: `add_debug_points(p_points, p_description)`
+- **Logic**: `point_history` 테이블에 `'debug'` 타입으로 포인트를 직접 삽입합니다.
+- **Usage Example**:
+  ```javascript
+  await supabase.rpc('add_debug_points', {
+    p_points: 1000,
+    p_description: "개발자 모드: 1000 포인트 획득"
+  });
+  ```
+- **Security**: `security definer`로 설정되어 있어 RLS를 우회하여 삽입이 가능하지만, 호출자의 `couple_id`를 내부적으로 검증합니다.
