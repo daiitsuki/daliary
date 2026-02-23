@@ -211,6 +211,7 @@ export default function BlindTimerGame({ onBack }: BlindTimerGameProps) {
 
   const handleStop = async () => {
     if (gameState !== "playing") return;
+    
     const end = performance.now();
     const elapsed = (end - startTime) / 1000;
     
@@ -225,15 +226,40 @@ export default function BlindTimerGame({ onBack }: BlindTimerGameProps) {
 
   const handleRetry = () => {
     if (retriesLeft <= 0) return;
+
+    // Check for high reward confirmation
+    const diff = stoppedTime - targetTime;
+    const info = getResultInfo(diff);
+    const isHighReward = ["GREAT", "GOOD"].includes(info.rank);
+
+    if (isHighReward) {
+      const confirmRetry = window.confirm(
+        `현재 상당히 높은 점수(${info.rank})를 기록하셨어요!\n다시 시도하면 이 점수는 사라집니다. 정말 다시 하시겠어요?`
+      );
+      if (!confirmRetry) return;
+    }
+
     setRetriesLeft(prev => prev - 1);
     startRound();
   };
 
   const handleClaim = async () => {
     if (!sessionId || loading) return;
+
+    // Check for low reward confirmation
+    const diff = stoppedTime - targetTime;
+    const info = getResultInfo(diff);
+    const isLowReward = ["NORMAL", "BAD", "FAIL"].includes(info.rank);
+
+    if (isLowReward && retriesLeft > 0) {
+      const confirmClaim = window.confirm(
+        `아직 재도전 기회가 ${retriesLeft}회 남아있습니다!\n정말 이대로 포인트를 받으시겠어요?`
+      );
+      if (!confirmClaim) return;
+    }
+
     setLoading(true);
     try {
-      const diff = stoppedTime - targetTime;
       const { data, error } = await supabase.rpc('claim_blind_timer_reward', {
         p_session_id: sessionId,
         p_diff_seconds: diff
@@ -449,23 +475,47 @@ export default function BlindTimerGame({ onBack }: BlindTimerGameProps) {
                     <span className="text-sm font-bold text-amber-700">보상: {resultInfo.reward} P</span>
                 </div>
 
-                <div className="space-y-3">
-                    <button
-                        onClick={handleClaim}
-                        disabled={loading}
-                        className="w-full bg-violet-500 text-white py-4 rounded-2xl font-black text-sm shadow-md active:scale-95 transition-all"
-                    >
-                        포인트 받기
-                    </button>
-                    {retriesLeft > 0 && (
-                        <button
-                            onClick={handleRetry}
-                            disabled={loading}
-                            className="w-full bg-white border border-gray-200 text-gray-600 py-4 rounded-2xl font-black text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 hover:bg-gray-50"
-                        >
-                            <RotateCcw size={14} />
-                            다시 시도 ({retriesLeft}회 남음)
-                        </button>
+                <div className="flex flex-col gap-3">
+                    {/* High Rewards or No Retries Left: Emphasize Claim */}
+                    {(resultInfo.rank === "PERFECT" || resultInfo.rank === "GREAT" || resultInfo.rank === "GOOD" || retriesLeft <= 0) ? (
+                        <>
+                            <button
+                                onClick={handleClaim}
+                                disabled={loading}
+                                className="w-full bg-violet-500 text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-violet-100 active:scale-95 transition-all"
+                            >
+                                포인트 받기
+                            </button>
+                            {resultInfo.rank !== "PERFECT" && retriesLeft > 0 && (
+                                <button
+                                    onClick={handleRetry}
+                                    disabled={loading}
+                                    className="w-full bg-white border border-gray-200 text-gray-500 py-4 rounded-2xl font-black text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 hover:bg-gray-50"
+                                >
+                                    <RotateCcw size={14} />
+                                    다시 시도 ({retriesLeft}회 남음)
+                                </button>
+                            )}
+                        </>
+                    ) : (
+                        /* Low Rewards: Emphasize Retry */
+                        <>
+                            <button
+                                onClick={handleRetry}
+                                disabled={loading}
+                                className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-amber-100 active:scale-95 transition-all flex items-center justify-center gap-2 hover:bg-amber-600"
+                            >
+                                <RotateCcw size={14} />
+                                다시 시도 ({retriesLeft}회 남음)
+                            </button>
+                            <button
+                                onClick={handleClaim}
+                                disabled={loading}
+                                className="w-full bg-white border border-gray-200 text-gray-400 py-4 rounded-2xl font-black text-sm shadow-sm active:scale-95 transition-all"
+                            >
+                                포인트 받기
+                            </button>
+                        </>
                     )}
                 </div>
             </motion.div>

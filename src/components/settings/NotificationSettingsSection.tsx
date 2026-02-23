@@ -35,9 +35,9 @@ const NotificationSettingsSection: React.FC<
 
   if (!settings) return null;
 
-  // The toggle reflects whether THIS device is registered.
-  // It's per-device: ON only if this device has active subscription.
-  const isToggleOn = isDeviceActive;
+  // The toggle reflects the user's global intent.
+  // We use settings.is_enabled which is persistent in the DB.
+  const isToggleOn = settings.is_enabled;
 
   const handleToggle = async () => {
     setIsProcessing(true);
