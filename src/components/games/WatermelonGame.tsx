@@ -45,7 +45,7 @@ interface FruitConfig {
 const FRUIT_CONFIGS: Record<FruitType, FruitConfig> = {
   cherry: {
     type: "cherry",
-    radius: 20,
+    radius: 18,
     score: 2,
     image: cherryImg,
     width: 164,
@@ -55,7 +55,7 @@ const FRUIT_CONFIGS: Record<FruitType, FruitConfig> = {
   },
   strawberry: {
     type: "strawberry",
-    radius: 22,
+    radius: 20,
     score: 4,
     image: strawberryImg,
     width: 123,
@@ -65,7 +65,7 @@ const FRUIT_CONFIGS: Record<FruitType, FruitConfig> = {
   },
   tangerine: {
     type: "tangerine",
-    radius: 30,
+    radius: 27,
     score: 6,
     image: tangerineImg,
     width: 144,
@@ -75,7 +75,7 @@ const FRUIT_CONFIGS: Record<FruitType, FruitConfig> = {
   },
   grape: {
     type: "grape",
-    radius: 38,
+    radius: 34,
     score: 8,
     image: grapeImg,
     width: 145,
@@ -85,7 +85,7 @@ const FRUIT_CONFIGS: Record<FruitType, FruitConfig> = {
   },
   persimmon: {
     type: "persimmon",
-    radius: 48,
+    radius: 42,
     score: 10,
     image: persimmonImg,
     width: 164,
@@ -95,7 +95,7 @@ const FRUIT_CONFIGS: Record<FruitType, FruitConfig> = {
   },
   apple: {
     type: "apple",
-    radius: 58,
+    radius: 52,
     score: 12,
     image: appleImg,
     width: 153,
@@ -105,7 +105,7 @@ const FRUIT_CONFIGS: Record<FruitType, FruitConfig> = {
   },
   pear: {
     type: "pear",
-    radius: 70,
+    radius: 62,
     score: 14,
     image: pearImg,
     width: 146,
@@ -115,7 +115,7 @@ const FRUIT_CONFIGS: Record<FruitType, FruitConfig> = {
   },
   peach: {
     type: "peach",
-    radius: 85,
+    radius: 75,
     score: 16,
     image: peachImg,
     width: 165,
@@ -125,7 +125,7 @@ const FRUIT_CONFIGS: Record<FruitType, FruitConfig> = {
   },
   pineapple: {
     type: "pineapple",
-    radius: 87,
+    radius: 80,
     score: 18,
     image: pineappleImg,
     width: 174,
@@ -135,7 +135,7 @@ const FRUIT_CONFIGS: Record<FruitType, FruitConfig> = {
   },
   melon: {
     type: "melon",
-    radius: 120,
+    radius: 105,
     score: 20,
     image: melonImg,
     width: 187,
@@ -145,7 +145,7 @@ const FRUIT_CONFIGS: Record<FruitType, FruitConfig> = {
   },
   watermelon: {
     type: "watermelon",
-    radius: 145,
+    radius: 130,
     score: 22,
     image: watermelonImg,
     width: 357,

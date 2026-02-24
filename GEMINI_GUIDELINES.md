@@ -302,7 +302,7 @@
 - **Game Type**: `'watermelon'`
 - **Concept**: Physics-based Suika Game. Merge identical fruits to grow them and eventually create a Watermelon.
 - **Physics Engine**: `matter-js` is used for collision detection, gravity, and fruit merging.
-- **Fruit Order & Radius**: **cherry (20px)** - strawberry (22px) - tangerine (30px) - grape (38px) - persimmon (48px) - apple (58px) - pear (70px) - peach (85px) - pineapple (100px) - melon (120px) - watermelon (145px). (Note: Cherry size was increased for visibility).
+- **Fruit Order & Radius**: **cherry (18px)** - strawberry (20px) - tangerine (27px) - grape (34px) - persimmon (42px) - apple (52px) - pear (62px) - peach (75px) - pineapple (80px) - melon (105px) - watermelon (130px).
 - **UI/UX & Logic**:
   - **Next Fruit Preview**: The 'Next Fruit' panel correctly shows the fruit that will follow the current one (states are separated).
   - **Mobile Controls**: Fruits drop immediately at the touched position via `onTouchStart` (no dragging required).
