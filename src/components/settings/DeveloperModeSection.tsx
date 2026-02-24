@@ -39,36 +39,37 @@ const DeveloperModeSection: React.FC = () => {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between ml-1">
-        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+      <div className="flex items-center gap-2 px-1">
+        <div className="w-1.5 h-5 bg-gray-400 rounded-full" />
+        <h2 className="text-lg sm:text-xl font-black text-gray-800 tracking-tight">
           개발자 모드
         </h2>
       </div>
 
-      <div className="bg-white p-5 rounded-[24px] border border-gray-100 space-y-4 shadow-sm">
+      <div className="bg-white p-5 sm:p-6 rounded-[32px] border border-gray-100/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         {/* Test Notification */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gray-50 rounded-xl">
-              <Terminal size={20} className="text-gray-400" />
+        <div className="flex items-center justify-between group">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Terminal size={22} className="text-gray-400" />
             </div>
             <div>
-              <h3 className="text-[15px] font-bold text-gray-800">나에게 알림 보내기</h3>
-              <p className="text-[11px] text-gray-400 font-medium">
-                내 FCM 토큰으로 테스트 알림을 보냅니다
+              <h3 className="text-[15px] font-black text-gray-700">나에게 알림 보내기</h3>
+              <p className="text-[10px] font-bold text-gray-400">
+                테스트 푸시 알림을 즉시 발송합니다
               </p>
             </div>
           </div>
           <button
             onClick={handleSendTestNotification}
             disabled={isSending || !settings?.is_enabled || !isDeviceActive}
-            className={`p-2 rounded-xl transition-colors ${
+            className={`p-3 rounded-2xl transition-all active:scale-90 ${
               isSending || !settings?.is_enabled || !isDeviceActive
-                ? "bg-gray-50 text-gray-300 cursor-not-allowed"
-                : "bg-rose-50 text-rose-400 hover:bg-rose-100"
+                ? "bg-gray-50 text-gray-200 cursor-not-allowed border border-transparent"
+                : "bg-rose-50 text-rose-400 hover:bg-rose-100 border border-rose-100/50 shadow-sm"
             }`}
           >
-            <Send size={18} />
+            <Send size={20} strokeWidth={2.5} />
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { usePlaces, Place } from '../context/PlacesContext';
+import { usePlaces, Place } from '../../../context/PlacesContext';
 import { MapPin, Trash2, CheckCircle, Navigation, Search } from 'lucide-react';
-import VisitForm from './VisitForm';
+import VisitForm from '../shared/VisitForm';
 import { motion, Variants } from 'framer-motion';
 
 const container: Variants = {

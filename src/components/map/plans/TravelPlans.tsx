@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useTrips } from '../../hooks/useTrips';
+import { useTrips } from '../../../hooks/useTrips';
 import { Plus, Calendar, ChevronRight, Trash2, Edit2 } from 'lucide-react';
-import { Trip } from '../../types';
+import { Trip } from '../../../types';
 import TripModal from './TripModal';
 import TripDetail from './TripDetail';
 import { motion } from 'framer-motion';

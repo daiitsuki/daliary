@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useVisitVerification } from '../hooks/useVisitVerification';
-import { KOREA_REGIONS, SUB_REGIONS, METROPOLITAN_CITIES } from '../constants/regions';
+import { useVisitVerification } from '../../../hooks/useVisitVerification';
+import { KOREA_REGIONS, SUB_REGIONS, METROPOLITAN_CITIES } from '../../../constants/regions';
 import { Camera, X, MapPin, Check, ChevronRight, Calendar } from 'lucide-react';
-import DatePicker from './common/DatePicker';
-import { usePlaceSearch, KakaoPlace } from '../hooks/usePlaceSearch';
+import DatePicker from '../../common/DatePicker';
+import { usePlaceSearch, KakaoPlace } from '../../../hooks/usePlaceSearch';
 
 interface VisitFormProps {
   placeId?: string;

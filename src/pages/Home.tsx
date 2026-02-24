@@ -120,7 +120,7 @@ export default function Home() {
                   초대 코드를 공유해보세요!
                 </h3>
                 <p className="text-gray-400 text-[11px] font-bold mb-6 uppercase tracking-widest">
-                  둘만의 다이어리를 시작할 시간
+                  둘만의 달이어리를 시작할 시간
                 </p>
                 <button
                   onClick={copyInviteCode}

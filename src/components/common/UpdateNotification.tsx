@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, ArrowUpCircle } from 'lucide-react';
-import { useAppUpdate } from '../hooks/useAppUpdate';
+import { useAppUpdate } from '../../hooks/useAppUpdate';
 
 const UpdateNotification = () => {
   const { hasUpdate, updateApp } = useAppUpdate();

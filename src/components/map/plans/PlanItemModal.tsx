@@ -12,10 +12,10 @@ import {
   MoreHorizontal,
   Camera,
 } from "lucide-react";
-import TimePicker from "../common/TimePicker";
-import { useTripPlans } from "../../hooks/useTrips";
-import { TripPlan } from "../../types";
-import { usePlaceSearch, KakaoPlace } from "../../hooks/usePlaceSearch";
+import TimePicker from "../../common/TimePicker";
+import { useTripPlans } from "../../../hooks/useTrips";
+import { TripPlan } from "../../../types";
+import { usePlaceSearch, KakaoPlace } from "../../../hooks/usePlaceSearch";
 import { createPortal } from "react-dom";
 
 interface PlanItemModalProps {

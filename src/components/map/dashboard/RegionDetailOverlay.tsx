@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { ArrowLeft, ImageIcon, MapPin, Calendar, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { VisitWithPlace } from "../../context/PlacesContext";
+import { VisitWithPlace } from "../../../context/PlacesContext";
 
 interface RegionDetailOverlayProps {
   region: string;

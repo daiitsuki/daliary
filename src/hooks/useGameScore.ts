@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useCouple } from "./useCouple";
 
-export type GameType = "2048";
+export type GameType = "2048" | "watermelon";
 
 export interface GameScore {
   user_id: string;

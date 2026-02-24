@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Map, MapMarker, CustomOverlayMap } from "react-kakao-maps-sdk";
-import { usePlaceSearch, KakaoPlace } from "../hooks/usePlaceSearch";
+import { usePlaceSearch, KakaoPlace } from "../../../hooks/usePlaceSearch";
 import {
   Search,
   MapPin,
@@ -9,8 +9,8 @@ import {
   Navigation,
   ExternalLink,
 } from "lucide-react";
-import VisitForm from "./VisitForm";
-import { Place, usePlaces } from "../context/PlacesContext";
+import VisitForm from "../shared/VisitForm";
+import { Place, usePlaces } from "../../../context/PlacesContext";
 
 interface PlaceSearchProps {
   targetPlace?: Place | null;

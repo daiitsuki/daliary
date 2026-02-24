@@ -9,14 +9,15 @@ import Home from './pages/Home';
 import Auth from './pages/Auth';
 import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
+import Profile from './pages/Profile';
 import Places from './pages/Places';
 import Calendar from './pages/Calendar';
 import Games from './pages/Games';
-import ProtectedRoute from './components/ProtectedRoute';
-import BottomNav from './components/BottomNav';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import BottomNav from './components/layout/BottomNav';
 
-import UpdateNotification from './components/UpdateNotification';
-import ChangelogModal from './components/ChangelogModal';
+import UpdateNotification from './components/common/UpdateNotification';
+import ChangelogModal from './components/common/ChangelogModal';
 import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -66,6 +67,7 @@ function App() {
                               <Route path="/calendar" element={<Calendar />} />
                               <Route path="/games" element={<Games />} />
                               <Route path="/places" element={<Places />} />
+                              <Route path="/profile" element={<Profile />} />
                               <Route path="/settings" element={<Settings />} />
                               <Route path="/onboarding" element={<Onboarding />} />
                               <Route path="*" element={<Navigate to="/home" replace />} />

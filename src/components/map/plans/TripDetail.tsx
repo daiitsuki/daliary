@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useTripPlans } from '../../hooks/useTrips';
-import { Trip, TripPlan } from '../../types';
+import { useTripPlans } from '../../../hooks/useTrips';
+import { Trip, TripPlan } from '../../../types';
 import { 
   ChevronLeft, 
   Plus, 

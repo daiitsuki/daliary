@@ -1,8 +1,8 @@
 import React, { useMemo } from "react";
-import { KOREA_REGIONS } from "../../constants/regions";
+import { KOREA_REGIONS } from "../../../constants/regions";
 import { MapPin } from "lucide-react";
 import { motion, Variants } from "framer-motion";
-import { VisitWithPlace } from "../../context/PlacesContext";
+import { VisitWithPlace } from "../../../context/PlacesContext";
 
 interface RegionCardListProps {
   stats: Record<string, number>;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, ChevronDown, ChevronUp } from "lucide-react";
-import { changelog } from "../data/changelog";
+import { changelog } from "../../data/changelog";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ChangelogModalProps {

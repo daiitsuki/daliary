@@ -201,6 +201,7 @@ const Calendar = () => {
               selectedDate={selectedDate}
               isDateSelected={isDateSelected}
               onDayClick={handleDayClick}
+              onMonthChange={handleMonthChange}
               today={getKSTToday()}
             />
           </motion.div>

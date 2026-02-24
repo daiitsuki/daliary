@@ -2,13 +2,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar, MoreVertical, Trash2, Camera, Loader2, ImageIcon, Send, Image as ImageIconLucide, MessageCircle, MapPin, ChevronDown, Edit2 } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../../../lib/supabase";
 import imageCompression from "browser-image-compression";
-import { VisitWithPlace } from "../context/PlacesContext";
-import { useVisitComments } from "../hooks/useVisitComments";
-import { useCouple } from "../hooks/useCouple";
-import { KOREA_REGIONS, SUB_REGIONS } from "../constants/regions";
-import ImageViewerModal from "./common/ImageViewerModal";
+import { VisitWithPlace } from "../../../context/PlacesContext";
+import { useVisitComments } from "../../../hooks/useVisitComments";
+import { useCouple } from "../../../hooks/useCouple";
+import { KOREA_REGIONS, SUB_REGIONS } from "../../../constants/regions";
+import ImageViewerModal from "../../common/ImageViewerModal";
 
 interface VisitDetailModalProps {
   visit: VisitWithPlace | null;

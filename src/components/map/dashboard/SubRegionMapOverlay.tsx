@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ChevronRight } from "lucide-react";
-import { usePlaces, VisitWithPlace } from "../../context/PlacesContext";
+import { usePlaces, VisitWithPlace } from "../../../context/PlacesContext";
 import ProvinceMap from "./ProvinceMap";
 
 interface SubRegionMapOverlayProps {

@@ -182,6 +182,30 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
   const currentPoints = pointsData?.current || 0;
   const history = pointsData?.history || [];
   const levelInfo = calculateLevel(totalPoints);
+  const isLoading = pointsLoading || attendanceLoading || itemsLoading;
+
+  // Level up detection and notification
+  useEffect(() => {
+    if (!couple?.id || !levelInfo || isLoading) return;
+
+    const storageKey = `last_level_${couple.id}`;
+    const lastLevelStr = localStorage.getItem(storageKey);
+    const lastLevel = lastLevelStr ? parseInt(lastLevelStr, 10) : null;
+
+    if (lastLevel !== null && levelInfo.level > lastLevel) {
+      // Trigger level up notification on backend
+      supabase.rpc('trigger_level_up_notification', { p_level: levelInfo.level })
+        .then(({ error }) => {
+          if (error) console.error('Failed to trigger level up notification:', error);
+        });
+    }
+
+    // Always update or set the last known level to prevent double notifications
+    // or to initialize the value for new users/browsers
+    if (lastLevel === null || levelInfo.level > lastLevel) {
+      localStorage.setItem(storageKey, levelInfo.level.toString());
+    }
+  }, [couple?.id, levelInfo?.level, isLoading]);
 
   // Real-time subscriptions
   useEffect(() => {
@@ -216,7 +240,7 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
       items,
       levelInfo, 
       hasCheckedIn, 
-      loading: pointsLoading || attendanceLoading || itemsLoading, 
+      loading: isLoading, 
       refreshPoints: async () => { await queryClient.invalidateQueries({ queryKey: ['couple_points'] }) }, 
       refreshAttendance: async () => { await queryClient.invalidateQueries({ queryKey: ['attendance'] }) },
       refreshItems: async () => { await queryClient.invalidateQueries({ queryKey: ['couple_items'] }) },

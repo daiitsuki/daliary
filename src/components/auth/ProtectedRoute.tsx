@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useCouple } from '../hooks/useCouple';
+import { useCouple } from '../../hooks/useCouple';
 import { Loader2 } from 'lucide-react';
 
 export default function ProtectedRoute() {

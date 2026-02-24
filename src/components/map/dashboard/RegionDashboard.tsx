@@ -1,18 +1,18 @@
 import { useState, useMemo, useEffect } from "react";
-import { usePlaces, VisitWithPlace } from "../context/PlacesContext";
+import { usePlaces, VisitWithPlace } from "../../../context/PlacesContext";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import VisitDetailModal from "./VisitDetailModal";
-import { METROPOLITAN_CITIES, PROVINCES } from "../constants/regions";
+import { METROPOLITAN_CITIES, PROVINCES } from "../../../constants/regions";
 import { Map as MapIcon, List, ArrowUpDown, ChevronDown, Check } from "lucide-react";
 
 // Map related components
-import DashboardHeader from "./map/DashboardHeader";
-import RegionDetailOverlay from "./map/RegionDetailOverlay";
-import HelpModal from "./map/HelpModal";
-import RegionCardList from "./map/RegionCardList";
-import SubRegionMapOverlay from "./map/SubRegionMapOverlay";
-import DetailedKoreaMap from "./map/DetailedKoreaMap";
+import DashboardHeader from "./DashboardHeader";
+import RegionDetailOverlay from "./RegionDetailOverlay";
+import HelpModal from "./HelpModal";
+import RegionCardList from "./RegionCardList";
+import SubRegionMapOverlay from "./SubRegionMapOverlay";
+import DetailedKoreaMap from "./DetailedKoreaMap";
 
 // Animation Variants
 const containerVariants: Variants = {

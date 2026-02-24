@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check } from 'lucide-react';
-import DatePicker from '../common/DatePicker';
-import { useTrips } from '../../hooks/useTrips';
-import { Trip } from '../../types';
+import DatePicker from '../../common/DatePicker';
+import { useTrips } from '../../../hooks/useTrips';
+import { Trip } from '../../../types';
 import { createPortal } from 'react-dom';
 
 interface TripModalProps {

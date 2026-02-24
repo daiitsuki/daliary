@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import PlaceSearch from '../components/PlaceSearch';
-import RegionDashboard from '../components/RegionDashboard';
-import Wishlist from '../components/Wishlist';
-import TravelPlans from '../components/map/TravelPlans';
+import PlaceSearch from '../components/map/search/PlaceSearch';
+import RegionDashboard from '../components/map/dashboard/RegionDashboard';
+import Wishlist from '../components/map/wishlist/Wishlist';
+import TravelPlans from '../components/map/plans/TravelPlans';
 import { Search, Map as MapIcon, Star, CalendarDays } from 'lucide-react';
 import { Place } from '../context/PlacesContext';
 import { motion, Variants } from 'framer-motion';

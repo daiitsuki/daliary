@@ -9,6 +9,7 @@ interface CalendarGridProps {
   selectedDate: Date;
   isDateSelected: boolean;
   onDayClick: (day: number, month: number, year: number) => void;
+  onMonthChange: (offset: number) => void;
   today: Date;
 }
 
@@ -179,14 +180,14 @@ const WeekRow = memo(
             <div
               key={`bg-${dStr}`}
               onClick={() => onDayClick(day, month, year)}
-              className={`relative h-24 sm:h-28 cursor-pointer transition-all group border-r border-b border-gray-50/50 ${
-                !currentMonth ? "bg-gray-50/30 text-opacity-30" : ""
-              } ${isActive ? "bg-rose-50/30" : "hover:bg-gray-50"}`}
+              className={`relative h-24 sm:h-28 cursor-pointer transition-all group border-r border-b border-gray-50/30 ${
+                !currentMonth ? "bg-gray-50/10 text-opacity-30" : ""
+              } ${isActive ? "bg-rose-50/20" : "hover:bg-gray-50/50"}`}
             >
               {/* Day Number */}
               <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
                 <span
-                  className={`text-[13px] sm:text-sm font-black transition-all flex items-center justify-center w-6 h-6 rounded-full ${
+                  className={`text-[12px] sm:text-[13px] font-black transition-all flex items-center justify-center w-6 h-6 rounded-full ${
                     isToday
                       ? "bg-rose-500 text-white shadow-sm"
                       : isActive
@@ -195,7 +196,7 @@ const WeekRow = memo(
                           ? "text-gray-300"
                           : isHoliday
                             ? "text-red-500"
-                            : "text-gray-700 group-hover:bg-white group-hover:shadow-sm"
+                            : "text-gray-600 group-hover:bg-white group-hover:shadow-sm"
                   }`}
                 >
                   {day}
@@ -250,6 +251,7 @@ const CalendarGrid = ({
   selectedDate,
   isDateSelected,
   onDayClick,
+  onMonthChange,
   today,
 }: CalendarGridProps) => {
   const year = currentDate.getFullYear();
@@ -299,18 +301,18 @@ const CalendarGrid = ({
   }, [year, month]);
 
   return (
-    <div className="bg-white rounded-[32px] pt-6 px-2 pb-2 sm:p-6 shadow-sm border border-rose-50 relative overflow-hidden">
+    <div className="bg-white rounded-[24px] sm:rounded-[32px] pt-6 px-1.5 pb-1.5 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 relative overflow-hidden">
       {/* Header Days */}
-      <div className="grid grid-cols-7 mb-2 border-b border-gray-50 pb-2">
+      <div className="grid grid-cols-7 mb-2 border-b border-gray-50/50 pb-3">
         {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
           <div
             key={d}
-            className={`text-center text-[12px] sm:text-xs font-black uppercase tracking-widest ${
+            className={`text-center text-[11px] sm:text-xs font-black uppercase tracking-[0.2em] ${
               i === 0
-                ? "text-rose-400"
+                ? "text-rose-400/80"
                 : i === 6
-                  ? "text-blue-400"
-                  : "text-gray-300"
+                  ? "text-blue-400/80"
+                  : "text-gray-400/80"
             }`}
           >
             {d}
@@ -331,7 +333,18 @@ const CalendarGrid = ({
               x: { type: "tween", ease: "circOut", duration: 0.3 },
               opacity: { duration: 0.2 },
             }}
-            className="flex flex-col transform-gpu"
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={1}
+            onDragEnd={(_, info) => {
+              const swipeThreshold = 50;
+              if (info.offset.x > swipeThreshold) {
+                onMonthChange(-1);
+              } else if (info.offset.x < -swipeThreshold) {
+                onMonthChange(1);
+              }
+            }}
+            className="flex flex-col transform-gpu touch-pan-y"
           >
             {weeks.map((weekDays, i) => (
               <WeekRow
