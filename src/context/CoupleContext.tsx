@@ -97,8 +97,12 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Auth 상태 변경 감지
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      queryClient.invalidateQueries({ queryKey: ['couple_info'] });
+    // SIGNED_IN, SIGNED_OUT, USER_UPDATED 등 실제 인증 상태가 변할 때만 쿼리를 무효화합니다.
+    // INITIAL_SESSION이나 TOKEN_REFRESHED 시에는 불필요한 초기 데이터 페칭을 방지합니다.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        queryClient.invalidateQueries({ queryKey: ['couple_info'] });
+      }
     });
 
     return () => subscription.unsubscribe();

@@ -1,9 +1,10 @@
 import { useSearchParams } from "react-router-dom";
 import { motion, Variants } from "framer-motion";
-import { Gamepad2, Sparkles, Play, Check, Timer } from "lucide-react";
+import { Gamepad2, Sparkles, Play, Check, Timer, Grid3X3 } from "lucide-react";
 import Game2048 from "../components/games/Game2048";
 import BlindTimerGame from "../components/games/BlindTimerGame";
 import WatermelonGame from "../components/games/WatermelonGame";
+import SwipeBrickBreaker from "../components/games/SwipeBrickBreaker";
 import { useGameScore } from "../hooks/useGameScore";
 
 export default function Games() {
@@ -11,6 +12,7 @@ export default function Games() {
   const selectedGame = searchParams.get("game");
   const { myScore: score2048 } = useGameScore("2048");
   const { myScore: scoreWatermelon } = useGameScore("watermelon");
+  const { myScore: scoreBrickBreaker } = useGameScore("brick_breaker");
 
   const today = new Date()
     .toLocaleDateString("ko-KR", {
@@ -24,6 +26,7 @@ export default function Games() {
 
   const is2048Rewarded = score2048?.last_reward_date === today;
   const isWatermelonRewarded = scoreWatermelon?.last_reward_date === today;
+  const isBrickBreakerRewarded = scoreBrickBreaker?.last_reward_date === today;
 
   const handleSelectGame = (gameId: string) => {
     setSearchParams({ game: gameId });
@@ -60,6 +63,10 @@ export default function Games() {
 
   if (selectedGame === "watermelon") {
     return <WatermelonGame onBack={handleBack} />;
+  }
+
+  if (selectedGame === "brick-breaker") {
+    return <SwipeBrickBreaker onBack={handleBack} />;
   }
 
   return (
@@ -218,6 +225,52 @@ export default function Games() {
                   <button
                     onClick={() => handleSelectGame("blind-timer")}
                     className="w-full bg-violet-500 text-white py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md shadow-violet-100 active:scale-[0.98]"
+                  >
+                    <Play size={16} fill="currentColor" />
+                    플레이
+                  </button>
+                </div>
+              </div>
+
+              {/* Swipe Brick Breaker Game Card */}
+              <div className="group relative">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-[28px] blur opacity-10 transition duration-500"></div>
+                <div className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-lg transition-all flex flex-col h-full overflow-hidden">
+                  <div className="flex items-start justify-between mb-8">
+                    <div className="w-16 h-16 bg-emerald-50 rounded-[20px] flex items-center justify-center text-3xl font-black text-emerald-500 border border-emerald-100 shadow-inner transition-transform duration-500">
+                      <Grid3X3 size={32} />
+                    </div>
+                    {isBrickBreakerRewarded ? (
+                      <div className="bg-gray-50 text-gray-600 text-[9px] font-black px-3 py-1.5 rounded-lg border border-gray-100 flex items-center gap-1 shadow-sm">
+                        <Check size={10} strokeWidth={3} />
+                        <span>포인트 획득 완료</span>
+                      </div>
+                    ) : (
+                      <div className="bg-emerald-50 text-emerald-600 text-[9px] font-black px-3 py-1.5 rounded-lg border border-emerald-100 flex items-center gap-1 shadow-sm">
+                        <Sparkles size={10} fill="currentColor" />
+                        <span>100 PT</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <h3 className="text-lg font-black text-gray-900 mb-1.5">
+                      벽돌깨기
+                    </h3>
+                    <p className="text-gray-500 text-xs leading-relaxed mb-10 font-medium">
+                      스와이프하여 벽돌을 부수세요!
+                      <br />
+                      40 스테이지 달성 시{" "}
+                      <span className="text-emerald-500 font-bold">
+                        100포인트
+                      </span>
+                      를 획득할 수 있습니다.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => handleSelectGame("brick-breaker")}
+                    className="w-full bg-emerald-500 text-white py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md shadow-emerald-100 active:scale-[0.98]"
                   >
                     <Play size={16} fill="currentColor" />
                     플레이
