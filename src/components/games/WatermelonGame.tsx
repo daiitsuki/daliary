@@ -192,6 +192,27 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
   const [rewardEarned, setRewardEarned] = useState(false); // 이 판에서 보상을 받았는지 여부
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [showDeadline, setShowDeadline] = useState(false);
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+
+  // Asset Preloading
+  useEffect(() => {
+    const imagesToPreload = Object.values(FRUIT_CONFIGS).map(
+      (config) => config.image,
+    );
+
+    const preloadImage = (src: string) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = resolve;
+        img.onerror = resolve; // 에러가 나도 게임은 진행할 수 있도록 resolve
+      });
+    };
+
+    Promise.all(imagesToPreload.map(preloadImage)).then(() => {
+      setAssetsLoaded(true);
+    });
+  }, []);
 
   // Stats refs to prevent effect re-triggers and stale closures in physics loop
   const scoreRef = useRef(score);
@@ -472,14 +493,16 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
     }
   }, []);
 
-  // Stable initialization - ONLY run once on mount
+  // Stable initialization - run when assets are loaded
   useEffect(() => {
-    initGame();
+    if (assetsLoaded) {
+      initGame();
+    }
     return () => {
       if (runnerRef.current) Matter.Runner.stop(runnerRef.current);
       if (renderRef.current) Matter.Render.stop(renderRef.current);
     };
-  }, []);
+  }, [assetsLoaded, initGame]);
 
   useEffect(() => {
     const saveInterval = setInterval(() => {
@@ -579,6 +602,22 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
   return (
     <div className="flex-1 bg-gray-50/30 flex flex-col relative lg:h-full lg:overflow-hidden overflow-y-auto custom-scrollbar pb-24 lg:pb-0">
       <AnimatePresence>
+        {!assetsLoaded && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[110] bg-gray-50/90 backdrop-blur-md flex items-center justify-center"
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-6 shadow-lg shadow-rose-200" />
+              <p className="text-gray-900 font-black text-lg">게임 에셋 준비 중...</p>
+              <p className="text-gray-400 text-sm font-medium mt-2">최상의 경험을 위해 로딩 중입니다.</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showRewardToast && (
           <motion.div
             initial={{ opacity: 0, y: -20, x: "-50%" }}
@@ -619,13 +658,23 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                 {score}
               </p>
             </div>
-            <div className="bg-rose-500 px-4 py-2 rounded-2xl shadow-md text-center border border-rose-400">
-              <p className="text-[10px] text-rose-100 font-black uppercase tracking-widest">
-                최고 기록
-              </p>
-              <p className="text-lg font-black text-white leading-none mt-1">
-                {Math.max(score, bestScore)}
-              </p>
+            <div className="flex bg-rose-500 rounded-2xl shadow-md border border-rose-400 overflow-hidden min-w-[140px]">
+              <div className="flex-1 px-3 py-2 text-center border-r border-rose-400/30">
+                <p className="text-[9px] text-rose-100 font-black uppercase tracking-widest">
+                  나의 기록
+                </p>
+                <p className="text-base font-black text-white leading-none mt-1">
+                  {Math.max(score, bestScore)}
+                </p>
+              </div>
+              <div className="flex-1 px-3 py-2 text-center bg-rose-600/20">
+                <p className="text-[9px] text-rose-100 font-black uppercase tracking-widest">
+                  {partnerProfile?.nickname?.slice(0, 3) || "상대"} 기록
+                </p>
+                <p className="text-base font-black text-white leading-none mt-1">
+                  {partnerScore?.high_score || 0}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -704,12 +753,12 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                 >
                   <RotateCcw size={14} />
                 </button>
-                <div className="flex flex-col items-end leading-tight">
+                <div className="flex flex-col items-end leading-tight min-w-[80px]">
                   <div className="flex items-baseline gap-1">
                     <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">
                       Score
                     </span>
-                    <span className="text-sm font-black text-rose-500">
+                    <span className="text-sm font-black text-rose-500 leading-none">
                       {score}
                     </span>
                   </div>
@@ -717,8 +766,12 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                     <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">
                       Best
                     </span>
-                    <span className="text-xs font-black text-gray-700">
+                    <span className="text-[10px] font-black text-gray-700 leading-none">
                       {Math.max(score, bestScore)}
+                    </span>
+                    <span className="text-[8px] font-bold text-gray-300">/</span>
+                    <span className="text-[10px] font-black text-rose-400 leading-none">
+                      {partnerScore?.high_score || 0}
                     </span>
                   </div>
                 </div>
@@ -813,10 +866,10 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
               </div>
               <div className="space-y-4 mb-8">
                 <div
-                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isMeRewarded ? "bg-rose-50 border-rose-100 text-rose-500" : "bg-gray-50 border-gray-100 text-gray-400"}`}
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isMeRewarded ? "bg-rose-50 border-rose-100" : "bg-gray-50 border-gray-100"}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden border border-gray-100">
                       {myProfile?.avatar_url ? (
                         <img
                           src={myProfile.avatar_url}
@@ -824,15 +877,20 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                           alt=""
                         />
                       ) : (
-                        <User size={14} />
+                        <User size={14} className="text-gray-400" />
                       )}
                     </div>
-                    <span className="text-xs font-black truncate max-w-[100px]">
-                      {myProfile?.nickname || "나"}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className={`text-xs font-black truncate max-w-[100px] ${isMeRewarded ? "text-rose-500" : "text-gray-600"}`}>
+                        {myProfile?.nickname || "나"}
+                      </span>
+                      <span className="text-[10px] font-bold text-gray-400">
+                        최고: {Math.max(score, bestScore)}
+                      </span>
+                    </div>
                   </div>
                   {isMeRewarded ? (
-                    <Star size={14} fill="currentColor" />
+                    <Star size={14} fill="currentColor" className="text-rose-500" />
                   ) : (
                     <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">
                       도전 가능
@@ -840,10 +898,10 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                   )}
                 </div>
                 <div
-                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isPartnerRewarded ? "bg-rose-50 border-rose-100 text-rose-500" : "bg-gray-50 border-gray-100 text-gray-400"}`}
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isPartnerRewarded ? "bg-rose-50 border-rose-100" : "bg-gray-50 border-gray-100"}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden border border-gray-100">
                       {partnerProfile?.avatar_url ? (
                         <img
                           src={partnerProfile.avatar_url}
@@ -851,15 +909,20 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                           alt=""
                         />
                       ) : (
-                        <User size={14} />
+                        <User size={14} className="text-gray-400" />
                       )}
                     </div>
-                    <span className="text-xs font-black truncate max-w-[100px]">
-                      {partnerProfile?.nickname || "상대방"}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className={`text-xs font-black truncate max-w-[100px] ${isPartnerRewarded ? "text-rose-500" : "text-gray-600"}`}>
+                        {partnerProfile?.nickname || "상대방"}
+                      </span>
+                      <span className="text-[10px] font-bold text-gray-400">
+                        최고: {partnerScore?.high_score || 0}
+                      </span>
+                    </div>
                   </div>
                   {isPartnerRewarded ? (
-                    <Star size={14} fill="currentColor" />
+                    <Star size={14} fill="currentColor" className="text-rose-500" />
                   ) : (
                     <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">
                       도전 가능

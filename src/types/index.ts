@@ -11,6 +11,7 @@ export interface Couple {
   id: string;
   anniversary_date: string | null;
   invite_code: string | null;
+  last_notified_level?: number;
   created_at?: string;
 }
 

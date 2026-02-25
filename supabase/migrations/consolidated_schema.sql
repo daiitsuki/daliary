@@ -939,7 +939,7 @@ create policy "Users can insert their couple's trip plans" on public.trip_plans 
 create policy "Users can update their couple's trip plans" on public.trip_plans for update
     using (trip_id in (select id from public.trips where couple_id in (select couple_id from public.profiles where id = auth.uid())));
 create policy "Users can delete their couple's trip plans" on public.trip_plans for delete
-    using (trip_id in (select id from public.trips where couple_id in (select couple_id from public.profiles where id = auth.uid())));
+    using (couple_id in (select id from public.trips where couple_id in (select couple_id from public.profiles where id = auth.uid())));
 
 -- COUPLE ITEMS
 create policy "Couples can view their own items" on public.couple_items

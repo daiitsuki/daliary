@@ -383,13 +383,23 @@ export default function Game2048({ onBack }: Game2048Props) {
                 {score}
               </p>
             </div>
-            <div className="bg-rose-500 px-4 py-2 rounded-2xl shadow-md text-center border border-rose-400">
-              <p className="text-[10px] text-rose-100 font-black uppercase tracking-widest">
-                최고 기록
-              </p>
-              <p className="text-lg font-black text-white leading-none mt-1">
-                {Math.max(score, bestScore)}
-              </p>
+            <div className="flex bg-rose-500 rounded-2xl shadow-md border border-rose-400 overflow-hidden min-w-[140px]">
+              <div className="flex-1 px-3 py-2 text-center border-r border-rose-400/30">
+                <p className="text-[9px] text-rose-100 font-black uppercase tracking-widest">
+                  나의 기록
+                </p>
+                <p className="text-base font-black text-white leading-none mt-1">
+                  {Math.max(score, bestScore).toLocaleString()}
+                </p>
+              </div>
+              <div className="flex-1 px-3 py-2 text-center bg-rose-600/20">
+                <p className="text-[9px] text-rose-100 font-black uppercase tracking-widest">
+                  {partnerProfile?.nickname?.slice(0, 3) || "상대"} 기록
+                </p>
+                <p className="text-base font-black text-white leading-none mt-1">
+                  {(partnerScore?.high_score || 0).toLocaleString()}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -461,21 +471,25 @@ export default function Game2048({ onBack }: Game2048Props) {
                     <Lightbulb size={16} />
                   </button>
                 </div>
-                <div className="flex flex-col items-end leading-tight">
+                <div className="flex flex-col items-end leading-tight min-w-[80px]">
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">
                       Score
                     </span>
-                    <span className="text-base font-black text-rose-500">
+                    <span className="text-base font-black text-rose-500 leading-none">
                       {score.toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex items-baseline gap-1.5">
+                  <div className="flex items-baseline gap-1">
                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">
                       Best
                     </span>
-                    <span className="text-sm font-black text-gray-700">
+                    <span className="text-[10px] font-black text-gray-700 leading-none">
                       {Math.max(score, bestScore).toLocaleString()}
+                    </span>
+                    <span className="text-[8px] font-bold text-gray-300">/</span>
+                    <span className="text-[10px] font-black text-rose-400 leading-none">
+                      {(partnerScore?.high_score || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -582,10 +596,10 @@ export default function Game2048({ onBack }: Game2048Props) {
             <div className="hidden lg:block bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm">
               <div className="space-y-4 mb-8">
                 <div
-                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isMeRewarded ? "bg-rose-50 border-rose-100 text-rose-500" : "bg-gray-50 border-gray-100 text-gray-400"}`}
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isMeRewarded ? "bg-rose-50 border-rose-100" : "bg-gray-50 border-gray-100"}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden border border-gray-100">
                       {myProfile?.avatar_url ? (
                         <img
                           src={myProfile.avatar_url}
@@ -593,15 +607,20 @@ export default function Game2048({ onBack }: Game2048Props) {
                           alt=""
                         />
                       ) : (
-                        <User size={14} />
+                        <User size={14} className="text-gray-400" />
                       )}
                     </div>
-                    <span className="text-xs font-black truncate max-w-[100px]">
-                      {myProfile?.nickname || "나"}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className={`text-xs font-black truncate max-w-[100px] ${isMeRewarded ? "text-rose-500" : "text-gray-600"}`}>
+                        {myProfile?.nickname || "나"}
+                      </span>
+                      <span className="text-[10px] font-bold text-gray-400">
+                        최고: {Math.max(score, bestScore).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                   {isMeRewarded ? (
-                    <Star size={14} fill="currentColor" />
+                    <Star size={14} fill="currentColor" className="text-rose-500" />
                   ) : (
                     <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">
                       도전 가능
@@ -610,10 +629,10 @@ export default function Game2048({ onBack }: Game2048Props) {
                 </div>
 
                 <div
-                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isPartnerRewarded ? "bg-rose-50 border-rose-100 text-rose-500" : "bg-gray-50 border-gray-100 text-gray-400"}`}
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isPartnerRewarded ? "bg-rose-50 border-rose-100" : "bg-gray-50 border-gray-100"}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden border border-gray-100">
                       {partnerProfile?.avatar_url ? (
                         <img
                           src={partnerProfile.avatar_url}
@@ -621,15 +640,20 @@ export default function Game2048({ onBack }: Game2048Props) {
                           alt=""
                         />
                       ) : (
-                        <User size={14} />
+                        <User size={14} className="text-gray-400" />
                       )}
                     </div>
-                    <span className="text-xs font-black truncate max-w-[100px]">
-                      {partnerProfile?.nickname || "상대방"}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className={`text-xs font-black truncate max-w-[100px] ${isPartnerRewarded ? "text-rose-500" : "text-gray-600"}`}>
+                        {partnerProfile?.nickname || "상대방"}
+                      </span>
+                      <span className="text-[10px] font-bold text-gray-400">
+                        최고: {(partnerScore?.high_score || 0).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                   {isPartnerRewarded ? (
-                    <Star size={14} fill="currentColor" />
+                    <Star size={14} fill="currentColor" className="text-rose-500" />
                   ) : (
                     <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">
                       도전 가능

@@ -188,24 +188,36 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!couple?.id || !levelInfo || isLoading) return;
 
+    // Use DB value if available, otherwise fallback to localStorage
+    const dbLastLevel = couple.last_notified_level;
     const storageKey = `last_level_${couple.id}`;
     const lastLevelStr = localStorage.getItem(storageKey);
-    const lastLevel = lastLevelStr ? parseInt(lastLevelStr, 10) : null;
+    const storageLastLevel = lastLevelStr ? parseInt(lastLevelStr, 10) : null;
+    
+    // Prefer DB value, but use storage as a fallback
+    const currentLastLevel = dbLastLevel !== undefined ? dbLastLevel : storageLastLevel;
 
-    if (lastLevel !== null && levelInfo.level > lastLevel) {
-      // Trigger level up notification on backend
+    if (currentLastLevel !== null && levelInfo.level > currentLastLevel) {
+      // Optimistically update localStorage to prevent multiple calls from same device
+      localStorage.setItem(storageKey, levelInfo.level.toString());
+
+      // Trigger level up notification on backend (atomic check-and-notify)
       supabase.rpc('trigger_level_up_notification', { p_level: levelInfo.level })
         .then(({ error }) => {
-          if (error) console.error('Failed to trigger level up notification:', error);
+          if (error) {
+            console.error('Failed to trigger level up notification:', error);
+          } else {
+            // Success: invalidate couple_info to sync DB state
+            queryClient.invalidateQueries({ queryKey: ['couple_info'] });
+          }
         });
     }
 
-    // Always update or set the last known level to prevent double notifications
-    // or to initialize the value for new users/browsers
-    if (lastLevel === null || levelInfo.level > lastLevel) {
+    // Initialization for new devices/users
+    if (currentLastLevel === null) {
       localStorage.setItem(storageKey, levelInfo.level.toString());
     }
-  }, [couple?.id, levelInfo?.level, isLoading]);
+  }, [couple?.id, levelInfo?.level, isLoading, couple?.last_notified_level, queryClient]);
 
   // Real-time subscriptions
   useEffect(() => {
