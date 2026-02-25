@@ -610,8 +610,9 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
           >
             <div className="text-center">
               <div className="w-16 h-16 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-6 shadow-lg shadow-rose-200" />
-              <p className="text-gray-900 font-black text-lg">게임 에셋 준비 중...</p>
-              <p className="text-gray-400 text-sm font-medium mt-2">최상의 경험을 위해 로딩 중입니다.</p>
+              <p className="text-gray-900 font-black text-lg">
+                게임 에셋 준비 중...
+              </p>
             </div>
           </motion.div>
         )}
@@ -769,7 +770,9 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                     <span className="text-[10px] font-black text-gray-700 leading-none">
                       {Math.max(score, bestScore)}
                     </span>
-                    <span className="text-[8px] font-bold text-gray-300">/</span>
+                    <span className="text-[8px] font-bold text-gray-300">
+                      /
+                    </span>
                     <span className="text-[10px] font-black text-rose-400 leading-none">
                       {partnerScore?.high_score || 0}
                     </span>
@@ -881,7 +884,9 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                       )}
                     </div>
                     <div className="flex flex-col">
-                      <span className={`text-xs font-black truncate max-w-[100px] ${isMeRewarded ? "text-rose-500" : "text-gray-600"}`}>
+                      <span
+                        className={`text-xs font-black truncate max-w-[100px] ${isMeRewarded ? "text-rose-500" : "text-gray-600"}`}
+                      >
                         {myProfile?.nickname || "나"}
                       </span>
                       <span className="text-[10px] font-bold text-gray-400">
@@ -890,7 +895,11 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                     </div>
                   </div>
                   {isMeRewarded ? (
-                    <Star size={14} fill="currentColor" className="text-rose-500" />
+                    <Star
+                      size={14}
+                      fill="currentColor"
+                      className="text-rose-500"
+                    />
                   ) : (
                     <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">
                       도전 가능
@@ -913,7 +922,9 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                       )}
                     </div>
                     <div className="flex flex-col">
-                      <span className={`text-xs font-black truncate max-w-[100px] ${isPartnerRewarded ? "text-rose-500" : "text-gray-600"}`}>
+                      <span
+                        className={`text-xs font-black truncate max-w-[100px] ${isPartnerRewarded ? "text-rose-500" : "text-gray-600"}`}
+                      >
                         {partnerProfile?.nickname || "상대방"}
                       </span>
                       <span className="text-[10px] font-bold text-gray-400">
@@ -922,7 +933,11 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                     </div>
                   </div>
                   {isPartnerRewarded ? (
-                    <Star size={14} fill="currentColor" className="text-rose-500" />
+                    <Star
+                      size={14}
+                      fill="currentColor"
+                      className="text-rose-500"
+                    />
                   ) : (
                     <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">
                       도전 가능
