@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, Variants } from "framer-motion";
 import { useSchedules, Schedule, ScheduleInput } from "../hooks/useSchedules";
 import { useHolidays } from "../hooks/useHolidays";
@@ -29,6 +30,7 @@ const itemVariants: Variants = {
 };
 
 const Calendar = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { schedules, addSchedule, updateSchedule, deleteSchedule } = useSchedules();
   const { holidaySchedules } = useHolidays();
   const { anniversarySchedules } = useAnniversaries();
@@ -49,6 +51,24 @@ const Calendar = () => {
   const [direction, setDirection] = useState(0);
   const [selectedDate, setSelectedDate] = useState(getKSTToday());
   const [isDateSelected, setIsDateSelected] = useState(false);
+
+  // Handle URL Date Parameter (Deep Linking)
+  useEffect(() => {
+    const dateParam = searchParams.get("date");
+    if (dateParam) {
+      const parsedDate = new Date(dateParam);
+      if (!isNaN(parsedDate.getTime())) {
+        setCurrentDate(new Date(parsedDate.getFullYear(), parsedDate.getMonth(), 1));
+        setSelectedDate(parsedDate);
+        setIsDateSelected(true);
+        
+        // URL에서 파라미터 제거하여 새로고침 시 중복 동작 방지
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete("date");
+        setSearchParams(newParams, { replace: true });
+      }
+    }
+  }, [searchParams, setSearchParams]);
 
   // 2. Search & Modal States
   const [searchQuery, setSearchQuery] = useState("");
