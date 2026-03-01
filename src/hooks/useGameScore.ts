@@ -51,6 +51,7 @@ export function useGameScore(gameType: GameType) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["game_scores", gameType] });
+      queryClient.invalidateQueries({ queryKey: ["all_game_scores"] });
       queryClient.invalidateQueries({ queryKey: ["couple_points"] });
     },
   });
@@ -63,5 +64,38 @@ export function useGameScore(gameType: GameType) {
     myScore,
     isLoading,
     recordResult,
+  };
+}
+
+/**
+ * 모든 게임의 점수와 보상 상태를 한 번의 요청으로 가져오는 훅 (대시보드용)
+ */
+export function useAllGameScores() {
+  const { profile, couple } = useCouple();
+
+  const { data: allScores, isLoading, refetch } = useQuery({
+    queryKey: ["all_game_scores", couple?.id],
+    queryFn: async () => {
+      if (!couple?.id) return [];
+      const { data, error } = await supabase
+        .from("game_scores")
+        .select("*")
+        .eq("couple_id", couple.id);
+
+      if (error) throw error;
+      return data as GameScore[];
+    },
+    enabled: !!couple?.id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const myScores = allScores?.filter(s => s.user_id === profile?.id) || [];
+
+  return {
+    allScores,
+    myScores,
+    isLoading,
+    refetch,
+    getScoreByType: (type: string) => myScores.find(s => s.game_type === type) || null
   };
 }

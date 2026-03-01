@@ -349,7 +349,7 @@ export default function Game2048({ onBack }: Game2048Props) {
             className="fixed top-20 left-1/2 z-[100] bg-amber-500 text-white px-6 py-3 rounded-2xl shadow-xl font-black flex items-center gap-2 border-2 border-white/20 backdrop-blur-sm whitespace-nowrap w-max"
           >
             <Star size={20} fill="currentColor" />
-            <span>2048 달성! 100포인트 적립 ✨</span>
+            <span>2048 달성! 150포인트 적립 ✨</span>
           </motion.div>
         )}
       </AnimatePresence>

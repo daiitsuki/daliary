@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Bell, Calendar, MessageSquare, MapPin, TrendingUp, CheckCircle2 } from "lucide-react";
+import { X, Bell, Calendar, MessageSquare, MapPin, TrendingUp, CheckCircle2, ShoppingBag, Gamepad2, Plane } from "lucide-react";
 import { useNotifications } from "../../hooks/useNotifications";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -15,6 +16,7 @@ interface NotificationHistoryModalProps {
 const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isOpen, onClose }) => {
   const { notifications, loading, markAsRead } = useNotifications();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -58,9 +60,27 @@ const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isO
         return <CheckCircle2 size={16} className="text-green-400" />;
       case "level_up":
         return <TrendingUp size={16} className="text-purple-400" />;
+      case "item_purchased":
+        return <ShoppingBag size={16} className="text-rose-400" />;
+      case "game_reward":
+        return <Gamepad2 size={16} className="text-emerald-400" />;
+      case "trip_change":
+        return <Plane size={16} className="text-blue-400" />;
       default:
         return <Bell size={16} className="text-gray-400" />;
     }
+  };
+
+  const handleNotificationClick = async (notif: any) => {
+    // 1. Mark as read if needed
+    if (!notif.is_read) {
+      await markAsRead(notif.id);
+    }
+
+    // 2. Navigate to target URL
+    const targetUrl = notif.metadata?.url || "/home";
+    onClose();
+    navigate(targetUrl);
   };
 
   const modalVariants = {
@@ -119,11 +139,11 @@ const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isO
                     <motion.div
                       key={notif.id}
                       layout
-                      onClick={() => !notif.is_read && markAsRead(notif.id)}
+                      onClick={() => handleNotificationClick(notif)}
                       className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                         notif.is_read 
-                          ? "bg-white border-gray-50" 
-                          : "bg-rose-50/30 border-rose-100/50"
+                          ? "bg-white border-gray-50 hover:bg-gray-50/50" 
+                          : "bg-rose-50/30 border-rose-100/50 hover:bg-rose-50/50"
                       }`}
                     >
                       <div className="flex gap-4">

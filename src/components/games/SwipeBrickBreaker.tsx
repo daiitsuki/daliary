@@ -18,6 +18,7 @@ const BALL_RADIUS = 5;
 const TARGET_STAGE_FOR_REWARD = 100;
 const SAVE_KEY = "daliary_brick_breaker_state_v1";
 const ENCRYPTION_SALT = "dal_game_brick";
+const BALL_SPEED = 1500; // Pixels per second
 
 // Persistence Utilities
 const encrypt = (data: any) => {
@@ -71,9 +72,15 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
   const savedData = useRef(decrypt(localStorage.getItem(SAVE_KEY))).current;
 
   const [gameState, setGameState] = useState<GameState>("idle");
+  const gameStateRef = useRef<GameState>("idle");
   const [stage, setStage] = useState(savedData?.stage || 1);
   const [ballCount, setBallCount] = useState(savedData?.ballCount || 1);
   const [showRewardToast, setShowRewardToast] = useState(false);
+
+  // Keep ref in sync for the game loop
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
 
   const { myProfile, partnerProfile } = useHomeData();
   const { scores, myScore, recordResult } = useGameScore("brick_breaker");
@@ -204,17 +211,22 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
     if (!ctx) return;
 
     let animationFrameId: number;
+    let lastTime = 0;
 
-    const update = () => {
-      if (gameState === "shooting") {
+    const update = (time: number) => {
+      const dt = lastTime ? (time - lastTime) / 1000 : 0;
+      lastTime = time;
+
+      if (gameStateRef.current === "shooting") {
         let allReturned = true;
 
         ballsRef.current.forEach((ball) => {
           if (!ball.active) return;
           allReturned = false;
 
-          ball.x += ball.dx * 10;
-          ball.y += ball.dy * 10;
+          // Frame-rate independent movement
+          ball.x += ball.dx * BALL_SPEED * dt;
+          ball.y += ball.dy * BALL_SPEED * dt;
 
           if (ball.x <= BALL_RADIUS || ball.x >= CANVAS_WIDTH - BALL_RADIUS) {
             ball.dx *= -1;
@@ -245,7 +257,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
               ball.y - BALL_RADIUS < by + BRICK_SIZE
             ) {
               if (brick.type === "add_ball") {
-                setBallCount((prev) => prev + 1);
+                setBallCount((prev: number) => prev + 1);
                 bricksRef.current.splice(i, 1);
                 continue;
               }
@@ -364,7 +376,10 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
         }
       });
 
-      if (gameState === "shooting" && nextShootOriginXRef.current !== null) {
+      if (
+        gameStateRef.current === "shooting" &&
+        nextShootOriginXRef.current !== null
+      ) {
         ctx.save();
         ctx.globalAlpha = 0.4;
         ctx.fillStyle = "#10b981";
@@ -384,7 +399,10 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
       ctx.shadowBlur = 10;
       ctx.shadowColor = "rgba(16, 185, 129, 0.5)";
 
-      if (gameState === "idle" || gameState === "aiming") {
+      if (
+        gameStateRef.current === "idle" ||
+        gameStateRef.current === "aiming"
+      ) {
         ctx.beginPath();
         ctx.arc(
           shootOriginRef.current.x,
@@ -404,7 +422,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
       });
       ctx.shadowBlur = 0;
 
-      if (gameState === "aiming") {
+      if (gameStateRef.current === "aiming") {
         let endX = shootOriginRef.current.x;
         let endY = shootOriginRef.current.y;
         const dx = aimVectorRef.current.dx;
@@ -464,17 +482,17 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
       }
     };
 
-    update();
+    animationFrameId = requestAnimationFrame(update);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [gameState, spawnBricks, stage, isMeRewarded, recordResult]);
+  }, [stage, isMeRewarded, recordResult, spawnBricks]);
 
   const handlePointerDown = () => {
-    if (gameState !== "idle") return;
+    if (gameStateRef.current !== "idle") return;
     setGameState("aiming");
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (gameState !== "aiming") return;
+    if (gameStateRef.current !== "aiming") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -487,17 +505,19 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
   };
 
   const handlePointerUp = () => {
-    if (gameState !== "aiming") return;
+    if (gameStateRef.current !== "aiming") return;
     setGameState("shooting");
     for (let i = 0; i < ballCount; i++) {
       setTimeout(() => {
-        ballsRef.current.push({
-          x: shootOriginRef.current.x,
-          y: shootOriginRef.current.y,
-          dx: aimVectorRef.current.dx,
-          dy: aimVectorRef.current.dy,
-          active: true,
-        });
+        if (gameStateRef.current === "shooting") {
+          ballsRef.current.push({
+            x: shootOriginRef.current.x,
+            y: shootOriginRef.current.y,
+            dx: aimVectorRef.current.dx,
+            dy: aimVectorRef.current.dy,
+            active: true,
+          });
+        }
       }, i * 80);
     }
   };
@@ -533,7 +553,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
             className="fixed top-20 left-1/2 z-[100] bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl font-black flex items-center gap-2 border-2 border-white/20 backdrop-blur-sm whitespace-nowrap w-max"
           >
             <Star size={20} fill="currentColor" />
-            <span>100 스테이지 달성! 100포인트 적립 ✨</span>
+            <span>100 스테이지 달성! 150포인트 적립 ✨</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -804,7 +824,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
               </div>
               <button
                 onClick={resetGame}
-                className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-[13px] flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
               >
                 <RotateCcw size={14} /> Restart
               </button>
@@ -825,7 +845,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
                 </li>
                 <li className="text-[11px] text-gray-400 font-medium leading-relaxed flex gap-2">
                   <span className="w-1 h-1 bg-emerald-300 rounded-full mt-1.5 shrink-0" />
-                  100 스테이지를 달성하면 100 포인트를 획득합니다!
+                  100 스테이지를 달성하면 150 포인트를 획득합니다!
                 </li>
               </ul>
             </div>

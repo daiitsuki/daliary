@@ -627,7 +627,7 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
             className="fixed top-20 left-1/2 z-[100] bg-amber-500 text-white px-6 py-3 rounded-2xl shadow-xl font-black flex items-center gap-2 border-2 border-white/20 backdrop-blur-sm whitespace-nowrap w-max"
           >
             <Star size={20} fill="currentColor" />
-            <span>수박 완성! 100포인트 적립 ✨</span>
+            <span>수박 완성! 150포인트 적립 ✨</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -968,6 +968,10 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                 <li className="text-[11px] text-gray-400 font-medium flex gap-2">
                   <span className="w-1 h-1 bg-gray-300 rounded-full mt-1.5 shrink-0" />
                   과일이 상단 선을 넘어가면 게임 오버!
+                </li>
+                <li className="text-[11px] text-gray-400 font-medium flex gap-2">
+                  <span className="w-1 h-1 bg-rose-300 rounded-full mt-1.5 shrink-0" />
+                  하루에 최대 2개의 게임에서 각각 150 포인트를 획득할 수 있습니다.
                 </li>
               </ul>
             </div>

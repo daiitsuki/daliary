@@ -23,19 +23,28 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const lastUpdateRef = useRef<number>(0);
+  const lastUserIdRef = useRef<string | null>(null);
 
   // React Query for common initial data
   const { data: initData, isLoading: queryLoading, refetch } = useQuery({
     queryKey: ['couple_info'],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return null;
+      if (!session) {
+        lastUserIdRef.current = null;
+        return null;
+      }
+
+      // 세션 정보를 바탕으로 현재 사용자 ID 기록
+      lastUserIdRef.current = session.user.id;
 
       const { data, error } = await supabase.rpc('get_app_init_data');
       if (error) throw error;
       return data;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false, // 창 포커스 시 자동 재요청 방지
+    refetchOnReconnect: false, // 네트워크 재연결 시 자동 재요청 방지
   });
 
   const couple = initData?.couple || null;
@@ -53,7 +62,6 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
 
     const updateActivity = async () => {
       const now = Date.now();
-      // Throttle: Only update if at least 30 seconds have passed since last update
       if (now - lastUpdateRef.current < 30000) return;
 
       try {
@@ -68,19 +76,14 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Initial update
     updateActivity();
 
-    // Periodic update (every 3 minutes)
-    // "Online" threshold is 5 minutes, so 3 minute interval is efficient.
     const intervalId = setInterval(() => {
-      // Only update if the page is visible to save DB writes
       if (document.visibilityState === 'visible') {
         updateActivity();
       }
     }, 180000);
 
-    // Update on visibility change (returning to app)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         updateActivity();
@@ -96,12 +99,25 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   }, [profile?.id]);
 
   useEffect(() => {
-    // Auth 상태 변경 감지
-    // SIGNED_IN, SIGNED_OUT, USER_UPDATED 등 실제 인증 상태가 변할 때만 쿼리를 무효화합니다.
-    // INITIAL_SESSION이나 TOKEN_REFRESHED 시에는 불필요한 초기 데이터 페칭을 방지합니다.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+    // Auth 상태 변경 감지 최적화
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const currentUserId = session?.user?.id || null;
+      
+      // 1. 로그아웃 시 즉시 쿼리 무효화 및 데이터 클리어
+      if (event === 'SIGNED_OUT') {
+        lastUserIdRef.current = null;
+        queryClient.setQueryData(['couple_info'], null);
         queryClient.invalidateQueries({ queryKey: ['couple_info'] });
+        return;
+      }
+
+      // 2. 로그인 또는 유저 정보 변경 시
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        // 실제 사용자 ID가 변경된 경우에만 무효화 수행 (창 포커스 시 동일 유저 세션 체크 무시)
+        if (currentUserId !== lastUserIdRef.current) {
+          lastUserIdRef.current = currentUserId;
+          queryClient.invalidateQueries({ queryKey: ['couple_info'] });
+        }
       }
     });
 
@@ -110,27 +126,21 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
 
   const generateInviteCode = async () => {
     try {
-      // 클라이언트 측 중복 생성 방지
       if (couple) {
         throw new Error('이미 연결된 커플(초대 코드)이 있습니다. 설정에서 연결 해제 후 다시 시도해주세요.');
       }
-
       const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-
       const { data: newCouple, error } = await supabase
         .rpc('create_couple_and_link_profile', { invite_code_input: code });
 
       if (error) {
-        if (error.message.includes('ALREADY_HAS_COUPLE')) {
-          throw new Error('이미 연결된 커플이 있습니다.');
-        }
+        if (error.message.includes('ALREADY_HAS_COUPLE')) throw new Error('이미 연결된 커플이 있습니다.');
         throw error;
       }
 
       await queryClient.invalidateQueries({ queryKey: ['couple_info'] });
       return newCouple;
     } catch (err: any) {
-      console.error(err);
       setError(err.message);
       throw err;
     }
@@ -139,7 +149,6 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   const joinCouple = async (code: string) => {
     try {
       setError(null);
-
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요합니다.');
 
@@ -147,23 +156,18 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
         .rpc('join_couple_by_code', { invite_code_input: code });
 
       if (rpcError) {
-        console.error('RPC Error details:', rpcError);
         let message = '유효하지 않은 코드입니다.';
-        
-        // 데이터베이스에서 정의한 에러 메시지 매칭
         if (rpcError.message.includes('INVALID_CODE')) message = '유효하지 않은 초대 코드입니다.';
         else if (rpcError.message.includes('ALREADY_HAS_COUPLE')) message = '이미 연결된 커플이 있습니다.';
         else if (rpcError.message.includes('COUPLE_FULL')) message = '해당 코드는 이미 사용되었거나 정원이 찼습니다.';
-        else message = rpcError.message; // 예상치 못한 에러 메시지도 전달
-        
+        else message = rpcError.message;
         throw new Error(message);
       }
 
       await queryClient.invalidateQueries({ queryKey: ['couple_info'] });
     } catch (err: any) {
-      console.error('Final Context error:', err.message);
       setError(err.message);
-      throw err; // 상위 컴포넌트(Onboarding)에서 catch 하도록 재전송
+      throw err;
     }
   };
 
@@ -171,10 +175,8 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await supabase.rpc('delete_couple_and_all_data');
       if (error) throw error;
-      
       await queryClient.invalidateQueries({ queryKey: ['couple_info'] });
     } catch (err: any) {
-      console.error('Error disconnecting couple:', err);
       setError(err.message);
       throw err;
     }

@@ -44,11 +44,12 @@
 알림 기능은 브라우저 Push API와 Supabase 실시간 연동, 그리고 Vercel 서버리스 함수를 기반으로 하며 다음의 원칙을 따릅니다.
 
 - **Background Push**: 앱이 닫혀 있을 때도 알림을 보내기 위해 Vercel 서버리스 함수(`/api/push.ts`)와 Web Push API(VAPID)를 사용합니다. Supabase Webhook이 `notifications` 테이블의 신규 행을 감지하여 Vercel API를 호출합니다.
+- **Deep Linking**: 모든 알림은 `metadata` 컬럼의 `url` 필드에 이동할 경로를 포함합니다. 사용자가 알림을 클릭하면 해당 URL로 즉시 이동해야 합니다.
 - **Multi-Device Support**: 사용자가 로그인한 **모든 기기(브라우저)**에서 알림을 받을 수 있도록 지원합니다. 사용자가 기기별로 알림을 활성화하면 해당 기기의 고유한 `endpoint`가 등록됩니다.
 - **Auto-Cleanup Logic**: 알림 발송 시 만료된 구독 정보(사용자가 알림 권한을 취소했거나 브라우저 데이터 삭제로 인해 `410 Gone` 또는 `404 Not Found` 에러 발생 시)는 DB에서 자동으로 삭제하여 최신 상태를 유지합니다.
 - **History Management**: 알림 내역(`notifications` 테이블)은 서버 부하 및 클라이언트 성능을 위해 사용자별로 **최대 20개**까지만 유지 및 표시합니다.
 - **Trigger Architecture**:
-  - 답변 완료, 일정 변경, 장소 추가, 방문 인증, **아이템 구매** 등 주요 액션은 PostgreSQL 트리거(`handle_notification_trigger`)를 통해 자동 생성됩니다.
+  - 답변 완료, 일정 변경, 장소 추가, 방문 인증, **아이템 구매**, **게임 미션 달성** 등 주요 액션은 PostgreSQL 트리거(`handle_notification_trigger`)를 통해 자동 생성됩니다.
   - **레벨 업** 알림은 `trigger_level_up_notification` RPC를 통해 직접 생성되며, 본인과 상대방 모두에게 발송됩니다.
   - 본인에게는 알림을 보내지 않으며(레벨 업 제외), 상대방의 `user_id`를 찾아 알림을 생성합니다.
 - **Stacking (Tagging)**: 동일한 유형의 알림이 단시간 내에 여러 번 발생할 경우, 알림이 난잡하게 쌓이지 않도록 `type` 필드를 `tag`로 활용하여 브라우저 수준에서 알림을 스택(Stack) 또는 그룹화하여 처리합니다.
@@ -188,7 +189,7 @@
 
 ### Key Security Policies (RLS)
 
-- **Couple Isolation**: 대부분의 테이블(`places`, `visits`, `schedules` 등)은 `couple_id = get_auth_couple_id()` 또는 서브쿼리를 통해 **내 커플의 데이터만** 조회/수정 가능하도록 격리되어 있습니다.
+- **Couple Isolation**: 대부분의 테이블(`places`, `visits`, `schedules 등)은 `couple_id = get_auth_couple_id()` 또는 서브쿼리를 통해 **내 커플의 데이터만** 조회/수정 가능하도록 격리되어 있습니다.
 - **User Ownership**: `profiles`, `notification_settings` 등 개인화된 데이터는 `auth.uid() = user_id` 조건으로 본인만 접근 가능합니다.
 
 ### Storage Buckets
@@ -260,13 +261,15 @@
 
 - **Table**: `game_scores`
 - **Fields**: `user_id`, `couple_id`, `game_type`, `high_score`, `last_reward_date`
-- **Logic**: 최고 점수는 개인별로 기록하며, 보상 수령 여부는 `last_reward_date`를 통해 일 단위로 체크합니다.
+- **Logic**: 
+  - 최고 점수는 개인별로 기록하며, 보상 수령 여부는 `last_reward_date`를 통해 일 단위로 체크합니다.
+  - **일일 미션 제한**: 사용자는 하루에 최대 **2개의 게임**에서만 포인트 보상을 획득할 수 있습니다.
 
 ### 17.2. 2048 Challenge
 
 - **Game Type**: `'2048'`
-- **Reward Condition**: 게임 플레이 중 2048 타일을 처음 생성했을 때 (일 1회 한정).
-- **Reward Amount**: 100 PT (커플 포인트)
+- **Reward Condition**: 게임 플레이 중 2048 타일을 처음 생성했을 때 (일 최대 2개 게임 제한 내).
+- **Reward Amount**: 150 PT (커플 포인트)
 - **Controls**: PC(방향키), Mobile(스와이프 제스처).
 - **Theme**: Rose/Amber 그라데이션과 Glassmorphism 스타일을 유지하되, 타일별로 고유한 색상(Rose 계열)을 부여하여 시각적 즐거움을 제공합니다.
 
@@ -308,10 +311,19 @@
   - **Mobile Controls**: Fruits drop immediately at the touched position via `onTouchStart` (no dragging required).
   - **Visuals**: The preview fruit size precisely matches the actual rendered size in the physics engine.
   - **Ground Position**: The ground is slightly raised (`WORLD_HEIGHT + 10`) to prevent fruits from appearing to clip through the bottom.
-- **Reward Condition**: Create the first Watermelon tile of the day (1 per user per day).
-- **Reward Amount**: 100 PT (Couple Points).
+- **Reward Condition**: Create the first Watermelon tile of the day (일 최대 2개 게임 제한 내).
+- **Reward Amount**: 150 PT (Couple Points).
 - **State Persistence**: Current fruit positions, score, and watermelon achievement status are saved in LocalStorage (encrypted).
 - **Game Over**: If any fruit stays above the deadline (Y=80) for more than **5 seconds** while moving slowly. When overflowing, a red gradient appears at the top without a text warning.
+
+### 17.6. Swipe Brick Breaker Challenge
+
+- **Game Type**: `'brick_breaker'`
+- **Concept**: Swipe to aim and shoot balls to break numbered bricks.
+- **Reward Condition**: Reach Stage 100 (일 최대 2개 게임 제한 내).
+- **Reward Amount**: 150 PT (Couple Points).
+- **Controls**: PC/Mobile (Drag/Swipe to aim, release to shoot).
+- **State Persistence**: Current stage, ball count, brick positions, and last reward date are saved in LocalStorage (encrypted).
 
 ## 18. Future Development Considerations
 

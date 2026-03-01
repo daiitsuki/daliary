@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCouple } from '../hooks/useCouple';
@@ -23,6 +23,7 @@ export interface NotificationSettings {
   notify_level_up: boolean;
   notify_trip_change: boolean;
   notify_item_purchased: boolean;
+  notify_game_reward: boolean;
 }
 
 interface NotificationsContextType {
@@ -61,15 +62,17 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   );
   const [isDeviceActive, setIsDeviceActive] = useState(false);
+  const lastDeviceCheckRef = useRef<number>(0);
 
   // 1. Notification Settings Query
+  // initialSettings가 있으면 staleTime을 길게 가져가서 초기 중복 호출을 방지합니다.
   const { data: settings = initialSettings } = useQuery({
     queryKey: ['notification_settings', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return null;
       const { data, error } = await supabase
         .from('notification_settings')
-        .select('is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up, notify_trip_change, notify_item_purchased')
+        .select('is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up, notify_trip_change, notify_item_purchased, notify_game_reward')
         .eq('user_id', profile.id)
         .single();
       if (error) throw error;
@@ -77,6 +80,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     },
     initialData: initialSettings,
     enabled: !!profile?.id && !coupleLoading,
+    staleTime: 1000 * 60 * 60, // 1 hour (초기 데이터가 있으므로 자주 리페칭할 필요 없음)
   });
 
   // 2. Notifications History Query
@@ -94,10 +98,15 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       return data as AppNotification[];
     },
     enabled: !!profile?.id && !coupleLoading,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const checkDeviceActive = useCallback(async () => {
     if (!profile?.id || typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    // Throttling: 10분 이내에 이미 확인했다면 요청 생략
+    const now = Date.now();
+    if (now - lastDeviceCheckRef.current < 600000) return;
 
     try {
       const registration = await navigator.serviceWorker.ready;
@@ -105,6 +114,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
       if (!subscription) {
         setIsDeviceActive(false);
+        lastDeviceCheckRef.current = now;
         return;
       }
 
@@ -115,16 +125,12 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         .eq('endpoint', subscription.endpoint)
         .maybeSingle();
 
-      if (error) {
-        // Transient error, don't flip to inactive yet
-        console.warn('[Push] Error checking device status, keeping current state:', error);
-        return;
+      if (!error) {
+        setIsDeviceActive(!!data);
+        lastDeviceCheckRef.current = now;
       }
-
-      setIsDeviceActive(!!data);
     } catch (err) {
       console.error('[Push] Device check error:', err);
-      // Don't flip to false on unknown errors to avoid UI jumping
     }
   }, [profile?.id]);
 

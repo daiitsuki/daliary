@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   ShoppingBag,
+  Gamepad2,
 } from "lucide-react";
 import { useNotifications } from "../../hooks/useNotifications";
 import { NotificationSettings } from "../../context/NotificationsContext";
@@ -86,6 +87,11 @@ const NotificationSettingsSection: React.FC<
       key: "notify_item_purchased",
       label: "아이템 구매",
       icon: <ShoppingBag size={12} />,
+    },
+    {
+      key: "notify_game_reward",
+      label: "게임 미션 달성",
+      icon: <Gamepad2 size={12} />,
     },
   ];
 
