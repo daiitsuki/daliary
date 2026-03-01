@@ -529,21 +529,23 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
   }, [score, reachedWatermelon, rewardEarned, today, gameOver]);
 
   useEffect(() => {
-    // 오늘 보상을 받지 않았고, 이 판에서도 보상을 받은 적이 없을 때만 보상 지급
-    if (
-      reachedWatermelon &&
-      !isMeRewarded &&
-      !rewardEarned &&
-      !showRewardToast
-    ) {
-      setShowRewardToast(true);
-      setTimeout(() => setShowRewardToast(false), 3000);
-      recordResult.mutate({ score, reachedTarget: true });
-      setRewardEarned(true); // 이 판은 이제 보상을 받은 판으로 기록됨
+    // 이 판에서 수박을 달성했고, 아직 보상을 시도하지 않았을 때
+    if (reachedWatermelon && !rewardEarned && !showRewardToast) {
+      recordResult.mutate(
+        { score, reachedTarget: true },
+        {
+          onSuccess: (data) => {
+            if (data.reward_given) {
+              setShowRewardToast(true);
+              setTimeout(() => setShowRewardToast(false), 3000);
+              setRewardEarned(true);
+            }
+          },
+        }
+      );
     }
   }, [
     reachedWatermelon,
-    isMeRewarded,
     rewardEarned,
     score,
     recordResult,

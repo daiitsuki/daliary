@@ -47,17 +47,19 @@ export function useGameScore(gameType: GameType) {
       });
 
       if (error) throw error;
-      return data as { reward_given: boolean };
+      return data as { high_score: number; reward_given: boolean };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["game_scores", gameType] });
       queryClient.invalidateQueries({ queryKey: ["all_game_scores"] });
-      queryClient.invalidateQueries({ queryKey: ["couple_points"] });
+      
+      if (data.reward_given) {
+        queryClient.invalidateQueries({ queryKey: ["couple_points"] });
+      }
     },
   });
 
-  // 본인의 점수만 편의상 별도로 추출
-  const myScore = scores?.find(s => s.user_id === profile?.id) || null;
+  const myScore = scores?.find((s) => s.user_id === profile?.id) || null;
 
   return {
     scores,
@@ -68,7 +70,7 @@ export function useGameScore(gameType: GameType) {
 }
 
 /**
- * 모든 게임의 점수와 보상 상태를 한 번의 요청으로 가져오는 훅 (대시보드용)
+ * 모든 게임의 점수와 보상 상태를 가져오는 훅
  */
 export function useAllGameScores() {
   const { profile, couple } = useCouple();
@@ -96,6 +98,12 @@ export function useAllGameScores() {
     myScores,
     isLoading,
     refetch,
-    getScoreByType: (type: string) => myScores.find(s => s.game_type === type) || null
+    getScoreByType: (type: string) => myScores.find(s => s.game_type === type) || null,
+    todayRewardCount: myScores.filter(s => {
+      const today = new Date().toLocaleDateString("ko-KR", {
+        year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Asia/Seoul"
+      }).replace(/\. /g, "-").replace(/\./g, "");
+      return s.last_reward_date === today;
+    }).length
   };
 }

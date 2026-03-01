@@ -19,7 +19,7 @@ import { useAllGameScores } from "../hooks/useGameScore";
 export default function Games() {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedGame = searchParams.get("game");
-  const { getScoreByType, isLoading: scoresLoading } = useAllGameScores();
+  const { getScoreByType, todayRewardCount } = useAllGameScores();
 
   const today = new Date()
     .toLocaleDateString("ko-KR", {
@@ -39,11 +39,9 @@ export default function Games() {
   const isWatermelonRewarded = scoreWatermelon?.last_reward_date === today;
   const isBrickBreakerRewarded = scoreBrickBreaker?.last_reward_date === today;
 
-  const rewardedCount = [
-    is2048Rewarded,
-    isWatermelonRewarded,
-    isBrickBreakerRewarded,
-  ].filter(Boolean).length;
+  // Use the count from hook for consistency, or calculate locally
+  const currentRewardedCount = todayRewardCount;
+  const isLimitReached = currentRewardedCount >= 2;
 
   const handleSelectGame = (gameId: string) => {
     setSearchParams({ game: gameId });
@@ -135,7 +133,7 @@ export default function Games() {
                   <div
                     key={i}
                     className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${
-                      rewardedCount >= i
+                      currentRewardedCount >= i
                         ? "bg-rose-500 border-rose-500 text-white shadow-sm shadow-rose-200"
                         : "bg-gray-50 border-gray-100 text-gray-300"
                     }`}
@@ -176,6 +174,10 @@ export default function Games() {
                         <Check size={10} strokeWidth={3} />
                         <span>오늘의 목표 달성</span>
                       </div>
+                    ) : isLimitReached ? (
+                      <div className="bg-gray-100 text-gray-400 text-[9px] font-black px-3 py-1.5 rounded-lg border border-gray-200 flex items-center gap-1 shadow-sm">
+                        <span>오늘의 보상 한도 도달</span>
+                      </div>
                     ) : (
                       <div className="bg-white text-rose-500 text-[10px] font-black px-3 py-1.5 rounded-lg border-2 border-rose-50 flex items-center gap-1 shadow-sm">
                         <Sparkles size={10} fill="currentColor" />
@@ -196,15 +198,17 @@ export default function Games() {
                     <p className="text-gray-500 text-xs leading-relaxed mb-10 font-medium">
                       타일을 합쳐서 2048을 완성하세요!
                       <br />
-                      목표 달성 시{" "}
-                      <span className="text-rose-500 font-bold">150포인트</span>
-                      를 획득할 수 있습니다.
+                      {isLimitReached && !is2048Rewarded ? (
+                        <span className="text-gray-400 font-bold">오늘 획득 가능한 보상을 모두 받았습니다.</span>
+                      ) : (
+                        <>목표 달성 시 <span className="text-rose-500 font-bold">150포인트</span>를 획득할 수 있습니다.</>
+                      )}
                     </p>
                   </div>
 
                   <button
                     onClick={() => handleSelectGame("2048")}
-                    className="w-full bg-rose-500 text-white py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md shadow-rose-100 active:scale-[0.98] hover:bg-rose-600"
+                    className={`w-full py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.98] ${isLimitReached && !is2048Rewarded ? "bg-gray-100 text-gray-400 shadow-none hover:bg-gray-200" : "bg-rose-500 text-white shadow-rose-100 hover:bg-rose-600"}`}
                   >
                     <Play size={16} fill="currentColor" />
                     플레이
@@ -224,6 +228,10 @@ export default function Games() {
                       <div className="bg-amber-500 text-white text-[9px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-md shadow-amber-100 animate-in fade-in zoom-in duration-300">
                         <Check size={10} strokeWidth={3} />
                         <span>오늘의 목표 달성</span>
+                      </div>
+                    ) : isLimitReached ? (
+                      <div className="bg-gray-100 text-gray-400 text-[9px] font-black px-3 py-1.5 rounded-lg border border-gray-200 flex items-center gap-1 shadow-sm">
+                        <span>오늘의 보상 한도 도달</span>
                       </div>
                     ) : (
                       <div className="bg-white text-amber-600 text-[10px] font-black px-3 py-1.5 rounded-lg border-2 border-amber-50 flex items-center gap-1 shadow-sm">
@@ -245,17 +253,17 @@ export default function Games() {
                     <p className="text-gray-500 text-xs leading-relaxed mb-10 font-medium">
                       과일을 합쳐서 커다란 수박을 만드세요!
                       <br />
-                      수박 완성 시{" "}
-                      <span className="text-amber-500 font-bold">
-                        150포인트
-                      </span>
-                      를 획득할 수 있습니다.
+                      {isLimitReached && !isWatermelonRewarded ? (
+                        <span className="text-gray-400 font-bold">오늘 획득 가능한 보상을 모두 받았습니다.</span>
+                      ) : (
+                        <>수박 완성 시 <span className="text-amber-500 font-bold">150포인트</span>를 획득할 수 있습니다.</>
+                      )}
                     </p>
                   </div>
 
                   <button
                     onClick={() => handleSelectGame("watermelon")}
-                    className="w-full bg-amber-500 text-white py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md shadow-amber-100 active:scale-[0.98] hover:bg-amber-600"
+                    className={`w-full py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.98] ${isLimitReached && !isWatermelonRewarded ? "bg-gray-100 text-gray-400 shadow-none hover:bg-gray-200" : "bg-amber-500 text-white shadow-amber-100 hover:bg-amber-600"}`}
                   >
                     <Play size={16} fill="currentColor" />
                     플레이
@@ -275,6 +283,10 @@ export default function Games() {
                       <div className="bg-emerald-500 text-white text-[9px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-md shadow-emerald-100 animate-in fade-in zoom-in duration-300">
                         <Check size={10} strokeWidth={3} />
                         <span>오늘의 목표 달성</span>
+                      </div>
+                    ) : isLimitReached ? (
+                      <div className="bg-gray-100 text-gray-400 text-[9px] font-black px-3 py-1.5 rounded-lg border border-gray-200 flex items-center gap-1 shadow-sm">
+                        <span>오늘의 보상 한도 도달</span>
                       </div>
                     ) : (
                       <div className="bg-white text-emerald-600 text-[10px] font-black px-3 py-1.5 rounded-lg border-2 border-emerald-50 flex items-center gap-1 shadow-sm">
@@ -296,17 +308,17 @@ export default function Games() {
                     <p className="text-gray-500 text-xs leading-relaxed mb-10 font-medium">
                       스와이프하여 벽돌을 부수세요!
                       <br />
-                      100 스테이지 달성 시{" "}
-                      <span className="text-emerald-500 font-bold">
-                        150포인트
-                      </span>
-                      를 획득할 수 있습니다.
+                      {isLimitReached && !isBrickBreakerRewarded ? (
+                        <span className="text-gray-400 font-bold">오늘 획득 가능한 보상을 모두 받았습니다.</span>
+                      ) : (
+                        <>100 스테이지 달성 시 <span className="text-emerald-500 font-bold">150포인트</span>를 획득할 수 있습니다.</>
+                      )}
                     </p>
                   </div>
 
                   <button
                     onClick={() => handleSelectGame("brick-breaker")}
-                    className="w-full bg-emerald-500 text-white py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md shadow-emerald-100 active:scale-[0.98] hover:bg-emerald-600"
+                    className={`w-full py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.98] ${isLimitReached && !isBrickBreakerRewarded ? "bg-gray-100 text-gray-400 shadow-none hover:bg-gray-200" : "bg-emerald-500 text-white shadow-emerald-100 hover:bg-emerald-600"}`}
                   >
                     <Play size={16} fill="currentColor" />
                     플레이

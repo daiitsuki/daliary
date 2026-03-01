@@ -214,17 +214,21 @@ export default function Game2048({ onBack }: Game2048Props) {
       setScore(newScore);
       setTiles(nextTiles);
 
-      // 이 판에서 아직 보상을 받지 않았고, 오늘 보상도 받지 않았을 때만 지급
+      // 이 판에서 아직 보상을 받지 않았고, 오늘 보상도 받지 않았을 때만 지급 시도
       if (newlyHit2048 && !reached2048 && !rewardEarned) {
         setReached2048(true);
-        if (!isMeRewarded) {
-          setShowRewardToast(true);
-          setTimeout(() => setShowRewardToast(false), 3000);
-          recordResult.mutate({ score: newScore, reachedTarget: true });
-          setRewardEarned(true); // 이 판은 이제 보상을 받은 판으로 기록됨
-        } else {
-          recordResult.mutate({ score: newScore, reachedTarget: false });
-        }
+        recordResult.mutate(
+          { score: newScore, reachedTarget: true },
+          {
+            onSuccess: (data) => {
+              if (data.reward_given) {
+                setShowRewardToast(true);
+                setTimeout(() => setShowRewardToast(false), 3000);
+                setRewardEarned(true);
+              }
+            },
+          },
+        );
       }
 
       const isGameOver =
@@ -688,7 +692,7 @@ export default function Game2048({ onBack }: Game2048Props) {
               <ul className="space-y-3">
                 <li className="text-[11px] text-gray-400 font-medium leading-relaxed flex gap-2">
                   <span className="w-1 h-1 bg-gray-300 rounded-full mt-1.5 shrink-0" />
-                  하루에 한 번 2048 타일을 만들어 100 포인트를 획득하세요.
+                  하루에 최대 2개의 게임에서 각각 150 포인트를 획득할 수 있습니다.
                 </li>{" "}
                 <li className="text-[11px] text-gray-400 font-medium leading-relaxed flex gap-2">
                   <span className="w-1 h-1 bg-gray-300 rounded-full mt-1.5 shrink-0" />

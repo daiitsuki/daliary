@@ -297,10 +297,18 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
           setStage(nextStage);
           spawnBricks(nextStage);
 
-          if (nextStage === TARGET_STAGE_FOR_REWARD && !isMeRewarded) {
-            recordResult.mutate({ score: nextStage, reachedTarget: true });
-            setShowRewardToast(true);
-            setTimeout(() => setShowRewardToast(false), 3000);
+          if (nextStage === TARGET_STAGE_FOR_REWARD) {
+            recordResult.mutate(
+              { score: nextStage, reachedTarget: true },
+              {
+                onSuccess: (data) => {
+                  if (data.reward_given) {
+                    setShowRewardToast(true);
+                    setTimeout(() => setShowRewardToast(false), 3000);
+                  }
+                },
+              }
+            );
           }
         }
       }
