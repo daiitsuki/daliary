@@ -129,7 +129,14 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       if (couple) {
         throw new Error('이미 연결된 커플(초대 코드)이 있습니다. 설정에서 연결 해제 후 다시 시도해주세요.');
       }
-      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      // More robust random code generation (always 6 characters)
+      const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Readable chars (no I, O, 0, 1)
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += charset.charAt(Math.floor(Math.random() * charset.length));
+      }
+
       const { data: newCouple, error } = await supabase
         .rpc('create_couple_and_link_profile', { invite_code_input: code });
 
@@ -175,12 +182,66 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await supabase.rpc('delete_couple_and_all_data');
       if (error) throw error;
+      
+      // 1. Clear game states and couple-related data from localStorage
+      const coupleRelatedKeys = [
+        'daliary_watermelon_state_v1',
+        'daliary_brick_breaker_state_v1',
+        'daliary_blind_timer_state_v1',
+        'showHolidays',
+        'cachedHolidays',
+        'holidaysLastUpdated',
+        'showAnniversaries',
+        'last_settings_save_time'
+      ];
+      
+      coupleRelatedKeys.forEach(key => localStorage.removeItem(key));
+      
+      // Clear dynamic keys (like level cache)
+      if (profile?.id) {
+        localStorage.removeItem(`couple_points_level_cache_${profile.id}`);
+      }
+
+      // 2. Reset query state immediately to reflect disconnected state in UI
+      queryClient.setQueryData(['couple_info'], null);
       await queryClient.invalidateQueries({ queryKey: ['couple_info'] });
     } catch (err: any) {
       setError(err.message);
       throw err;
     }
   };
+
+  // Realtime Subscription for Profile changes (to detect linkage/unlinkage)
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const channel = supabase
+      .channel(`profile_changes_${profile.id}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'profiles', 
+          filter: `id=eq.${profile.id}` 
+        },
+        (payload) => {
+          const oldCoupleId = profile.couple_id;
+          const newCoupleId = payload.new.couple_id;
+
+          // If couple_id changed, refetch everything
+          if (oldCoupleId !== newCoupleId) {
+            console.log('[CoupleContext] Profile change detected (couple_id change), refetching...');
+            refetch();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id, profile?.couple_id, refetch]);
 
   const signOut = async () => {
     await supabase.auth.signOut();

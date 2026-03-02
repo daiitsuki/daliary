@@ -33,7 +33,7 @@ export default async function handler(req: any, res: any) {
     // 1. 해당 유저의 알림 설정 확인
     const { data: settings } = await supabase
       .from('notification_settings')
-      .select('is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up')
+      .select('is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up, notify_trip_change, notify_item_purchased, notify_game_reward')
       .eq('user_id', record.user_id)
       .single();
 
@@ -57,12 +57,15 @@ export default async function handler(req: any, res: any) {
     }
 
     // 3. 실제 Push 발송
+    // metadata에 deep_link가 있으면 해당 URL을 사용하고, 없으면 기본값인 '/'를 사용합니다.
+    const deepLink = record.metadata?.deep_link || '/';
+
     const payload = JSON.stringify({
       title: record.title,
       body: record.content,
       tag: record.type,
       data: {
-        url: '/',
+        url: deepLink,
         id: record.id
       }
     });

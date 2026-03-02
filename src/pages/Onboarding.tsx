@@ -15,12 +15,17 @@ export default function Onboarding() {
 
   const handleCreate = async () => {
     setActionLoading(true);
+    setError(null);
     try {
       const couple = await generateInviteCode();
+      if (!couple || !couple.invite_code) {
+        throw new Error("생성된 코드를 확인하지 못했습니다.");
+      }
       setCreatedCode(couple.invite_code);
       setMode("create");
-    } catch (err) {
-      setError("코드 생성에 실패했습니다.");
+    } catch (err: any) {
+      console.error("Create error in component:", err);
+      setError(err.message || "코드 생성에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }

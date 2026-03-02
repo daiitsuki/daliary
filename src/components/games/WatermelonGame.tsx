@@ -189,7 +189,8 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
   const [currentFruitX, setCurrentFruitX] = useState(WORLD_WIDTH / 2);
   const [canDrop, setCanDrop] = useState(true);
   const [reachedWatermelon, setReachedWatermelon] = useState(false);
-  const [rewardEarned, setRewardEarned] = useState(false); // 이 판에서 보상을 받았는지 여부
+  const [rewardEarned, setRewardEarned] = useState(false); // 이 세션에서 보상을 시도했는지 여부 (중복 방지)
+  const [rewardConfirmed, setRewardConfirmed] = useState(false); // 서버로부터 보상을 최종 확인받았는지 여부 (영구 저장용)
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [showDeadline, setShowDeadline] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
@@ -217,6 +218,7 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
   // Stats refs to prevent effect re-triggers and stale closures in physics loop
   const scoreRef = useRef(score);
   const reachedRef = useRef(reachedWatermelon);
+  const confirmedRef = useRef(rewardConfirmed);
   const gameOverRef = useRef(gameOver);
   const overflowStartRef = useRef<number | null>(null);
   const lastDangerTimeRef = useRef<number>(0);
@@ -227,6 +229,9 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
   useEffect(() => {
     reachedRef.current = reachedWatermelon;
   }, [reachedWatermelon]);
+  useEffect(() => {
+    confirmedRef.current = rewardConfirmed;
+  }, [rewardConfirmed]);
   useEffect(() => {
     gameOverRef.current = gameOver;
   }, [gameOver]);
@@ -471,6 +476,7 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
     setGameOver(false);
     setReachedWatermelon(false);
     setRewardEarned(false);
+    setRewardConfirmed(false);
     setNextFruit(getRandomFruit());
     setCanDrop(true);
     setIsOverflowing(false);
@@ -484,7 +490,9 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
       if (parsed && parsed.fruits) {
         setScore(parsed.score || 0);
         setReachedWatermelon(parsed.reachedWatermelon || false);
-        setRewardEarned(parsed.rewardEarned || false);
+        setRewardConfirmed(parsed.rewardConfirmed || false);
+        // rewardConfirmed가 이미 true면 rewardEarned도 true로 설정하여 요청 방지
+        if (parsed.rewardConfirmed) setRewardEarned(true);
         parsed.fruits.forEach((f: any) => {
           const body = createFruit(f.x, f.y, f.type as FruitType);
           Matter.World.add(engine.world, body);
@@ -518,7 +526,7 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
             fruits,
             score,
             reachedWatermelon,
-            rewardEarned,
+            rewardConfirmed,
             date: today,
           };
           localStorage.setItem(SAVE_KEY, encrypt(state));
@@ -529,23 +537,37 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
   }, [score, reachedWatermelon, rewardEarned, today, gameOver]);
 
   useEffect(() => {
-    // 이 판에서 수박을 달성했고, 아직 보상을 시도하지 않았을 때
-    if (reachedWatermelon && !rewardEarned && !showRewardToast) {
+    // 이 판에서 수박을 달성했고, 아직 보상을 확인받지 않았으며, 이번 세션에서 시도 중이 아닐 때
+    if (reachedWatermelon && !rewardConfirmed && !rewardEarned && !showRewardToast) {
+      console.log("[Watermelon] Target reached, calling recordResult...");
+      
+      // 세션 내 중복 호출 방지
+      setRewardEarned(true); 
+      
       recordResult.mutate(
         { score, reachedTarget: true },
         {
           onSuccess: (data) => {
-            if (data.reward_given) {
+            console.log("[Watermelon] recordResult success, reward_given:", data?.reward_given);
+            if (data?.reward_given === true) {
+              setRewardConfirmed(true);
               setShowRewardToast(true);
               setTimeout(() => setShowRewardToast(false), 3000);
-              setRewardEarned(true);
             }
           },
+          onError: (err) => {
+            console.error("[Watermelon] recordResult error:", err);
+            // 에러 발생 시 30초 후에 다시 시도할 수 있도록 리셋 (무한 루프 방지용 쿨다운)
+            setTimeout(() => {
+              setRewardEarned(false);
+            }, 30000);
+          }
         }
       );
     }
   }, [
     reachedWatermelon,
+    rewardConfirmed,
     rewardEarned,
     score,
     recordResult,
@@ -682,13 +704,9 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
           </div>
         </div>
 
-        {/* Layout Split like Calendar.tsx */}
         <div className="flex flex-col lg:flex-row gap-10 items-start lg:flex-1 lg:min-h-0 mt-2">
-          {/* Main Content (Left): Game Board Area */}
           <div className="w-full lg:flex-1 flex flex-col items-center justify-center lg:h-full">
-            {/* Mobile Header Overlay: Rewards (Left), Next Fruit (Center) & Actions/Scores (Right) */}
             <div className="flex sm:hidden items-center justify-between w-full max-w-[340px] mb-4 px-2">
-              {/* Left: Reward Status with Avatars */}
               <div className="flex items-center gap-2 flex-1 justify-start">
                 <div
                   className={`relative w-8 h-8 rounded-full border-2 transition-all ${isMeRewarded ? "border-rose-500 bg-rose-50" : "border-gray-200 bg-white"}`}
@@ -732,7 +750,6 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                 </div>
               </div>
 
-              {/* Center: Next Fruit Indicator */}
               <div className="flex flex-col items-center flex-1">
                 <p className="text-[8px] font-black text-gray-400 uppercase tracking-tighter mb-0.5">
                   Next
@@ -748,7 +765,6 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                 </div>
               </div>
 
-              {/* Right: Actions and Compact Scores */}
               <div className="flex items-center gap-3 flex-1 justify-end">
                 <button
                   onClick={handleRestart}
@@ -756,30 +772,6 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                 >
                   <RotateCcw size={14} />
                 </button>
-                <div className="flex flex-col items-end leading-tight min-w-[80px]">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">
-                      Score
-                    </span>
-                    <span className="text-sm font-black text-rose-500 leading-none">
-                      {score}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">
-                      Best
-                    </span>
-                    <span className="text-[10px] font-black text-gray-700 leading-none">
-                      {Math.max(score, bestScore)}
-                    </span>
-                    <span className="text-[8px] font-bold text-gray-300">
-                      /
-                    </span>
-                    <span className="text-[10px] font-black text-rose-400 leading-none">
-                      {partnerScore?.high_score || 0}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -791,7 +783,6 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
               onTouchStart={handleTouchStart}
               onClick={() => performDrop(currentFruitX)}
             >
-              {/* Visible Deadline */}
               <AnimatePresence>
                 {showDeadline && (
                   <motion.div
@@ -916,7 +907,7 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                       {partnerProfile?.avatar_url ? (
                         <img
                           src={partnerProfile.avatar_url}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full rounded-full object-cover"
                           alt=""
                         />
                       ) : (
@@ -947,12 +938,14 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
                   )}
                 </div>
               </div>
-              <button
-                onClick={handleRestart}
-                className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
-              >
-                <RotateCcw size={14} /> Restart Game
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleRestart}
+                  className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                >
+                  <RotateCcw size={14} /> Restart Game
+                </button>
+              </div>
             </div>
             <div className="bg-gray-50/50 rounded-[32px] p-8 border border-gray-100">
               <div className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest mb-4">

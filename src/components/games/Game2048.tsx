@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   RotateCcw,
@@ -17,6 +17,7 @@ type Tile = {
   value: number;
   x: number;
   y: number;
+  isNew?: boolean;
 };
 
 interface Game2048Props {
@@ -33,7 +34,8 @@ export default function Game2048({ onBack }: Game2048Props) {
   const [bestScore, setBestScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [reached2048, setReached2048] = useState(false);
-  const [rewardEarned, setRewardEarned] = useState(false); // 이 판에서 보상을 받았는지 여부
+  const [rewardEarned, setRewardEarned] = useState(false); // 세션 내 달성 시도 여부
+  const [rewardConfirmed, setRewardConfirmed] = useState(false); // 서버 보상 처리 완료 여부
   const [isMoving, setIsMoving] = useState(false);
   const [hintUsed, setHintUsed] = useState(false);
   const [showRewardToast, setShowRewardToast] = useState(false);
@@ -63,7 +65,7 @@ export default function Game2048({ onBack }: Game2048Props) {
     if (myScore) setBestScore(myScore.high_score);
   }, [myScore]);
 
-  const generateId = () => Math.random().toString(36).substr(2, 9);
+  const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   const encrypt = (data: any) => {
     const str = JSON.stringify(data);
@@ -87,10 +89,11 @@ export default function Game2048({ onBack }: Game2048Props) {
     if (saved) {
       const parsed = decrypt(saved);
       if (parsed && parsed.tiles.length > 0) {
-        setTiles(parsed.tiles);
+        setTiles(parsed.tiles.map((t: any) => ({ ...t, isNew: false })));
         setScore(parsed.score);
         setReached2048(parsed.reached2048 || false);
-        setRewardEarned(parsed.rewardEarned || false);
+        setRewardConfirmed(parsed.rewardConfirmed || false);
+        if (parsed.rewardConfirmed) setRewardEarned(true);
         setHintUsed(parsed.hintUsed || false);
         return true;
       }
@@ -104,6 +107,7 @@ export default function Game2048({ onBack }: Game2048Props) {
     setGameOver(false);
     setReached2048(false);
     setRewardEarned(false);
+    setRewardConfirmed(false);
     setIsMoving(false);
     setHintUsed(false);
 
@@ -120,6 +124,7 @@ export default function Game2048({ onBack }: Game2048Props) {
         value: Math.random() < 0.9 ? 2 : 4,
         x: pos.x,
         y: pos.y,
+        isNew: true,
       });
     }
     setTiles(initialTiles);
@@ -133,16 +138,16 @@ export default function Game2048({ onBack }: Game2048Props) {
   useEffect(() => {
     if (tiles.length > 0 && !gameOver) {
       const state = {
-        tiles,
+        tiles: tiles.map(t => ({ ...t, isNew: false })),
         score,
         reached2048,
-        rewardEarned,
+        rewardConfirmed,
         hintUsed,
         date: today,
       };
       localStorage.setItem(SAVE_KEY, encrypt(state));
     }
-  }, [tiles, score, reached2048, rewardEarned, hintUsed, today, gameOver]);
+  }, [tiles, score, reached2048, rewardConfirmed, hintUsed, today, gameOver]);
 
   const move = useCallback(
     (direction: "up" | "down" | "left" | "right") => {
@@ -164,15 +169,17 @@ export default function Game2048({ onBack }: Game2048Props) {
 
         const processedLine: Tile[] = [];
         for (let j = 0; j < line.length; j++) {
-          const current = { ...line[j] };
+          const current = { ...line[j], isNew: false };
           if (processedLine.length > 0) {
             const last = processedLine[processedLine.length - 1];
             if (last.value === current.value && !mergedIds.has(last.id)) {
+              // 머지 발생: 이동해 온 타일의 ID를 유지하여 슬라이딩 효과 보장
               processedLine[processedLine.length - 1] = {
-                ...last,
+                ...current,
                 value: last.value * 2,
+                isNew: false,
               };
-              mergedIds.add(last.id);
+              mergedIds.add(current.id);
               scoreGain += last.value * 2;
               if (last.value * 2 === 2048) newlyHit2048 = true;
               hasMoved = true;
@@ -206,6 +213,7 @@ export default function Game2048({ onBack }: Game2048Props) {
           value: Math.random() < 0.9 ? 2 : 4,
           x: pos.x,
           y: pos.y,
+          isNew: true,
         });
       }
 
@@ -214,19 +222,26 @@ export default function Game2048({ onBack }: Game2048Props) {
       setScore(newScore);
       setTiles(nextTiles);
 
-      // 이 판에서 아직 보상을 받지 않았고, 오늘 보상도 받지 않았을 때만 지급 시도
-      if (newlyHit2048 && !reached2048 && !rewardEarned) {
+      // 보상 로직: 2048 달성 시 서버 연동
+      if (newlyHit2048 && !reached2048 && !rewardConfirmed && !rewardEarned) {
         setReached2048(true);
+        setRewardEarned(true);
         recordResult.mutate(
           { score: newScore, reachedTarget: true },
           {
             onSuccess: (data) => {
-              if (data.reward_given) {
+              // 포인트 지급 여부와 상관없이 이 판에서의 보상 체크 완료 처리
+              setRewardConfirmed(true);
+              if (data?.reward_given === true) {
                 setShowRewardToast(true);
                 setTimeout(() => setShowRewardToast(false), 3000);
-                setRewardEarned(true);
               }
             },
+            onError: () => {
+              // 네트워크 실패 시 다음 이동 때 재시도할 수 있도록 플래그 복구
+              setRewardEarned(false);
+              setReached2048(false);
+            }
           },
         );
       }
@@ -245,13 +260,14 @@ export default function Game2048({ onBack }: Game2048Props) {
       if (isGameOver) {
         setGameOver(true);
         localStorage.removeItem(SAVE_KEY);
+        // 최종 점수 기록
         recordResult.mutate({
           score: newScore,
           reachedTarget: reached2048 || newlyHit2048,
         });
       }
 
-      setTimeout(() => setIsMoving(false), 150);
+      setTimeout(() => setIsMoving(false), 100);
     },
     [
       tiles,
@@ -260,6 +276,7 @@ export default function Game2048({ onBack }: Game2048Props) {
       isMoving,
       reached2048,
       rewardEarned,
+      rewardConfirmed,
       recordResult,
       isMeRewarded,
       today,
@@ -300,7 +317,7 @@ export default function Game2048({ onBack }: Game2048Props) {
         }
         const pos = empty[Math.floor(Math.random() * empty.length)];
         setHintUsed(true);
-        return [...prev, { id: generateId(), value: 1024, x: pos.x, y: pos.y }];
+        return [...prev.map(t => ({ ...t, isNew: false })), { id: generateId(), value: 1024, x: pos.x, y: pos.y, isNew: true }];
       });
     }
   };
@@ -342,6 +359,10 @@ export default function Game2048({ onBack }: Game2048Props) {
     setTouchStart(null);
   };
 
+  const sortedTiles = useMemo(() => {
+    return [...tiles].sort((a, b) => a.id.localeCompare(b.id));
+  }, [tiles]);
+
   return (
     <div className="flex-1 bg-gray-50/30 flex flex-col relative lg:h-full lg:overflow-hidden overflow-y-auto custom-scrollbar pb-24 lg:pb-0">
       <AnimatePresence>
@@ -359,7 +380,6 @@ export default function Game2048({ onBack }: Game2048Props) {
       </AnimatePresence>
 
       <div className="w-full max-w-[1600px] mx-auto px-4 py-6 lg:py-10 lg:h-full lg:flex lg:flex-col">
-        {/* Navigation Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <button
@@ -408,13 +428,9 @@ export default function Game2048({ onBack }: Game2048Props) {
           </div>
         </div>
 
-        {/* Layout Split like Calendar.tsx */}
         <div className="flex flex-col lg:flex-row gap-10 items-start lg:flex-1 lg:min-h-0 mt-2">
-          {/* Main Content (Left): Game Board Area */}
           <div className="w-full lg:flex-1 flex flex-col items-center justify-center lg:h-full">
-            {/* Mobile Header Overlay: Rewards (Left) & Actions/Scores (Right) */}
             <div className="flex sm:hidden items-center justify-between w-full max-w-[340px] md:max-w-[380px] mb-4 px-2">
-              {/* Left: Reward Status with Avatars */}
               <div className="flex items-center gap-2.5">
                 <div
                   className={`relative w-9 h-9 rounded-full border-2 transition-all ${isMeRewarded ? "border-rose-500 bg-rose-50" : "border-gray-200 bg-white"}`}
@@ -458,7 +474,6 @@ export default function Game2048({ onBack }: Game2048Props) {
                 </div>
               </div>
 
-              {/* Right: Actions and Compact Scores */}
               <div className="flex items-center gap-3">
                 <div className="flex gap-1.5 mr-1">
                   <button
@@ -514,12 +529,12 @@ export default function Game2048({ onBack }: Game2048Props) {
                 ))}
               </div>
               <div className="absolute inset-3 pointer-events-none">
-                <AnimatePresence>
-                  {tiles.map((tile) => (
+                <AnimatePresence initial={false}>
+                  {sortedTiles.map((tile) => (
                     <motion.div
                       key={tile.id}
-                      layout
-                      initial={{ scale: 0, opacity: 0 }}
+                      layout="position"
+                      initial={tile.isNew ? { scale: 0, opacity: 0 } : false}
                       animate={{
                         scale: 1,
                         opacity: 1,
@@ -529,8 +544,8 @@ export default function Game2048({ onBack }: Game2048Props) {
                       exit={{ scale: 0, opacity: 0 }}
                       transition={{
                         type: "spring",
-                        stiffness: 500,
-                        damping: 40,
+                        stiffness: 400,
+                        damping: 30,
                         mass: 1,
                       }}
                       className="absolute w-1/4 h-1/4 p-1"
@@ -594,9 +609,7 @@ export default function Game2048({ onBack }: Game2048Props) {
             </div>
           </div>
 
-          {/* Sidebar Area (Right - PC Only Style) */}
           <div className="w-full lg:w-[380px] shrink-0 lg:h-full flex flex-col gap-6">
-            {/* Status & Dashboard Card */}
             <div className="hidden lg:block bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm">
               <div className="space-y-4 mb-8">
                 <div
@@ -640,7 +653,7 @@ export default function Game2048({ onBack }: Game2048Props) {
                       {partnerProfile?.avatar_url ? (
                         <img
                           src={partnerProfile.avatar_url}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full rounded-full object-cover"
                           alt=""
                         />
                       ) : (
@@ -666,7 +679,6 @@ export default function Game2048({ onBack }: Game2048Props) {
                 </div>
               </div>
 
-              {/* Action Buttons (PC) */}
               <div className="flex gap-3">
                 <button
                   onClick={handleRestart}
@@ -684,7 +696,6 @@ export default function Game2048({ onBack }: Game2048Props) {
               </div>
             </div>
 
-            {/* Quick Tips Panel */}
             <div className="bg-gray-50/50 rounded-[32px] p-8 border border-gray-100">
               <div className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest mb-4">
                 <Info size={14} /> 보상 안내

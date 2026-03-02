@@ -60,7 +60,7 @@ export default function Settings() {
 
     try {
       await disconnect();
-      navigate("/");
+      navigate("/onboarding");
     } catch (error) {
       console.error(error);
       alert("연결 해제 실패");

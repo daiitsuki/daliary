@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, ChevronLeft, User, Info, Star, Trophy } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { RotateCcw, ChevronLeft, User, Info, Star, Trophy, Lightbulb } from "lucide-react";
 import { useGameScore } from "../../hooks/useGameScore";
 import { useHomeData } from "../../hooks/useHomeData";
 
@@ -63,9 +62,6 @@ interface Brick {
 }
 
 export default function SwipeBrickBreaker({ onBack }: Props) {
-  const [searchParams] = useSearchParams();
-  const isDebug = searchParams.get("debug") === "true";
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Load initial data immediately to avoid race conditions
@@ -75,7 +71,10 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
   const gameStateRef = useRef<GameState>("idle");
   const [stage, setStage] = useState(savedData?.stage || 1);
   const [ballCount, setBallCount] = useState(savedData?.ballCount || 1);
+  const [hintUsed, setHintUsed] = useState(savedData?.hintUsed || false);
   const [showRewardToast, setShowRewardToast] = useState(false);
+  const [rewardEarned, setRewardEarned] = useState(false); // 세션용
+  const [rewardConfirmed, setRewardConfirmed] = useState(savedData?.rewardConfirmed || false); // 영구 저장용
 
   // Keep ref in sync for the game loop
   useEffect(() => {
@@ -114,12 +113,14 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
     const state = {
       stage,
       ballCount,
+      hintUsed,
       bricks: bricksRef.current,
       origin: shootOriginRef.current,
+      rewardConfirmed,
       date: today,
     };
     localStorage.setItem(SAVE_KEY, encrypt(state));
-  }, [stage, ballCount, today, gameState]);
+  }, [stage, ballCount, hintUsed, today, gameState, rewardConfirmed]);
 
   // Initialize Bricks for a new stage
   const spawnBricks = useCallback(
@@ -142,26 +143,16 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
       }
 
       // 2. 벽돌 개수 결정
-      // 2개: 10%, 3개: 20%, 4개: 30%, 5개: 40%
       const rand = Math.random();
-      let brickCount = 5;
-      if (rand < 0.1) brickCount = 2;
-      else if (rand < 0.3) brickCount = 3;
-      else if (rand < 0.6) brickCount = 4;
-      else brickCount = 5;
+      let brickCount = rand < 0.1 ? 2 : rand < 0.3 ? 3 : rand < 0.6 ? 4 : 5;
 
-      // 벽돌을 배치할 수 있는 열 목록 (공 추가 아이템이 있는 열 제외)
       const availableCols: number[] = [];
       for (let i = 0; i < BRICK_COLS; i++) {
         if (i !== addBallCol) availableCols.push(i);
       }
 
-      // 셔플하여 앞에서부터 brickCount만큼 선택
       const shuffledCols = [...availableCols].sort(() => Math.random() - 0.5);
-      const selectedCols = shuffledCols.slice(
-        0,
-        Math.min(brickCount, shuffledCols.length),
-      );
+      const selectedCols = shuffledCols.slice(0, Math.min(brickCount, shuffledCols.length));
 
       selectedCols.forEach((col) => {
         newBricks.push({
@@ -193,7 +184,6 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
   );
 
   useEffect(() => {
-    // If no bricks were loaded (new game or corrupted save), spawn initial bricks
     if (bricksRef.current.length === 0) {
       spawnBricks(1);
     }
@@ -224,14 +214,12 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
           if (!ball.active) return;
           allReturned = false;
 
-          // Frame-rate independent movement
           ball.x += ball.dx * BALL_SPEED * dt;
           ball.y += ball.dy * BALL_SPEED * dt;
 
           if (ball.x <= BALL_RADIUS || ball.x >= CANVAS_WIDTH - BALL_RADIUS) {
             ball.dx *= -1;
-            ball.x =
-              ball.x <= BALL_RADIUS ? BALL_RADIUS : CANVAS_WIDTH - BALL_RADIUS;
+            ball.x = ball.x <= BALL_RADIUS ? BALL_RADIUS : CANVAS_WIDTH - BALL_RADIUS;
           }
           if (ball.y <= BALL_RADIUS) {
             ball.dy *= -1;
@@ -267,15 +255,9 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
               const overlapTop = ball.y + BALL_RADIUS - by;
               const overlapBottom = by + BRICK_SIZE - (ball.y - BALL_RADIUS);
 
-              const minOverlap = Math.min(
-                overlapLeft,
-                overlapRight,
-                overlapTop,
-                overlapBottom,
-              );
+              const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
 
-              if (minOverlap === overlapLeft || minOverlap === overlapRight)
-                ball.dx *= -1;
+              if (minOverlap === overlapLeft || minOverlap === overlapRight) ball.dx *= -1;
               else ball.dy *= -1;
 
               brick.hp -= 1;
@@ -297,17 +279,22 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
           setStage(nextStage);
           spawnBricks(nextStage);
 
-          if (nextStage === TARGET_STAGE_FOR_REWARD) {
+          if (nextStage >= TARGET_STAGE_FOR_REWARD && !rewardConfirmed && !rewardEarned) {
+            setRewardEarned(true);
             recordResult.mutate(
               { score: nextStage, reachedTarget: true },
               {
                 onSuccess: (data) => {
-                  if (data.reward_given) {
+                  if (data?.reward_given === true) {
+                    setRewardConfirmed(true);
                     setShowRewardToast(true);
                     setTimeout(() => setShowRewardToast(false), 3000);
                   }
                 },
-              }
+                onError: () => {
+                  setTimeout(() => setRewardEarned(false), 30000);
+                },
+              },
             );
           }
         }
@@ -326,7 +313,6 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
         const padding = 2;
 
         if (brick.type === "normal") {
-          // Color depends purely on HP
           const hue = (brick.hp * 10) % 360;
           const opacity = 0.7 + (brick.hp / (stage + 1)) * 0.3;
           ctx.fillStyle = `hsla(${hue}, 70%, 50%, ${opacity})`;
@@ -334,13 +320,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
           ctx.lineWidth = 1;
 
           ctx.beginPath();
-          ctx.roundRect(
-            bx + padding,
-            by + padding,
-            BRICK_SIZE - padding * 2,
-            BRICK_SIZE - padding * 2,
-            8,
-          );
+          ctx.roundRect(bx + padding, by + padding, BRICK_SIZE - padding * 2, BRICK_SIZE - padding * 2, 8);
           ctx.fill();
           ctx.stroke();
 
@@ -348,33 +328,16 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
           ctx.font = "bold 12px sans-serif";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText(
-            brick.hp.toString(),
-            bx + BRICK_SIZE / 2,
-            by + BRICK_SIZE / 2,
-          );
+          ctx.fillText(brick.hp.toString(), bx + BRICK_SIZE / 2, by + BRICK_SIZE / 2);
         } else {
-          // Add Ball Item
           ctx.beginPath();
-          ctx.arc(
-            bx + BRICK_SIZE / 2,
-            by + BRICK_SIZE / 2,
-            BALL_RADIUS + 5,
-            0,
-            Math.PI * 2,
-          );
+          ctx.arc(bx + BRICK_SIZE / 2, by + BRICK_SIZE / 2, BALL_RADIUS + 5, 0, Math.PI * 2);
           ctx.strokeStyle = "#10b981";
           ctx.lineWidth = 2;
           ctx.stroke();
           ctx.fillStyle = "white";
           ctx.beginPath();
-          ctx.arc(
-            bx + BRICK_SIZE / 2,
-            by + BRICK_SIZE / 2,
-            BALL_RADIUS,
-            0,
-            Math.PI * 2,
-          );
+          ctx.arc(bx + BRICK_SIZE / 2, by + BRICK_SIZE / 2, BALL_RADIUS, 0, Math.PI * 2);
           ctx.fill();
           ctx.fillStyle = "#10b981";
           ctx.font = "bold 14px sans-serif";
@@ -384,21 +347,12 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
         }
       });
 
-      if (
-        gameStateRef.current === "shooting" &&
-        nextShootOriginXRef.current !== null
-      ) {
+      if (gameStateRef.current === "shooting" && nextShootOriginXRef.current !== null) {
         ctx.save();
         ctx.globalAlpha = 0.4;
         ctx.fillStyle = "#10b981";
         ctx.beginPath();
-        ctx.arc(
-          nextShootOriginXRef.current,
-          shootOriginRef.current.y,
-          BALL_RADIUS,
-          0,
-          Math.PI * 2,
-        );
+        ctx.arc(nextShootOriginXRef.current, shootOriginRef.current.y, BALL_RADIUS, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       }
@@ -407,18 +361,9 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
       ctx.shadowBlur = 10;
       ctx.shadowColor = "rgba(16, 185, 129, 0.5)";
 
-      if (
-        gameStateRef.current === "idle" ||
-        gameStateRef.current === "aiming"
-      ) {
+      if (gameStateRef.current === "idle" || gameStateRef.current === "aiming") {
         ctx.beginPath();
-        ctx.arc(
-          shootOriginRef.current.x,
-          shootOriginRef.current.y,
-          BALL_RADIUS,
-          0,
-          Math.PI * 2,
-        );
+        ctx.arc(shootOriginRef.current.x, shootOriginRef.current.y, BALL_RADIUS, 0, Math.PI * 2);
         ctx.fill();
       }
 
@@ -457,12 +402,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
             if (brick.type !== "normal") continue;
             const bx = brick.col * BRICK_SIZE;
             const by = brick.row * BRICK_SIZE;
-            if (
-              tx > bx &&
-              tx < bx + BRICK_SIZE &&
-              ty > by &&
-              ty < by + BRICK_SIZE
-            ) {
+            if (tx > bx && tx < bx + BRICK_SIZE && ty > by && ty < by + BRICK_SIZE) {
               hit = true;
               endX = tx;
               endY = ty;
@@ -492,7 +432,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
 
     animationFrameId = requestAnimationFrame(update);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [stage, isMeRewarded, recordResult, spawnBricks]);
+  }, [stage, isMeRewarded, recordResult, spawnBricks, rewardEarned, rewardConfirmed]);
 
   const handlePointerDown = () => {
     if (gameStateRef.current !== "idle") return;
@@ -530,24 +470,37 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
     }
   };
 
+  const handleHintUse = () => {
+    if (hintUsed || gameState !== "idle") return;
+    if (confirm("화면의 모든 벽돌을 즉시 제거할까요? (게임당 1회)")) {
+      // 1. normal 타입의 모든 벽돌 제거
+      bricksRef.current = bricksRef.current.filter(b => b.type === "add_ball");
+      setHintUsed(true);
+      
+      // 2. 스테이지 즉시 종료 및 다음 스테이지로 이동
+      const nextStage = stage + 1;
+      setStage(nextStage);
+      spawnBricks(nextStage);
+      
+      // 3. 상태 저장
+      saveGameState();
+    }
+  };
+
   const resetGame = () => {
     if (confirm("게임을 초기화하시겠습니까?")) {
       setStage(1);
       setBallCount(1);
+      setHintUsed(false);
       bricksRef.current = [];
       ballsRef.current = [];
       shootOriginRef.current = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT - 20 };
       localStorage.removeItem(SAVE_KEY);
       spawnBricks(1);
       setGameState("idle");
+      setRewardEarned(false);
+      setRewardConfirmed(false);
     }
-  };
-
-  const skipTo99 = () => {
-    setStage(99);
-    setBallCount(50);
-    bricksRef.current = bricksRef.current.map((b) => ({ ...b, hp: 1 }));
-    setGameState("idle");
   };
 
   return (
@@ -594,8 +547,8 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
                 {stage}
               </p>
             </div>
-            <div className="flex bg-emerald-500 rounded-2xl shadow-md  border-emerald-400 overflow-hidden min-w-[140px]">
-              <div className="flex-1 px-3 py-2 text-center  border-emerald-400/30">
+            <div className="flex bg-emerald-500 rounded-2xl shadow-md border-emerald-400 overflow-hidden min-w-[140px]">
+              <div className="flex-1 px-3 py-2 text-center border-emerald-400/30">
                 <p className="text-[9px] text-emerald-100 font-black uppercase tracking-widest">
                   나의 기록
                 </p>
@@ -617,9 +570,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
 
         <div className="flex flex-col lg:flex-row gap-10 items-start lg:flex-1 lg:min-h-0 mt-2">
           <div className="w-full lg:flex-1 flex flex-col items-center justify-center lg:h-full">
-            {/* Mobile Header Overlay: Rewards (Left) & Actions/Scores (Right) */}
             <div className="flex sm:hidden items-center justify-between w-full max-w-[340px] mb-4 px-2">
-              {/* Left: Reward Status with Avatars */}
               <div className="flex items-center gap-2.5">
                 <div
                   className={`relative w-9 h-9 rounded-full border-2 transition-all ${isMeRewarded ? "border-emerald-500 bg-emerald-50" : "border-gray-200 bg-white"}`}
@@ -663,14 +614,22 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
                 </div>
               </div>
 
-              {/* Right: Actions and Compact Scores */}
               <div className="flex items-center gap-3">
-                <button
-                  onClick={resetGame}
-                  className="p-2 bg-gray-900 text-white rounded-xl shadow-sm active:scale-95 transition-all"
-                >
-                  <RotateCcw size={16} />
-                </button>
+                <div className="flex gap-1.5 mr-1">
+                  <button
+                    onClick={resetGame}
+                    className="p-2 bg-gray-900 text-white rounded-xl shadow-sm active:scale-95 transition-all"
+                  >
+                    <RotateCcw size={16} />
+                  </button>
+                  <button
+                    onClick={handleHintUse}
+                    disabled={hintUsed || gameState !== "idle"}
+                    className={`p-2 rounded-xl shadow-sm active:scale-95 transition-all ${hintUsed || gameState !== "idle" ? "bg-gray-100 text-gray-300 grayscale cursor-not-allowed" : "bg-amber-100 text-amber-600 hover:bg-amber-200"}`}
+                  >
+                    <Lightbulb size={16} />
+                  </button>
+                </div>
                 <div className="flex flex-col items-end leading-tight min-w-[80px]">
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">
@@ -685,10 +644,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
                       Best
                     </span>
                     <span className="text-[10px] font-black text-gray-700 leading-none">
-                      {Math.max(
-                        stage,
-                        myScore?.high_score || 0,
-                      ).toLocaleString()}
+                      {Math.max(stage, myScore?.high_score || 0).toLocaleString()}
                     </span>
                     <span className="text-[8px] font-bold text-gray-300">
                       /
@@ -739,22 +695,13 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
                 )}
               </AnimatePresence>
             </div>
-
-            {isDebug && (
-              <button
-                onClick={skipTo99}
-                className="mt-4 px-4 py-2 bg-rose-500 text-white rounded-xl font-black text-xs shadow-lg shadow-rose-200 active:scale-95 transition-all animate-pulse"
-              >
-                [DEBUG] Skip to Stage 99
-              </button>
-            )}
           </div>
 
           <div className="w-full lg:w-[380px] shrink-0 lg:h-full flex flex-col gap-6">
             <div className="hidden lg:block bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm">
               <div className="space-y-4 mb-8">
                 <div
-                  className={`flex items-center justify-between p-4 rounded-2xl border ${isMeRewarded ? "bg-emerald-50 border-emerald-100" : "bg-gray-50 border-gray-100"}`}
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isMeRewarded ? "bg-emerald-50 border-emerald-100" : "bg-gray-50 border-gray-100"}`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden border border-gray-100">
@@ -775,7 +722,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
                         {myProfile?.nickname || "나"}
                       </span>
                       <span className="text-[10px] font-bold text-gray-400">
-                        최고: {Math.max(stage, myScore?.high_score || 0)}
+                        최고: {Math.max(stage, myScore?.high_score || 0).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -792,14 +739,14 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
                   )}
                 </div>
                 <div
-                  className={`flex items-center justify-between p-4 rounded-2xl border ${isPartnerRewarded ? "bg-emerald-50 border-emerald-100" : "bg-gray-50 border-gray-100"}`}
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isPartnerRewarded ? "bg-emerald-50 border-emerald-100" : "bg-gray-50 border-gray-100"}`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden border border-gray-100">
                       {partnerProfile?.avatar_url ? (
                         <img
                           src={partnerProfile.avatar_url}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full rounded-full object-cover"
                           alt=""
                         />
                       ) : (
@@ -813,7 +760,7 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
                         {partnerProfile?.nickname || "상대방"}
                       </span>
                       <span className="text-[10px] font-bold text-gray-400">
-                        최고: {partnerScore?.high_score || 0}
+                        최고: {(partnerScore?.high_score || 0).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -830,12 +777,23 @@ export default function SwipeBrickBreaker({ onBack }: Props) {
                   )}
                 </div>
               </div>
-              <button
-                onClick={resetGame}
-                className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-[13px] flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
-              >
-                <RotateCcw size={14} /> Restart
-              </button>
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-3">
+                  <button
+                    onClick={resetGame}
+                    className="flex-1 bg-gray-900 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                  >
+                    <RotateCcw size={14} /> Restart
+                  </button>
+                  <button
+                    onClick={handleHintUse}
+                    disabled={hintUsed || gameState !== "idle"}
+                    className={`flex-1 py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 ${hintUsed || gameState !== "idle" ? "bg-gray-100 text-gray-300 grayscale cursor-not-allowed" : "bg-amber-100 text-amber-600 hover:bg-amber-200"}`}
+                  >
+                    <Lightbulb size={14} /> Hint
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="bg-gray-50/50 rounded-[32px] p-8 border border-gray-100">

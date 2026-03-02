@@ -65,7 +65,6 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const lastDeviceCheckRef = useRef<number>(0);
 
   // 1. Notification Settings Query
-  // initialSettings가 있으면 staleTime을 길게 가져가서 초기 중복 호출을 방지합니다.
   const { data: settings = initialSettings } = useQuery({
     queryKey: ['notification_settings', profile?.id],
     queryFn: async () => {
@@ -80,7 +79,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     },
     initialData: initialSettings,
     enabled: !!profile?.id && !coupleLoading,
-    staleTime: 1000 * 60 * 60, // 1 hour (초기 데이터가 있으므로 자주 리페칭할 필요 없음)
+    staleTime: 1000 * 60 * 60,
   });
 
   // 2. Notifications History Query
@@ -98,13 +97,12 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       return data as AppNotification[];
     },
     enabled: !!profile?.id && !coupleLoading,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
   const checkDeviceActive = useCallback(async () => {
     if (!profile?.id || typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
-    // Throttling: 10분 이내에 이미 확인했다면 요청 생략
     const now = Date.now();
     if (now - lastDeviceCheckRef.current < 600000) return;
 
@@ -145,8 +143,6 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
     try {
       const registration = await navigator.serviceWorker.ready;
-      
-      // Ensure we have permission first
       if (Notification.permission !== 'granted') return false;
 
       const subscription = await registration.pushManager.subscribe({
@@ -190,7 +186,6 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         
         if (!error) {
           setIsDeviceActive(false);
-          // Also unsubscribe the browser if possible
           await subscription.unsubscribe();
           return true;
         }
@@ -202,15 +197,8 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   }, [profile?.id]);
 
-  // Auto-Repair Logic: Ensure device is registered if global settings are ON
   useEffect(() => {
-    if (
-      settings?.is_enabled && 
-      !isDeviceActive && 
-      permissionStatus === 'granted' && 
-      !coupleLoading
-    ) {
-      console.log('[Push] Auto-repairing push subscription...');
+    if (settings?.is_enabled && !isDeviceActive && permissionStatus === 'granted' && !coupleLoading) {
       registerPushSubscription().then(success => {
         if (success) setIsDeviceActive(true);
       });
@@ -221,19 +209,16 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     if (!profile?.id) return false;
 
     if (targetState) {
-      // 1. Request permission
       const permission = await Notification.requestPermission();
       setPermissionStatus(permission);
       if (permission !== 'granted') return false;
 
-      // 2. Register THIS device
       const subscribed = await registerPushSubscription();
       if (!subscribed) {
         alert('푸시 알림 등록에 실패했습니다. 브라우저 설정을 확인해주세요.');
         return false;
       }
 
-      // 3. Update global setting
       const { error } = await supabase
         .from('notification_settings')
         .update({ is_enabled: true })
@@ -243,7 +228,6 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         queryClient.setQueryData(['notification_settings', profile.id], (prev: any) => ({ ...prev, is_enabled: true }));
       }
     } else {
-      // 1. Update global setting to OFF
       const { error } = await supabase
         .from('notification_settings')
         .update({ is_enabled: false })
@@ -251,14 +235,11 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
       if (!error) {
         queryClient.setQueryData(['notification_settings', profile.id], (prev: any) => ({ ...prev, is_enabled: false }));
-        // 2. Unregister only THIS device (Server will cleanup others later if 410 occurs)
         await unregisterPushSubscription();
       } else {
         return false;
       }
     }
-
-    // Refresh active state
     checkDeviceActive();
     return true;
   };
@@ -291,7 +272,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   };
 
-  // Realtime Sync
+  // Realtime Sync & Click Handling
   useEffect(() => {
     if (!profile?.id) return;
 
@@ -302,11 +283,21 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         queryClient.setQueryData(['notifications', profile.id], (prev: any) => [newNotif, ...(prev || []).slice(0, 19)]);
 
         if (Notification.permission === 'granted') {
-          new Notification(newNotif.title, { 
+          const notification = new Notification(newNotif.title, { 
             body: newNotif.content, 
             icon: window.location.origin + '/logo.png', 
             tag: newNotif.type 
           });
+
+          notification.onclick = (e) => {
+            e.preventDefault();
+            window.focus();
+            const url = newNotif.metadata?.deep_link || '/';
+            // 만약 현재 SPA 라우팅을 유지하고 싶다면 브라우저의 navigate API나 
+            // 상태를 통한 처리가 필요하지만, 알림 클릭은 보통 전체 페이지 이동으로 처리합니다.
+            window.location.href = url;
+            notification.close();
+          };
         }
       })
       .subscribe();
