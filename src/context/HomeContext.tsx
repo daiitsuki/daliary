@@ -58,12 +58,14 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     queryFn: async () => {
       if (!couple?.id) return null;
       
-      const today = new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'Asia/Seoul',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).format(new Date()).replace(/\. /g, '-').replace(/\./g, '');
+      // Standardize date to YYYY-MM-DD (Asia/Seoul)
+      const now = new Date();
+      const kstOffset = 9 * 60 * 60 * 1000; // KST is UTC+9
+      const kstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + kstOffset);
+      const year = kstNow.getFullYear();
+      const month = String(kstNow.getMonth() + 1).padStart(2, '0');
+      const day = String(kstNow.getDate()).padStart(2, '0');
+      const today = `${year}-${month}-${day}`;
 
       const { data: question } = await supabase
         .from('questions')
@@ -73,7 +75,7 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!question) {
         return { 
-          question: { id: 'dummy-q', content: '아직 오늘의 질문이 준비되지 않았어요. 새로운 질문을 기다려주세요!' },
+          question: null,
           answers: []
         };
       }
@@ -99,9 +101,9 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const calculateDDay = useCallback(() => {
     if (couple?.anniversary_date) {
-      const kstNow = new Date(new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Asia/Seoul'
-      }).format(new Date()));
+      const now = new Date();
+      const kstOffset = 9 * 60 * 60 * 1000;
+      const kstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + kstOffset);
       kstNow.setHours(0, 0, 0, 0);
 
       const start = new Date(couple.anniversary_date);
@@ -118,8 +120,8 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refresh = useCallback(async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['home_profiles', couple?.id] }),
-      queryClient.invalidateQueries({ queryKey: ['daily_data', couple?.id] })
+      queryClient.refetchQueries({ queryKey: ['home_profiles', couple?.id] }),
+      queryClient.refetchQueries({ queryKey: ['daily_data', couple?.id] })
     ]);
   }, [queryClient, couple?.id]);
 

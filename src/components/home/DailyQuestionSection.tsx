@@ -84,7 +84,20 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
       </div>
 
       <AnimatePresence mode="wait">
-        {!myAnswer ? (
+        {!todayQuestion ? (
+          <motion.div
+            key="no-question"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white p-8 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-rose-50/50 flex flex-col items-center justify-center text-center space-y-3"
+          >
+            <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center text-rose-300">
+              <Lock size={20} />
+            </div>
+            <p className="text-gray-500 font-bold text-[14px]">아직 오늘의 질문이 준비되지 않았어요.</p>
+            <p className="text-gray-400 text-[12px]">새로운 질문을 기다려주세요!</p>
+          </motion.div>
+        ) : !myAnswer ? (
           <motion.div
             key="input"
             initial={{ opacity: 0, y: 10 }}
@@ -95,7 +108,7 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
             <div className="absolute -right-6 -top-6 w-24 h-24 bg-rose-50/30 rounded-full blur-2xl" />
             
             <p className="relative z-10 text-gray-800 font-bold text-[14px] mb-5 leading-tight tracking-tight pr-4">
-              Q. {todayQuestion?.content || "로딩 중..."}
+              Q. {todayQuestion.content}
             </p>
             <textarea
               value={inputAnswer}
@@ -105,7 +118,7 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
             />
             <button
               onClick={onSubmit}
-              disabled={isSubmitting || !todayQuestion}
+              disabled={isSubmitting}
               className="w-full py-3.5 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-[13px] transition-all disabled:opacity-30 active:scale-[0.98] shadow-lg shadow-gray-200"
             >
               {isSubmitting ? "저장하는 중..." : "답변 완료"}
