@@ -4,7 +4,8 @@ import PlaceSearch from '../components/map/search/PlaceSearch';
 import RegionDashboard from '../components/map/dashboard/RegionDashboard';
 import Wishlist from '../components/map/wishlist/Wishlist';
 import TravelPlans from '../components/map/plans/TravelPlans';
-import { Search, Map as MapIcon, Star, CalendarDays } from 'lucide-react';
+import MemoryFeed from '../components/map/memory/MemoryFeed';
+import { Search, Map as MapIcon, Star, CalendarDays, Camera } from 'lucide-react';
 import { Place } from '../context/PlacesContext';
 import { motion, Variants } from 'framer-motion';
 
@@ -12,17 +13,16 @@ export default function Places() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [targetPlace, setTargetPlace] = useState<Place | null>(null);
   
-  const activeTab = (searchParams.get('tab') as 'dashboard' | 'search' | 'wishlist' | 'plans') || 'dashboard';
+  const activeTab = (searchParams.get('tab') as 'dashboard' | 'search' | 'wishlist' | 'plans' | 'memory') || 'dashboard';
 
   const setActiveTab = (tab: string) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('tab', tab);
-    // 탭 이동 시 지역 선택 해제 (원할 경우 유지할 수도 있음)
+    // 탭 이동 시 지역 선택 해제
     if (tab !== 'dashboard') {
       newParams.delete('region');
       newParams.delete('subRegion');
     }
-    // 직접 탭 클릭 시에는 targetPlace 초기화
     setTargetPlace(null);
     setSearchParams(newParams);
   };
@@ -34,7 +34,6 @@ export default function Places() {
     setSearchParams(newParams);
   };
 
-  // Stagger Animation Variants (홈 탭과 동일한 스타일)
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -58,49 +57,58 @@ export default function Places() {
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* 상단 탭 스위처: 고정 높이 */}
       <div className="bg-white border-b border-gray-100 shrink-0 z-30">
-        <div className="flex max-w-md mx-auto">
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`flex-1 py-4 text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
-              activeTab === 'dashboard' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
-            }`}
-          >
-            <MapIcon size={18} />
-            여행 지도
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('search');
-            }}
-            className={`flex-1 py-4 text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
-              activeTab === 'search' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
-            }`}
-          >
-            <Search size={18} />
-            장소 찾기
-          </button>
-          <button
-            onClick={() => setActiveTab('wishlist')}
-            className={`flex-1 py-4 text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
-              activeTab === 'wishlist' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
-            }`}
-          >
-            <Star size={18} />
-            가고 싶은 곳
-          </button>
-          <button
-            onClick={() => setActiveTab('plans')}
-            className={`flex-1 py-4 text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
-              activeTab === 'plans' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
-            }`}
-          >
-            <CalendarDays size={18} />
-            여행 계획
-          </button>
+        <div className="flex w-full overflow-x-auto no-scrollbar scroll-smooth">
+          <div className="flex min-w-full sm:max-w-xl sm:mx-auto">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex-1 min-w-[70px] py-4 text-[10px] sm:text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
+                activeTab === 'dashboard' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
+              }`}
+            >
+              <MapIcon size={16} className="sm:w-[18px] sm:h-[18px]" />
+              여행 지도
+            </button>
+            <button
+              onClick={() => setActiveTab('memory')}
+              className={`flex-1 min-w-[70px] py-4 text-[10px] sm:text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
+                activeTab === 'memory' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
+              }`}
+            >
+              <Camera size={16} className="sm:w-[18px] sm:h-[18px]" />
+              추억 피드
+            </button>
+            <button
+              onClick={() => setActiveTab('search')}
+              className={`flex-1 min-w-[70px] py-4 text-[10px] sm:text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
+                activeTab === 'search' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
+              }`}
+            >
+              <Search size={16} className="sm:w-[18px] sm:h-[18px]" />
+              장소 찾기
+            </button>
+            <button
+              onClick={() => setActiveTab('wishlist')}
+              className={`flex-1 min-w-[70px] py-4 text-[10px] sm:text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
+                activeTab === 'wishlist' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
+              }`}
+            >
+              <Star size={16} className="sm:w-[18px] sm:h-[18px]" />
+              가고 싶은 곳
+            </button>
+            <button
+              onClick={() => setActiveTab('plans')}
+              className={`flex-1 min-w-[70px] py-4 text-[10px] sm:text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
+                activeTab === 'plans' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
+              }`}
+            >
+              <CalendarDays size={16} className="sm:w-[18px] sm:h-[18px]" />
+              여행 계획
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 메인 컨텐츠 영역: 남은 공간 모두 차지 */}
+      {/* 메인 컨텐츠 영역 */}
       <main className="flex-1 relative min-h-0 overflow-hidden">
         {activeTab === 'dashboard' && (
           <motion.div 
@@ -112,6 +120,20 @@ export default function Places() {
           >
             <motion.div variants={itemVariants} className="h-full">
               <RegionDashboard />
+            </motion.div>
+          </motion.div>
+        )}
+
+        {activeTab === 'memory' && (
+          <motion.div 
+            key="memory"
+            variants={containerVariants} 
+            initial="hidden" 
+            animate="visible" 
+            className="h-full"
+          >
+            <motion.div variants={itemVariants} className="h-full">
+              <MemoryFeed />
             </motion.div>
           </motion.div>
         )}
