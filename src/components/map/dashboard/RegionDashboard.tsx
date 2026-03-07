@@ -1,10 +1,16 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { usePlaces, VisitWithPlace } from "../../../context/PlacesContext";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import VisitDetailModal from "./VisitDetailModal";
 import { METROPOLITAN_CITIES, PROVINCES } from "../../../constants/regions";
-import { Map as MapIcon, List, ArrowUpDown, ChevronDown, Check } from "lucide-react";
+import {
+  Map as MapIcon,
+  List,
+  ArrowUpDown,
+  ChevronDown,
+  Check,
+} from "lucide-react";
 
 // Map related components
 import DashboardHeader from "./DashboardHeader";
@@ -19,33 +25,40 @@ const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { 
-      staggerChildren: 0.1
-    }
-  }
+    transition: {
+      staggerChildren: 0.05,
+    },
+  },
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 15 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { 
-      duration: 0.5, 
-      ease: "easeOut"
-    }
-  }
+    transition: {
+      duration: 0.4,
+      ease: "easeOut",
+    },
+  },
 };
 
-type SortOption = 'default' | 'most-visited' | 'least-visited' | 'recent';
+type SortOption = "default" | "most-visited" | "least-visited" | "recent";
 
 /**
  * 메인 RegionDashboard 컴포넌트
  */
 const RegionDashboard = () => {
-  const { stats, subRegionStats, visits, updateVisit, deleteVisit, loading: placesLoading } = usePlaces();
+  const {
+    stats,
+    subRegionStats,
+    visits,
+    updateVisit,
+    deleteVisit,
+    loading: placesLoading,
+  } = usePlaces();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   const selectedRegion = searchParams.get("region");
   const selectedSubRegion = searchParams.get("subRegion");
 
@@ -55,17 +68,17 @@ const RegionDashboard = () => {
   const [showHelp, setShowHelp] = useState(false);
 
   // 뷰 모드 관련 상태 및 로컬 스토리지 저장
-  const VIEW_MODE_KEY = 'daliary_region_view_mode';
+  const VIEW_MODE_KEY = "daliary_region_view_mode";
   const [viewMode, setViewMode] = useState<"map" | "list">(() => {
     const saved = localStorage.getItem(VIEW_MODE_KEY);
     return (saved as "map" | "list") || "list";
   });
 
   // 정렬 관련 상태
-  const SORT_STORAGE_KEY = 'daliary_region_sort';
+  const SORT_STORAGE_KEY = "daliary_region_sort";
   const [sortOption, setSortOption] = useState<SortOption>(() => {
     const saved = localStorage.getItem(SORT_STORAGE_KEY);
-    return (saved as SortOption) || 'default';
+    return (saved as SortOption) || "default";
   });
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
@@ -77,12 +90,15 @@ const RegionDashboard = () => {
     localStorage.setItem(VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
 
-  const sortOptions = [
-    { id: 'default', label: '기본 순' },
-    { id: 'most-visited', label: '방문 많은 순' },
-    { id: 'least-visited', label: '방문 적은 순' },
-    { id: 'recent', label: '최근 다녀온 순' },
-  ];
+  const sortOptions = useMemo(
+    () => [
+      { id: "default", label: "기본 순" },
+      { id: "most-visited", label: "방문 많은 순" },
+      { id: "least-visited", label: "방문 적은 순" },
+      { id: "recent", label: "최근 다녀온 순" },
+    ],
+    [],
+  );
 
   const totalVisits = visits.length;
   const visitedRegionsCount = useMemo(
@@ -93,23 +109,21 @@ const RegionDashboard = () => {
   const filteredVisits = useMemo(() => {
     if (!selectedRegion) return [];
 
+    const baseVisits = visits.filter((v) => v.region === selectedRegion);
+
     if (METROPOLITAN_CITIES.includes(selectedRegion)) {
-      return visits
-        .filter((v) => v.region === selectedRegion)
-        .sort(
-          (a, b) =>
-            new Date(b.visited_at).getTime() - new Date(a.visited_at).getTime(),
-        );
+      return [...baseVisits].sort(
+        (a, b) =>
+          new Date(b.visited_at).getTime() - new Date(a.visited_at).getTime(),
+      );
     }
 
     if (selectedSubRegion) {
-      return visits
-        .filter(
-          (v) =>
-            v.region === selectedRegion && 
-            (selectedSubRegion === "미분류" 
-              ? (!v.sub_region || v.sub_region === "") 
-              : v.sub_region === selectedSubRegion),
+      return baseVisits
+        .filter((v) =>
+          selectedSubRegion === "미분류"
+            ? !v.sub_region || v.sub_region === ""
+            : v.sub_region === selectedSubRegion,
         )
         .sort(
           (a, b) =>
@@ -117,53 +131,64 @@ const RegionDashboard = () => {
         );
     }
 
-    return visits.filter((v) => v.region === selectedRegion);
+    return baseVisits;
   }, [visits, selectedRegion, selectedSubRegion]);
 
-  const setSelectedRegion = (region: string | null) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (region) {
+  const handleSetSelectedRegion = useCallback(
+    (region: string | null) => {
+      const newParams = new URLSearchParams(searchParams);
+      if (region) {
+        newParams.set("region", region);
+      } else {
+        newParams.delete("region");
+        newParams.delete("subRegion");
+      }
+      setSearchParams(newParams);
+    },
+    [searchParams, setSearchParams],
+  );
+
+  const handleSetSelectedSubRegion = useCallback(
+    (subRegion: string | null) => {
+      const newParams = new URLSearchParams(searchParams);
+      if (subRegion) {
+        newParams.set("subRegion", subRegion);
+      } else {
+        newParams.delete("subRegion");
+      }
+      setSearchParams(newParams);
+    },
+    [searchParams, setSearchParams],
+  );
+
+  const handleMapRegionSelect = useCallback(
+    (region: string, subRegion?: string) => {
+      const newParams = new URLSearchParams(searchParams);
       newParams.set("region", region);
-    } else {
-      newParams.delete("region");
-      newParams.delete("subRegion");
-    }
-    setSearchParams(newParams);
-  };
+      if (subRegion) {
+        newParams.set("subRegion", subRegion);
+      } else {
+        newParams.delete("subRegion");
+      }
+      setSearchParams(newParams);
+    },
+    [searchParams, setSearchParams],
+  );
 
-  const setSelectedSubRegion = (subRegion: string | null) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (subRegion) {
-      newParams.set("subRegion", subRegion);
-    } else {
-      newParams.delete("subRegion");
-    }
-    setSearchParams(newParams);
-  };
-
-  const handleMapRegionSelect = (region: string, subRegion?: string) => {
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set("region", region);
-    if (subRegion) {
-      newParams.set("subRegion", subRegion);
-    } else {
-      newParams.delete("subRegion");
-    }
-    setSearchParams(newParams);
-  };
-
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (selectedSubRegion) {
-      setSelectedSubRegion(null);
+      handleSetSelectedSubRegion(null);
     } else {
-      setSelectedRegion(null);
+      handleSetSelectedRegion(null);
     }
-  };
+  }, [selectedSubRegion, handleSetSelectedSubRegion, handleSetSelectedRegion]);
 
-  const currentSortLabel = sortOptions.find(opt => opt.id === sortOption)?.label;
+  const currentSortLabel = sortOptions.find(
+    (opt) => opt.id === sortOption,
+  )?.label;
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -180,7 +205,10 @@ const RegionDashboard = () => {
         </motion.div>
 
         {/* Control Bar (Sort & View Toggle) */}
-        <motion.div variants={itemVariants} className="px-6 py-2 flex items-center justify-between bg-white shrink-0 relative z-30">
+        <motion.div
+          variants={itemVariants}
+          className="px-6 py-2 flex items-center justify-between bg-white shrink-0 relative z-30"
+        >
           {/* Sort Dropdown (Left) - Only visible in list mode */}
           <div className="relative">
             <AnimatePresence>
@@ -195,8 +223,13 @@ const RegionDashboard = () => {
                     className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all active:scale-95"
                   >
                     <ArrowUpDown size={14} className="text-gray-400" />
-                    <span className="text-xs font-bold text-gray-700">{currentSortLabel}</span>
-                    <ChevronDown size={14} className={`text-gray-400 transition-transform ${isSortDropdownOpen ? 'rotate-180' : ''}`} />
+                    <span className="text-xs font-bold text-gray-700">
+                      {currentSortLabel}
+                    </span>
+                    <ChevronDown
+                      size={14}
+                      className={`text-gray-400 transition-transform ${isSortDropdownOpen ? "rotate-180" : ""}`}
+                    />
                   </button>
                 </motion.div>
               )}
@@ -205,9 +238,9 @@ const RegionDashboard = () => {
             <AnimatePresence>
               {isSortDropdownOpen && viewMode === "list" && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-20" 
-                    onClick={() => setIsSortDropdownOpen(false)} 
+                  <div
+                    className="fixed inset-0 z-20"
+                    onClick={() => setIsSortDropdownOpen(false)}
                   />
                   <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -223,7 +256,9 @@ const RegionDashboard = () => {
                           setIsSortDropdownOpen(false);
                         }}
                         className={`w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold transition-colors ${
-                          sortOption === opt.id ? 'text-rose-500 bg-rose-50' : 'text-gray-600 hover:bg-gray-50'
+                          sortOption === opt.id
+                            ? "text-rose-500 bg-rose-50"
+                            : "text-gray-600 hover:bg-gray-50"
                         }`}
                       >
                         {opt.label}
@@ -261,22 +296,32 @@ const RegionDashboard = () => {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="flex-1 w-full min-h-0 overflow-hidden relative">
+        <motion.div
+          variants={itemVariants}
+          className="flex-1 w-full min-h-0 overflow-hidden relative"
+        >
           {placesLoading ? (
             <div className="h-full flex flex-col items-center justify-center gap-4">
               <div className="w-10 h-10 border-4 border-rose-100 border-t-rose-500 rounded-full animate-spin" />
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Loading Records...</p>
+              <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
+                Loading Records...
+              </p>
             </div>
           ) : viewMode === "map" ? (
             <div className="h-full">
-              <DetailedKoreaMap 
+              <DetailedKoreaMap
                 stats={stats}
-                subRegionStats={subRegionStats} 
-                onRegionSelect={handleMapRegionSelect} 
+                subRegionStats={subRegionStats}
+                onRegionSelect={handleMapRegionSelect}
               />
             </div>
           ) : (
-            <RegionCardList stats={stats} visits={visits} onRegionClick={setSelectedRegion} sortOption={sortOption} />
+            <RegionCardList
+              stats={stats}
+              visits={visits}
+              onRegionClick={handleSetSelectedRegion}
+              sortOption={sortOption}
+            />
           )}
         </motion.div>
       </div>
@@ -289,7 +334,7 @@ const RegionDashboard = () => {
             <SubRegionMapOverlay
               region={selectedRegion}
               onBack={handleBack}
-              onSubRegionClick={setSelectedSubRegion}
+              onSubRegionClick={handleSetSelectedSubRegion}
               onVisitClick={setSelectedVisit}
             />
           )}

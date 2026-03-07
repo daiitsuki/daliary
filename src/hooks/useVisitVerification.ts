@@ -17,9 +17,10 @@ export const useVisitVerification = () => {
   const uploadImage = async (file: File) => {
     try {
       const options = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
+        maxSizeMB: 0.3,
+        maxWidthOrHeight: 1024,
         useWebWorker: true,
+        initialQuality: 0.7,
       };
       const compressedFile = await imageCompression(file, options);
       

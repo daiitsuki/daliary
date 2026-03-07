@@ -140,6 +140,15 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
     });
   };
 
+  const handleCloseVisitForm = useCallback(() => {
+    setIsVisitFormOpen(false);
+  }, []);
+
+  const handleVisitFormSuccess = useCallback(() => {
+    setIsVisitFormOpen(false);
+    refresh();
+  }, [refresh]);
+
   return (
     <div
       ref={containerRef}
@@ -339,11 +348,8 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
           placeAddress={
             selectedPlace.road_address_name || selectedPlace.address_name
           }
-          onClose={() => setIsVisitFormOpen(false)}
-          onSuccess={() => {
-            setIsVisitFormOpen(false);
-            refresh();
-          }}
+          onClose={handleCloseVisitForm}
+          onSuccess={handleVisitFormSuccess}
         />
       )}
     </div>

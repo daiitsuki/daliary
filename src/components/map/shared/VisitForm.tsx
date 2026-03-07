@@ -1,9 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useVisitVerification } from '../../../hooks/useVisitVerification';
-import { KOREA_REGIONS, SUB_REGIONS, METROPOLITAN_CITIES } from '../../../constants/regions';
-import { Camera, X, MapPin, Check, ChevronRight, Calendar } from 'lucide-react';
-import DatePicker from '../../common/DatePicker';
-import { usePlaceSearch, KakaoPlace } from '../../../hooks/usePlaceSearch';
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useVisitVerification } from "../../../hooks/useVisitVerification";
+import {
+  KOREA_REGIONS,
+  SUB_REGIONS,
+  METROPOLITAN_CITIES,
+} from "../../../constants/regions";
+import { Camera, X, MapPin, Check, ChevronRight, Calendar } from "lucide-react";
+import DatePicker from "../../common/DatePicker";
+import { usePlaceSearch, KakaoPlace } from "../../../hooks/usePlaceSearch";
 
 interface VisitFormProps {
   placeId?: string;
@@ -14,16 +18,25 @@ interface VisitFormProps {
   onSuccess: () => void;
 }
 
-const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddress, onClose, onSuccess }: VisitFormProps) => {
+const VisitForm = ({
+  placeId: initialPlaceId,
+  kakaoPlace,
+  placeName,
+  placeAddress,
+  onClose,
+  onSuccess,
+}: VisitFormProps) => {
   const { verifyVisit, isSubmitting, error } = useVisitVerification();
   const { savePlace } = usePlaceSearch();
-  
-  const [region, setRegion] = useState('');
-  const [subRegion, setSubRegion] = useState('');
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  const [region, setRegion] = useState("");
+  const [subRegion, setSubRegion] = useState("");
+  const [date, setDate] = useState<string>(
+    new Date().toISOString().split("T")[0],
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Cleanup for object URL
@@ -37,36 +50,48 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
 
   useEffect(() => {
     if (placeAddress) {
-      const parts = placeAddress.split(' ');
+      const parts = placeAddress.split(" ");
       if (parts.length >= 1) {
         const firstPart = parts[0];
-        let matchedRegion = '';
-        if (firstPart.includes('서울')) matchedRegion = '서울';
-        else if (firstPart.includes('부산')) matchedRegion = '부산';
-        else if (firstPart.includes('대구')) matchedRegion = '대구';
-        else if (firstPart.includes('인천')) matchedRegion = '인천';
-        else if (firstPart.includes('광주')) matchedRegion = '광주';
-        else if (firstPart.includes('대전')) matchedRegion = '대전';
-        else if (firstPart.includes('울산')) matchedRegion = '울산';
-        else if (firstPart.includes('세종')) matchedRegion = '세종';
-        else if (firstPart.includes('경기')) matchedRegion = '경기';
-        else if (firstPart.includes('강원')) matchedRegion = '강원';
-        else if (firstPart.includes('충북') || firstPart.includes('충청북도')) matchedRegion = '충북';
-        else if (firstPart.includes('충남') || firstPart.includes('충청남도')) matchedRegion = '충남';
-        else if (firstPart.includes('전북') || (firstPart.includes('전라북') && !firstPart.includes('특별자치도'))) matchedRegion = '전북';
-        else if (firstPart.includes('전북특별자치도')) matchedRegion = '전북';
-        else if (firstPart.includes('전남') || firstPart.includes('전라남도')) matchedRegion = '전남';
-        else if (firstPart.includes('경북') || firstPart.includes('경상북도')) matchedRegion = '경북';
-        else if (firstPart.includes('경남') || firstPart.includes('경상남도')) matchedRegion = '경남';
-        else if (firstPart.includes('제주')) matchedRegion = '제주';
+        let matchedRegion = "";
+        if (firstPart.includes("서울")) matchedRegion = "서울";
+        else if (firstPart.includes("부산")) matchedRegion = "부산";
+        else if (firstPart.includes("대구")) matchedRegion = "대구";
+        else if (firstPart.includes("인천")) matchedRegion = "인천";
+        else if (firstPart.includes("광주")) matchedRegion = "광주";
+        else if (firstPart.includes("대전")) matchedRegion = "대전";
+        else if (firstPart.includes("울산")) matchedRegion = "울산";
+        else if (firstPart.includes("세종")) matchedRegion = "세종";
+        else if (firstPart.includes("경기")) matchedRegion = "경기";
+        else if (firstPart.includes("강원")) matchedRegion = "강원";
+        else if (firstPart.includes("충북") || firstPart.includes("충청북도"))
+          matchedRegion = "충북";
+        else if (firstPart.includes("충남") || firstPart.includes("충청남도"))
+          matchedRegion = "충남";
+        else if (
+          firstPart.includes("전북") ||
+          (firstPart.includes("전라북") && !firstPart.includes("특별자치도"))
+        )
+          matchedRegion = "전북";
+        else if (firstPart.includes("전북특별자치도")) matchedRegion = "전북";
+        else if (firstPart.includes("전남") || firstPart.includes("전라남도"))
+          matchedRegion = "전남";
+        else if (firstPart.includes("경북") || firstPart.includes("경상북도"))
+          matchedRegion = "경북";
+        else if (firstPart.includes("경남") || firstPart.includes("경상남도"))
+          matchedRegion = "경남";
+        else if (firstPart.includes("제주")) matchedRegion = "제주";
 
         if (matchedRegion && KOREA_REGIONS.includes(matchedRegion)) {
           setRegion(matchedRegion);
-          if (!METROPOLITAN_CITIES.includes(matchedRegion) && parts.length >= 2) {
+          if (
+            !METROPOLITAN_CITIES.includes(matchedRegion) &&
+            parts.length >= 2
+          ) {
             const secondPart = parts[1];
             const subRegions = SUB_REGIONS[matchedRegion] || [];
-            const matchedSubRegion = subRegions.find(sr => 
-              secondPart.includes(sr) || sr.includes(secondPart)
+            const matchedSubRegion = subRegions.find(
+              (sr) => secondPart.includes(sr) || sr.includes(secondPart),
             );
             if (matchedSubRegion) {
               setSubRegion(matchedSubRegion);
@@ -77,23 +102,41 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
     }
   }, [placeAddress]);
 
-  // 뒤로가기 시 모달 닫기 로직
+  // --- 히스토리 관리 (중복 방지 강화) ---
+  const hasPushedState = useRef(false);
+
+  const handleCloseInternal = useCallback(() => {
+    // 직접 닫기 버튼을 누른 경우: 현재 히스토리가 이 모달의 상태일 때만 뒤로가기 실행
+    if (window.history.state?.modal === "visit-form") {
+      window.history.back();
+    }
+    onClose();
+  }, [onClose]);
+
   useEffect(() => {
-    window.history.pushState({ modal: "visit-form" }, "");
-    
+    // 중복 Push 방지: 전역 history state를 직접 확인
+    const currentState = window.history.state;
+    if (currentState?.modal === "visit-form") {
+      hasPushedState.current = true;
+    }
+
+    if (!hasPushedState.current) {
+      window.history.pushState({ modal: "visit-form" }, "");
+      hasPushedState.current = true;
+    }
+
     const handlePopState = (event: PopStateEvent) => {
+      // 뒤로가기 버튼을 눌러서 상태가 변했을 때, 이 모달의 상태가 아니면 닫기
       if (event.state?.modal !== "visit-form") {
         onClose();
       }
     };
-    
+
     window.addEventListener("popstate", handlePopState);
-    
+
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      if (window.history.state?.modal === "visit-form") {
-        window.history.back();
-      }
+      // cleanup에서 history.back() 호출은 하지 않음 (이미 handleCloseInternal에서 처리하거나 popstate에서 처리됨)
     };
   }, [onClose]);
 
@@ -101,12 +144,12 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      
+
       // Revoke old URL if exists
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
-      
+
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     }
@@ -114,18 +157,18 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     let targetPlaceId = initialPlaceId;
 
     try {
       // If no placeId but we have kakaoPlace, save it first
       if (!targetPlaceId && kakaoPlace) {
-        const savedPlace = await savePlace(kakaoPlace, 'visited');
+        const savedPlace = await savePlace(kakaoPlace, "visited");
         targetPlaceId = savedPlace.id;
       }
 
       if (!targetPlaceId) {
-        throw new Error('장소 정보가 없습니다.');
+        throw new Error("장소 정보가 없습니다.");
       }
 
       const success = await verifyVisit({
@@ -133,27 +176,26 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
         date: new Date(date),
         file: selectedFile,
         region,
-        subRegion: subRegion || undefined
+        subRegion: subRegion || undefined,
       });
 
       if (success) {
-        alert('방문 인증이 완료되었습니다!');
+        alert("방문 인증이 완료되었습니다!");
         onSuccess();
       }
     } catch (err: any) {
-      alert(err.message || '인증 처리 중 오류가 발생했습니다.');
+      alert(err.message || "인증 처리 중 오류가 발생했습니다.");
     }
   };
 
   const handleRegionSelect = (r: string) => {
     setRegion(r);
-    setSubRegion('');
+    setSubRegion("");
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white w-full h-[90vh] md:h-auto md:max-h-[85vh] md:max-w-lg md:rounded-[32px] rounded-t-[32px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300">
-        
         {/* Header */}
         <div className="px-6 py-5 border-b border-gray-50 flex justify-between items-center bg-white shrink-0">
           <div>
@@ -161,10 +203,12 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
               <MapPin className="w-5 h-5 text-rose-500" />
               방문 인증하기
             </h2>
-            <p className="text-xs text-gray-400 font-medium mt-1">{placeName}</p>
+            <p className="text-xs text-gray-400 font-medium mt-1">
+              {placeName}
+            </p>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 -mr-2 rounded-full hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-6 h-6" />
@@ -174,17 +218,12 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8 overscroll-contain">
           <form id="visit-form" onSubmit={handleSubmit} className="space-y-8">
-            
             {/* 1. Date Selection */}
             <div className="space-y-3">
               <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-rose-400" /> 방문 날짜
               </label>
-              <DatePicker 
-                value={date}
-                onChange={setDate}
-                variant="calendar"
-              />
+              <DatePicker value={date} onChange={setDate} variant="calendar" />
             </div>
 
             {/* 2. Photo Upload */}
@@ -192,19 +231,21 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
               <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
                 <Camera className="w-4 h-4 text-rose-400" /> 인증 사진
               </label>
-              <div 
+              <div
                 className={`group relative w-full aspect-video bg-gray-50 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
-                  previewUrl ? 'border-rose-200 bg-rose-50/30' : 'border-gray-200 hover:border-rose-300 hover:bg-rose-50/10'
+                  previewUrl
+                    ? "border-rose-200 bg-rose-50/30"
+                    : "border-gray-200 hover:border-rose-300 hover:bg-rose-50/10"
                 }`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {previewUrl ? (
                   <>
-                    <img 
+                    <img
                       key={previewUrl}
-                      src={previewUrl} 
-                      alt="Preview" 
-                      className="absolute inset-0 w-full h-full object-cover" 
+                      src={previewUrl}
+                      alt="Preview"
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                       <span className="bg-white/90 text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
@@ -217,7 +258,9 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
                     <div className="p-3 bg-white rounded-full shadow-sm">
                       <Camera className="w-6 h-6" />
                     </div>
-                    <span className="text-xs font-bold">터치하여 사진 업로드</span>
+                    <span className="text-xs font-bold">
+                      터치하여 사진 업로드
+                    </span>
                   </div>
                 )}
                 <input
@@ -236,7 +279,11 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
                 <span className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-rose-400" /> 행정구역 선택
                 </span>
-                {!region && <span className="text-[10px] text-rose-500 font-medium">* 필수 선택</span>}
+                {!region && (
+                  <span className="text-[10px] text-rose-500 font-medium">
+                    * 필수 선택
+                  </span>
+                )}
               </label>
               <div className="grid grid-cols-4 gap-2">
                 {KOREA_REGIONS.map((r) => (
@@ -246,8 +293,8 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
                     onClick={() => handleRegionSelect(r)}
                     className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
                       region === r
-                        ? 'bg-rose-500 border-rose-500 text-white shadow-md shadow-rose-200'
-                        : 'bg-white border-gray-100 text-gray-400 hover:border-rose-200 hover:text-rose-500'
+                        ? "bg-rose-500 border-rose-500 text-white shadow-md shadow-rose-200"
+                        : "bg-white border-gray-100 text-gray-400 hover:border-rose-200 hover:text-rose-500"
                     }`}
                   >
                     {r}
@@ -261,9 +308,14 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
               <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                 <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5 justify-between">
                   <span className="flex items-center gap-1.5">
-                    <ChevronRight className="w-4 h-4 text-rose-400" /> 상세 지역 선택
+                    <ChevronRight className="w-4 h-4 text-rose-400" /> 상세 지역
+                    선택
                   </span>
-                  {!subRegion && <span className="text-[10px] text-rose-500 font-medium">* 필수 선택</span>}
+                  {!subRegion && (
+                    <span className="text-[10px] text-rose-500 font-medium">
+                      * 필수 선택
+                    </span>
+                  )}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {SUB_REGIONS[region].map((sr) => (
@@ -273,8 +325,8 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
                       onClick={() => setSubRegion(sr)}
                       className={`py-2 rounded-xl text-[10px] font-bold transition-all border ${
                         subRegion === sr
-                          ? 'bg-rose-400 border-rose-400 text-white shadow-md'
-                          : 'bg-white border-gray-100 text-gray-400 hover:border-rose-200 hover:text-rose-400'
+                          ? "bg-rose-400 border-rose-400 text-white shadow-md"
+                          : "bg-white border-gray-100 text-gray-400 hover:border-rose-200 hover:text-rose-400"
                       }`}
                     >
                       {sr}
@@ -298,7 +350,9 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
           <button
             form="visit-form"
             type="submit"
-            disabled={isSubmitting || !region || (SUB_REGIONS[region] && !subRegion)}
+            disabled={
+              isSubmitting || !region || (SUB_REGIONS[region] && !subRegion)
+            }
             className="w-full py-4 bg-rose-500 text-white rounded-2xl font-bold text-base hover:bg-rose-600 active:scale-[0.98] transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed shadow-lg shadow-rose-100 disabled:shadow-none flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
@@ -311,7 +365,6 @@ const VisitForm = ({ placeId: initialPlaceId, kakaoPlace, placeName, placeAddres
             )}
           </button>
         </div>
-
       </div>
     </div>
   );

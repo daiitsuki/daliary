@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { usePlaces, Place } from '../../../context/PlacesContext';
 import { MapPin, Trash2, CheckCircle, Navigation, Search } from 'lucide-react';
 import VisitForm from '../shared/VisitForm';
@@ -82,6 +82,15 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
     setSelectedPlace(place);
     setIsVisitFormOpen(true);
   };
+
+  const handleCloseVisitForm = useCallback(() => {
+    setIsVisitFormOpen(false);
+  }, []);
+
+  const handleVisitFormSuccess = useCallback(() => {
+    setIsVisitFormOpen(false);
+    refresh();
+  }, [refresh]);
 
   if (loading) {
     return (
@@ -173,11 +182,8 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
           placeId={selectedPlace.id}
           placeName={selectedPlace.name}
           placeAddress={selectedPlace.address}
-          onClose={() => setIsVisitFormOpen(false)}
-          onSuccess={() => {
-            setIsVisitFormOpen(false);
-            refresh();
-          }}
+          onClose={handleCloseVisitForm}
+          onSuccess={handleVisitFormSuccess}
         />
       )}
     </motion.div>
