@@ -95,6 +95,9 @@ export default function StackGame({ onBack }: StackGameProps) {
     const topBlock = blocksRef.current[blocksRef.current.length - 1];
     const newY = topBlock.y - BLOCK_HEIGHT;
 
+    // 홀수 번째 이동 블록(1, 3, 5...)은 왼쪽에서, 짝수 번째(2, 4, 6...)는 오른쪽에서 등장
+    directionRef.current = blocksRef.current.length % 2 !== 0 ? 1 : -1;
+
     const newBlock: Block = {
       x:
         directionRef.current > 0
@@ -135,7 +138,6 @@ export default function StackGame({ onBack }: StackGameProps) {
     cameraYRef.current = 0;
     targetCameraYRef.current = 0;
     speedRef.current = 3;
-    directionRef.current = 1;
 
     spawnBlock();
   }, [spawnBlock]);
