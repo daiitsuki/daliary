@@ -395,7 +395,7 @@ export default function SwipeBrickBreaker({ onBack }: { onBack: () => void }) {
               ball.y - BALL_RADIUS < by + BRICK_SIZE
             ) {
               if (brick.type === "add_ball") {
-                setBallCount((prev) => prev + 1);
+                setBallCount((prev: number) => prev + 1);
                 bricksRef.current.splice(i, 1);
                 continue;
               }
@@ -757,7 +757,6 @@ export default function SwipeBrickBreaker({ onBack }: { onBack: () => void }) {
           </div>
 
           <Sidebar
-            stage={stage}
             myBest={Math.max(stage, myScore?.high_score || 0)}
             partnerBest={partnerScore?.high_score || 0}
             onReset={resetGame}
@@ -901,7 +900,6 @@ function MobileStats({
 }
 
 function Sidebar({
-  stage,
   myBest,
   partnerBest,
   onReset,

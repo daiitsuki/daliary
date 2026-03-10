@@ -261,7 +261,7 @@
 
 - **Table**: `game_scores`
 - **Fields**: `user_id`, `couple_id`, `game_type`, `high_score`, `last_reward_date`
-- **Logic**: 
+- **Logic**:
   - 최고 점수는 개인별로 기록하며, 보상 수령 여부는 `last_reward_date`를 통해 일 단위로 체크합니다.
   - **일일 미션 제한**: 사용자는 총 4개의 일일 미션 게임(2048, 수박게임, 벽돌깨기, 스택 타워) 중 하루에 최대 **2개의 게임**에서만 포인트 보상을 획득할 수 있습니다.
 
@@ -332,7 +332,7 @@
 - **Visual Effects**:
   - **Perfect Alignment**: 정확히 일치할 경우 "PERFECT!" 텍스트 피드백과 블록이 하얗게 빛나는 플래시 효과가 발생합니다.
   - **Chopping Physics**: 어긋난 부분은 조각나서 중력에 의해 아래로 떨어지며 투명해지는 애니메이션이 적용됩니다.
-- **Reward Condition**: 25층 이상 쌓기 또는 5회 연속 퍼펙트 콤보 달성 (일 최대 2개 게임 제한 내).
+- **Reward Condition**: 30층 이상 쌓기 또는 5회 연속 퍼펙트 콤보 달성 (일 최대 2개 게임 제한 내).
 - **Reward Amount**: 150 PT (Couple Points).
 - **Controls**: 화면 어디든 탭/클릭하여 블록 배치. (PC: Space 키 지원)
 - **UI/UX**: 2048 게임과 통일된 모바일 헤더 대시보드 및 하단 안내 디자인을 적용했습니다. 층수가 높아짐에 따라 블록 색상이 자연스럽게 변하는 그라데이션 팔레트를 사용합니다.

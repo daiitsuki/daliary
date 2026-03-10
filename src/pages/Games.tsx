@@ -133,7 +133,7 @@ export default function Games() {
                 <span className="text-gray-900 font-black">300 PT</span> 획득
               </p>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="h-8 w-[1px] bg-gray-100" />
               <div className="flex gap-1.5">
@@ -351,7 +351,7 @@ export default function Games() {
                       스택 타워
                     </h3>
                     <p className="text-gray-500 text-xs leading-relaxed mb-10 font-medium">
-                      블록을 타이밍 맞춰 높이 쌓으세요! (25층)
+                      블록을 타이밍 맞춰 높이 쌓으세요! (30층)
                     </p>
                   </div>
 
@@ -387,12 +387,20 @@ export default function Games() {
                   <div className="flex items-start justify-between mb-8">
                     <div className="w-16 h-16 bg-gray-50 rounded-[20px] flex items-center justify-center text-3xl font-black border border-gray-100 shadow-inner transition-transform duration-500 group-hover:scale-110 relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-rose-500/10 via-yellow-500/10 to-blue-500/10" />
-                      <Timer size={32} className="text-gray-700 relative z-10" />
+                      <Timer
+                        size={32}
+                        className="text-gray-700 relative z-10"
+                      />
                     </div>
                     <div className="bg-gradient-to-r from-rose-500 via-amber-500 via-emerald-500 via-blue-500 to-violet-500 p-[1px] rounded-lg shadow-sm">
                       <div className="bg-white rounded-[7px] px-3 py-1.5 flex items-center gap-1">
-                        <Ticket size={10} className="text-rose-500 fill-current" />
-                        <span className="text-[9px] font-black bg-gradient-to-r from-rose-500 via-amber-500 to-blue-500 bg-clip-text text-transparent">TICKET REQUIRED</span>
+                        <Ticket
+                          size={10}
+                          className="text-rose-500 fill-current"
+                        />
+                        <span className="text-[9px] font-black bg-gradient-to-r from-rose-500 via-amber-500 to-blue-500 bg-clip-text text-transparent">
+                          TICKET REQUIRED
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -422,7 +430,11 @@ export default function Games() {
                     className="w-full relative py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.98] group/btn overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-rose-500 via-amber-500 via-emerald-500 via-blue-500 to-violet-500 transition-transform duration-500 group-hover/btn:scale-110" />
-                    <Play size={16} fill="currentColor" className="relative z-10 text-white" />
+                    <Play
+                      size={16}
+                      fill="currentColor"
+                      className="relative z-10 text-white"
+                    />
                     <span className="relative z-10 text-white">플레이</span>
                   </button>
                 </div>

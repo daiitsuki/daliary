@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useMemoryFeed, MemoryFeedItem } from '../../../hooks/useMemoryFeed';
 import MemoryCard from './MemoryCard';
 import { Camera, Loader2 } from 'lucide-react';
@@ -63,7 +63,7 @@ export default function MemoryFeed() {
     );
   }
 
-  const allItems = data?.pages.flatMap((page) => page.data) || [];
+  const allItems: MemoryFeedItem[] = (data as any)?.pages.flatMap((page: any) => page.data) || [];
 
   if (allItems.length === 0) {
     return (
@@ -98,7 +98,7 @@ export default function MemoryFeed() {
 
       <div className="flex-1 overflow-y-auto custom-scrollbar pb-32 pt-4 px-4">
         <div className="max-w-md mx-auto space-y-6">
-          {allItems.map((item) => (
+          {allItems.map((item: MemoryFeedItem) => (
             <MemoryCard 
               key={item.id} 
               item={item} 

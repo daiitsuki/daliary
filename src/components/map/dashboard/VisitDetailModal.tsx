@@ -6,14 +6,10 @@ import {
   Calendar,
   MoreVertical,
   Trash2,
-  Camera,
   Loader2,
   ImageIcon,
   Send,
-  Image as ImageIconLucide,
-  MessageCircle,
   MapPin,
-  ChevronDown,
   Edit2,
   Check,
   ChevronRight,
@@ -26,7 +22,6 @@ import { useCouple } from "../../../hooks/useCouple";
 import {
   KOREA_REGIONS,
   SUB_REGIONS,
-  METROPOLITAN_CITIES,
 } from "../../../constants/regions";
 import ImageViewerModal from "../../common/ImageViewerModal";
 import DatePicker from "../../common/DatePicker";

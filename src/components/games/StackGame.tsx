@@ -34,7 +34,7 @@ const CANVAS_HEIGHT = 540;
 const INITIAL_BLOCK_SIZE = 200;
 const BLOCK_HEIGHT = 35;
 const CAMERA_LERP = 0.1;
-const TARGET_FLOORS = 25;
+const TARGET_FLOORS = 30;
 const TARGET_PERFECTS = 5;
 const PERFECT_TOLERANCE = 5;
 
@@ -46,9 +46,7 @@ export default function StackGame({ onBack }: StackGameProps) {
   const [showRewardToast, setShowRewardToast] = useState(false);
   const [perfectCount, setPerfectCount] = useState(0);
   const [maxConsecutivePerfects, setMaxConsecutivePerfects] = useState(0);
-  const [reachedTarget, setReachedTarget] = useState(false);
   const [rewardEarned, setRewardEarned] = useState(false);
-  const [rewardConfirmed, setRewardConfirmed] = useState(false);
   const [perfectFeedback, setPerfectFeedback] = useState(false);
 
   const { myProfile, partnerProfile } = useHomeData();
@@ -132,9 +130,7 @@ export default function StackGame({ onBack }: StackGameProps) {
     setMaxConsecutivePerfects(0);
     setGameOver(false);
     gameOverRef.current = false;
-    setReachedTarget(false);
     setRewardEarned(false);
-    setRewardConfirmed(false);
     cameraYRef.current = 0;
     targetCameraYRef.current = 0;
     speedRef.current = 3;
@@ -147,14 +143,12 @@ export default function StackGame({ onBack }: StackGameProps) {
       if (rewardEarned || isMeRewarded) return;
 
       setRewardEarned(true);
-      setReachedTarget(true);
 
       recordResult.mutate(
         { score: currentScore, reachedTarget: true },
         {
           onSuccess: (data) => {
             if (data?.reward_given) {
-              setRewardConfirmed(true);
               setShowRewardToast(true);
               setTimeout(() => setShowRewardToast(false), 3000);
             }
@@ -763,7 +757,7 @@ export default function StackGame({ onBack }: StackGameProps) {
               <ul className="space-y-3">
                 <li className="text-[11px] text-gray-400 font-medium leading-relaxed flex gap-2">
                   <span className="w-1 h-1 bg-gray-300 rounded-full mt-1.5 shrink-0" />
-                  25층을 쌓거나 5연속 콤보를 달성하면 미션 성공!
+                  30층을 쌓거나 5연속 콤보를 달성하면 미션 성공!
                 </li>
                 <li className="text-[11px] text-gray-400 font-medium leading-relaxed flex gap-2">
                   <span className="w-1 h-1 bg-gray-300 rounded-full mt-1.5 shrink-0" />

@@ -208,7 +208,7 @@ const VisitForm = ({
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCloseInternal}
             className="p-2 -mr-2 rounded-full hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-6 h-6" />

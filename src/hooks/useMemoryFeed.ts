@@ -39,7 +39,9 @@ export const useMemoryFeed = () => {
 
   return useInfiniteQuery({
     queryKey: ['memory_feed', couple?.id],
-    queryFn: async ({ pageParam = 0 }) => {
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const currentOffset = pageParam as number;
       if (!couple?.id || !myProfile?.id) return { data: [], nextCursor: null };
 
       // 1. Fetch visits
@@ -59,7 +61,7 @@ export const useMemoryFeed = () => {
         .not('image_url', 'is', null)
         .order('visited_at', { ascending: false })
         .order('created_at', { ascending: false })
-        .range(pageParam, pageParam + PAGE_SIZE - 1);
+        .range(currentOffset, currentOffset + PAGE_SIZE - 1);
 
       if (error) throw error;
 
@@ -110,10 +112,10 @@ export const useMemoryFeed = () => {
 
       return {
         data: formattedData,
-        nextCursor: data.length === PAGE_SIZE ? pageParam + PAGE_SIZE : null,
+        nextCursor: data.length === PAGE_SIZE ? currentOffset + PAGE_SIZE : null,
       };
     },
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: any) => lastPage.nextCursor,
     enabled: !!couple?.id && !!myProfile?.id,
   });
 };

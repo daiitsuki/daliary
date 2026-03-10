@@ -598,7 +598,7 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
     updatePreviewPosition(e.touches[0].clientX);
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = () => {
     if (gameOver || !canDrop) return;
     // 터치가 끝났을 때의 위치에서 드랍
     performDrop(currentFruitX);
