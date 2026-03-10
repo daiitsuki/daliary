@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Trophy, Star, ChevronLeft, Info, Zap, User } from "lucide-react";
+import {
+  RotateCcw,
+  Trophy,
+  Star,
+  ChevronLeft,
+  Info,
+  Zap,
+  User,
+} from "lucide-react";
 import { useGameScore } from "../../hooks/useGameScore";
 import { useHomeData } from "../../hooks/useHomeData";
 
@@ -70,14 +78,15 @@ export default function StackGame({ onBack }: StackGameProps) {
 
   const isMeRewarded = myScore?.last_reward_date === today;
   const partnerScore = scores?.find((s) => s.user_id === partnerProfile?.id);
-  const isPartnerRewarded = !!partnerProfile && partnerScore?.last_reward_date === today;
+  const isPartnerRewarded =
+    !!partnerProfile && partnerScore?.last_reward_date === today;
 
   useEffect(() => {
     if (myScore) setBestScore(myScore.high_score);
   }, [myScore]);
 
   const getColor = (index: number) => {
-    const baseHue = 260; 
+    const baseHue = 260;
     const hue = (baseHue + index * 5) % 360;
     return `hsl(${hue}, 70%, 65%)`;
   };
@@ -85,21 +94,24 @@ export default function StackGame({ onBack }: StackGameProps) {
   const spawnBlock = useCallback(() => {
     const topBlock = blocksRef.current[blocksRef.current.length - 1];
     const newY = topBlock.y - BLOCK_HEIGHT;
-    
+
     const newBlock: Block = {
-      x: directionRef.current > 0 ? -topBlock.width : CANVAS_WIDTH + topBlock.width,
+      x:
+        directionRef.current > 0
+          ? -topBlock.width
+          : CANVAS_WIDTH + topBlock.width,
       y: newY,
       width: topBlock.width,
       color: getColor(blocksRef.current.length),
     };
 
     movingBlockRef.current = newBlock;
-    
-    // 속도 계산: 기본 3.0 + 층당 0.09 상승
-    speedRef.current = 3 + (blocksRef.current.length - 1) * 0.09;
-    
+
+    // 속도 계산: 기본 3.0 + 층당 0.11 상승
+    speedRef.current = 3 + (blocksRef.current.length - 1) * 0.11;
+
     // 최대 속도 제한
-    if (speedRef.current > 5.25) speedRef.current = 5.25;
+    if (speedRef.current > 5.64) speedRef.current = 5.64;
   }, []);
 
   const initGame = useCallback(() => {
@@ -128,37 +140,41 @@ export default function StackGame({ onBack }: StackGameProps) {
     spawnBlock();
   }, [spawnBlock]);
 
-  const triggerReward = useCallback((currentScore: number) => {
-    if (rewardEarned || isMeRewarded) return;
-    
-    setRewardEarned(true);
-    setReachedTarget(true);
-    
-    recordResult.mutate(
-      { score: currentScore, reachedTarget: true },
-      {
-        onSuccess: (data) => {
-          if (data?.reward_given) {
-            setRewardConfirmed(true);
-            setShowRewardToast(true);
-            setTimeout(() => setShowRewardToast(false), 3000);
-          }
-        }
-      }
-    );
-  }, [rewardEarned, isMeRewarded, recordResult]);
+  const triggerReward = useCallback(
+    (currentScore: number) => {
+      if (rewardEarned || isMeRewarded) return;
+
+      setRewardEarned(true);
+      setReachedTarget(true);
+
+      recordResult.mutate(
+        { score: currentScore, reachedTarget: true },
+        {
+          onSuccess: (data) => {
+            if (data?.reward_given) {
+              setRewardConfirmed(true);
+              setShowRewardToast(true);
+              setTimeout(() => setShowRewardToast(false), 3000);
+            }
+          },
+        },
+      );
+    },
+    [rewardEarned, isMeRewarded, recordResult],
+  );
 
   const endGame = useCallback(() => {
     setGameOver(true);
     gameOverRef.current = true;
     movingBlockRef.current = null;
-    
+
     const finalScore = blocksRef.current.length - 1;
-    const isTargetReached = finalScore >= TARGET_FLOORS || maxConsecutivePerfects >= TARGET_PERFECTS;
-    
+    const isTargetReached =
+      finalScore >= TARGET_FLOORS || maxConsecutivePerfects >= TARGET_PERFECTS;
+
     recordResult.mutate({
       score: finalScore,
-      reachedTarget: isTargetReached
+      reachedTarget: isTargetReached,
     });
   }, [maxConsecutivePerfects, recordResult]);
 
@@ -186,22 +202,23 @@ export default function StackGame({ onBack }: StackGameProps) {
       setTimeout(() => setPerfectFeedback(false), 500);
     } else {
       const overlap = top.width - absDiff;
-      
+
       if (overlap <= 0) {
         fallingPiecesRef.current.push({
           ...moving,
           vx: speedRef.current * directionRef.current * 0.5,
           vy: 2,
-          opacity: 1
+          opacity: 1,
         });
         endGame();
         return;
       }
 
       const pieceWidth = absDiff;
-      const pieceX = diff > 0 
-        ? moving.x + (moving.width / 2) - (pieceWidth / 2)
-        : moving.x - (moving.width / 2) + (pieceWidth / 2);
+      const pieceX =
+        diff > 0
+          ? moving.x + moving.width / 2 - pieceWidth / 2
+          : moving.x - moving.width / 2 + pieceWidth / 2;
 
       fallingPiecesRef.current.push({
         x: pieceX,
@@ -210,7 +227,7 @@ export default function StackGame({ onBack }: StackGameProps) {
         color: moving.color,
         vx: directionRef.current * 1,
         vy: 2,
-        opacity: 1
+        opacity: 1,
       });
 
       const newWidth = overlap;
@@ -229,12 +246,12 @@ export default function StackGame({ onBack }: StackGameProps) {
 
     const newScore = blocksRef.current.length - 1;
     setScore(newScore);
-    
+
     // 즉시 보상 판정
     if (newScore >= TARGET_FLOORS || nextPerfectCount >= TARGET_PERFECTS) {
       triggerReward(newScore);
     }
-    
+
     if (blocksRef.current.length > 4) {
       targetCameraYRef.current += BLOCK_HEIGHT;
     }
@@ -259,10 +276,15 @@ export default function StackGame({ onBack }: StackGameProps) {
     ctx.save();
     ctx.translate(0, cameraYRef.current);
 
-    fallingPiecesRef.current.forEach(piece => {
+    fallingPiecesRef.current.forEach((piece) => {
       ctx.globalAlpha = piece.opacity;
       ctx.fillStyle = piece.color;
-      ctx.fillRect(piece.x - piece.width / 2, piece.y, piece.width, BLOCK_HEIGHT);
+      ctx.fillRect(
+        piece.x - piece.width / 2,
+        piece.y,
+        piece.width,
+        BLOCK_HEIGHT,
+      );
     });
     ctx.globalAlpha = 1;
 
@@ -271,19 +293,34 @@ export default function StackGame({ onBack }: StackGameProps) {
       ctx.shadowBlur = 10;
       ctx.shadowOffsetY = 5;
       ctx.fillStyle = block.color;
-      ctx.fillRect(block.x - block.width / 2, block.y, block.width, BLOCK_HEIGHT);
+      ctx.fillRect(
+        block.x - block.width / 2,
+        block.y,
+        block.width,
+        BLOCK_HEIGHT,
+      );
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
       ctx.fillStyle = "rgba(255,255,255,0.2)";
       ctx.fillRect(block.x - block.width / 2, block.y, block.width, 4);
       ctx.fillStyle = "rgba(0,0,0,0.05)";
-      ctx.fillRect(block.x - block.width / 2, block.y + BLOCK_HEIGHT - 4, block.width, 4);
+      ctx.fillRect(
+        block.x - block.width / 2,
+        block.y + BLOCK_HEIGHT - 4,
+        block.width,
+        4,
+      );
     });
 
     if (movingBlockRef.current && !gameOverRef.current) {
       const block = movingBlockRef.current;
       ctx.fillStyle = block.color;
-      ctx.fillRect(block.x - block.width / 2, block.y, block.width, BLOCK_HEIGHT);
+      ctx.fillRect(
+        block.x - block.width / 2,
+        block.y,
+        block.width,
+        BLOCK_HEIGHT,
+      );
       ctx.fillStyle = "rgba(255,255,255,0.2)";
       ctx.fillRect(block.x - block.width / 2, block.y, block.width, 4);
     }
@@ -291,45 +328,53 @@ export default function StackGame({ onBack }: StackGameProps) {
     ctx.restore();
   }, []);
 
-  const update = useCallback((time: number) => {
-    if (!lastTimeRef.current) {
+  const update = useCallback(
+    (time: number) => {
+      if (!lastTimeRef.current) {
+        lastTimeRef.current = time;
+        requestRef.current = requestAnimationFrame(update);
+        return;
+      }
+      const deltaTime = Math.min(time - lastTimeRef.current, 100);
       lastTimeRef.current = time;
+
+      // 60fps 기준(16.67ms)으로 타임스케일 계산
+      const timeScale = deltaTime / 16.666;
+
+      if (movingBlockRef.current && !gameOverRef.current) {
+        const moving = movingBlockRef.current;
+        moving.x += speedRef.current * directionRef.current * timeScale;
+
+        if (moving.x > CANVAS_WIDTH - moving.width / 2 + 50) {
+          moving.x = CANVAS_WIDTH - moving.width / 2 + 50;
+          directionRef.current = -1;
+        }
+        if (moving.x < -50 + moving.width / 2) {
+          moving.x = -50 + moving.width / 2;
+          directionRef.current = 1;
+        }
+      }
+
+      fallingPiecesRef.current.forEach((piece) => {
+        piece.y += piece.vy * timeScale;
+        piece.x += piece.vx * timeScale;
+        piece.vy += 0.4 * timeScale;
+        piece.opacity -= 0.02 * timeScale;
+      });
+      fallingPiecesRef.current = fallingPiecesRef.current.filter(
+        (p) => p.opacity > 0 && p.y < CANVAS_HEIGHT + 100,
+      );
+
+      cameraYRef.current +=
+        (targetCameraYRef.current - cameraYRef.current) *
+        CAMERA_LERP *
+        timeScale;
+
+      draw();
       requestRef.current = requestAnimationFrame(update);
-      return;
-    }
-    const deltaTime = Math.min(time - lastTimeRef.current, 100);
-    lastTimeRef.current = time;
-    
-    // 60fps 기준(16.67ms)으로 타임스케일 계산
-    const timeScale = deltaTime / 16.666;
-
-    if (movingBlockRef.current && !gameOverRef.current) {
-      const moving = movingBlockRef.current;
-      moving.x += speedRef.current * directionRef.current * timeScale;
-      
-      if (moving.x > CANVAS_WIDTH - moving.width / 2 + 50) {
-        moving.x = CANVAS_WIDTH - moving.width / 2 + 50;
-        directionRef.current = -1;
-      }
-      if (moving.x < -50 + moving.width / 2) {
-        moving.x = -50 + moving.width / 2;
-        directionRef.current = 1;
-      }
-    }
-
-    fallingPiecesRef.current.forEach(piece => {
-      piece.y += piece.vy * timeScale;
-      piece.x += piece.vx * timeScale;
-      piece.vy += 0.4 * timeScale;
-      piece.opacity -= 0.02 * timeScale;
-    });
-    fallingPiecesRef.current = fallingPiecesRef.current.filter(p => p.opacity > 0 && p.y < CANVAS_HEIGHT + 100);
-
-    cameraYRef.current += (targetCameraYRef.current - cameraYRef.current) * CAMERA_LERP * timeScale;
-
-    draw();
-    requestRef.current = requestAnimationFrame(update);
-  }, [draw]);
+    },
+    [draw],
+  );
 
   useEffect(() => {
     initGame();
@@ -345,14 +390,17 @@ export default function StackGame({ onBack }: StackGameProps) {
     placeBlock();
   }, [gameOver, placeBlock]);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (gameOver) return;
-    // 터치 시 스크롤 등 기본 동작 방지 및 즉각 반응
-    if (e.pointerType === 'touch') {
-      // 터치 이벤트의 경우에만 방지 (마우스의 경우 버튼 클릭 등을 위해)
-    }
-    handleInteraction();
-  }, [gameOver, handleInteraction]);
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (gameOver) return;
+      // 터치 시 스크롤 등 기본 동작 방지 및 즉각 반응
+      if (e.pointerType === "touch") {
+        // 터치 이벤트의 경우에만 방지 (마우스의 경우 버튼 클릭 등을 위해)
+      }
+      handleInteraction();
+    },
+    [gameOver, handleInteraction],
+  );
 
   // Handle Keyboard Input
   useEffect(() => {
@@ -452,9 +500,15 @@ export default function StackGame({ onBack }: StackGameProps) {
             {/* Mobile Dashboard */}
             <div className="flex sm:hidden items-center justify-between w-full max-w-[340px] mb-4 px-2">
               <div className="flex items-center gap-2.5">
-                <div className={`relative w-9 h-9 rounded-full border-2 transition-all ${isMeRewarded ? "border-violet-500 bg-violet-50" : "border-gray-200 bg-white"}`}>
+                <div
+                  className={`relative w-9 h-9 rounded-full border-2 transition-all ${isMeRewarded ? "border-violet-500 bg-violet-50" : "border-gray-200 bg-white"}`}
+                >
                   {myProfile?.avatar_url ? (
-                    <img src={myProfile.avatar_url} className="w-full h-full rounded-full object-cover" alt="" />
+                    <img
+                      src={myProfile.avatar_url}
+                      className="w-full h-full rounded-full object-cover"
+                      alt=""
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-gray-400">
                       {myProfile?.nickname?.slice(0, 1)}
@@ -466,9 +520,15 @@ export default function StackGame({ onBack }: StackGameProps) {
                     </div>
                   )}
                 </div>
-                <div className={`relative w-9 h-9 rounded-full border-2 transition-all ${isPartnerRewarded ? "border-violet-500 bg-violet-50" : "border-gray-200 bg-white"}`}>
+                <div
+                  className={`relative w-9 h-9 rounded-full border-2 transition-all ${isPartnerRewarded ? "border-violet-500 bg-violet-50" : "border-gray-200 bg-white"}`}
+                >
                   {partnerProfile?.avatar_url ? (
-                    <img src={partnerProfile.avatar_url} className="w-full h-full rounded-full object-cover" alt="" />
+                    <img
+                      src={partnerProfile.avatar_url}
+                      className="w-full h-full rounded-full object-cover"
+                      alt=""
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-gray-400">
                       {partnerProfile?.nickname?.slice(0, 1) || "P"}
@@ -491,20 +551,33 @@ export default function StackGame({ onBack }: StackGameProps) {
                 </button>
                 <div className="flex flex-col items-end leading-tight min-w-[80px]">
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Floors</span>
-                    <span className="text-base font-black text-violet-500 leading-none">{score}</span>
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">
+                      Floors
+                    </span>
+                    <span className="text-base font-black text-violet-500 leading-none">
+                      {score}
+                    </span>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Record</span>
-                    <span className="text-[10px] font-black text-gray-700 leading-none">{Math.max(score, bestScore)}</span>
-                    <span className="text-[8px] font-bold text-gray-300">/</span>
-                    <span className="text-[10px] font-black text-violet-400 leading-none">{partnerScore?.high_score || 0}</span>
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">
+                      Record
+                    </span>
+                    <span className="text-[10px] font-black text-gray-700 leading-none">
+                      {Math.max(score, bestScore)}
+                    </span>
+                    <span className="text-[8px] font-bold text-gray-300">
+                      /
+                    </span>
+                    <span className="text-[10px] font-black text-violet-400 leading-none">
+                      {partnerScore?.high_score || 0}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="relative bg-white rounded-[32px] border-[6px] border-white shadow-2xl overflow-hidden touch-none box-content mb-6 lg:mb-0"
+            <div
+              className="relative bg-white rounded-[32px] border-[6px] border-white shadow-2xl overflow-hidden touch-none box-content mb-6 lg:mb-0"
               style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}
               onPointerDown={handlePointerDown}
             >
@@ -524,7 +597,9 @@ export default function StackGame({ onBack }: StackGameProps) {
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-[15]"
                   >
                     <div className="bg-white/90 backdrop-blur-sm px-6 py-2 rounded-full border-4 border-yellow-400 shadow-xl">
-                      <span className="text-yellow-500 font-black text-2xl tracking-tighter">PERFECT!</span>
+                      <span className="text-yellow-500 font-black text-2xl tracking-tighter">
+                        PERFECT!
+                      </span>
                     </div>
                   </motion.div>
                 )}
@@ -532,8 +607,17 @@ export default function StackGame({ onBack }: StackGameProps) {
 
               <div className="absolute top-6 left-6 pointer-events-none z-10">
                 <div className="flex items-center gap-2 bg-black/5 backdrop-blur-md px-3 py-1.5 rounded-full border border-black/5">
-                  <Zap size={14} className={perfectCount > 0 ? "text-yellow-500 fill-current" : "text-gray-400"} />
-                  <span className="text-gray-700 font-black text-sm">Combo: {perfectCount}</span>
+                  <Zap
+                    size={14}
+                    className={
+                      perfectCount > 0
+                        ? "text-yellow-500 fill-current"
+                        : "text-gray-400"
+                    }
+                  />
+                  <span className="text-gray-700 font-black text-sm">
+                    Combo: {perfectCount}
+                  </span>
                 </div>
               </div>
 
@@ -583,17 +667,25 @@ export default function StackGame({ onBack }: StackGameProps) {
           <div className="w-full lg:w-[380px] shrink-0 lg:h-full flex flex-col gap-6">
             <div className="hidden lg:block bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm">
               <div className="space-y-4 mb-8">
-                <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isMeRewarded ? "bg-violet-50 border-violet-100" : "bg-gray-50 border-gray-100"}`}>
+                <div
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isMeRewarded ? "bg-violet-50 border-violet-100" : "bg-gray-50 border-gray-100"}`}
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden border border-gray-100">
                       {myProfile?.avatar_url ? (
-                        <img src={myProfile.avatar_url} className="w-full h-full object-cover" alt="" />
+                        <img
+                          src={myProfile.avatar_url}
+                          className="w-full h-full object-cover"
+                          alt=""
+                        />
                       ) : (
                         <User size={14} className="text-gray-400" />
                       )}
                     </div>
                     <div className="flex flex-col">
-                      <span className={`text-xs font-black truncate max-w-[100px] ${isMeRewarded ? "text-violet-500" : "text-gray-600"}`}>
+                      <span
+                        className={`text-xs font-black truncate max-w-[100px] ${isMeRewarded ? "text-violet-500" : "text-gray-600"}`}
+                      >
                         {myProfile?.nickname || "나"}
                       </span>
                       <span className="text-[10px] font-bold text-gray-400">
@@ -602,23 +694,37 @@ export default function StackGame({ onBack }: StackGameProps) {
                     </div>
                   </div>
                   {isMeRewarded ? (
-                    <Star size={14} fill="currentColor" className="text-violet-500" />
+                    <Star
+                      size={14}
+                      fill="currentColor"
+                      className="text-violet-500"
+                    />
                   ) : (
-                    <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">도전 가능</span>
+                    <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">
+                      도전 가능
+                    </span>
                   )}
                 </div>
 
-                <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isPartnerRewarded ? "bg-violet-50 border-violet-100" : "bg-gray-50 border-gray-100"}`}>
+                <div
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isPartnerRewarded ? "bg-violet-50 border-violet-100" : "bg-gray-50 border-gray-100"}`}
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden border border-gray-100">
                       {partnerProfile?.avatar_url ? (
-                        <img src={partnerProfile.avatar_url} className="w-full h-full rounded-full object-cover" alt="" />
+                        <img
+                          src={partnerProfile.avatar_url}
+                          className="w-full h-full rounded-full object-cover"
+                          alt=""
+                        />
                       ) : (
                         <User size={14} className="text-gray-400" />
                       )}
                     </div>
                     <div className="flex flex-col">
-                      <span className={`text-xs font-black truncate max-w-[100px] ${isPartnerRewarded ? "text-violet-500" : "text-gray-600"}`}>
+                      <span
+                        className={`text-xs font-black truncate max-w-[100px] ${isPartnerRewarded ? "text-violet-500" : "text-gray-600"}`}
+                      >
                         {partnerProfile?.nickname || "상대방"}
                       </span>
                       <span className="text-[10px] font-bold text-gray-400">
@@ -627,9 +733,15 @@ export default function StackGame({ onBack }: StackGameProps) {
                     </div>
                   </div>
                   {isPartnerRewarded ? (
-                    <Star size={14} fill="currentColor" className="text-violet-500" />
+                    <Star
+                      size={14}
+                      fill="currentColor"
+                      className="text-violet-500"
+                    />
                   ) : (
-                    <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">도전 가능</span>
+                    <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">
+                      도전 가능
+                    </span>
                   )}
                 </div>
               </div>
