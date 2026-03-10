@@ -108,11 +108,11 @@ export default function StackGame({ onBack }: StackGameProps) {
 
     movingBlockRef.current = newBlock;
 
-    // 속도 계산: 기본 3.0 + 층당 0.11 상승
-    speedRef.current = 3 + (blocksRef.current.length - 1) * 0.11;
+    // 속도 계산: 기본 3.0 + 층당 0.2 상승
+    speedRef.current = 3 + (blocksRef.current.length - 1) * 0.2;
 
     // 최대 속도 제한
-    if (speedRef.current > 5.64) speedRef.current = 5.64;
+    if (speedRef.current > 9) speedRef.current = 9;
   }, []);
 
   const initGame = useCallback(() => {
