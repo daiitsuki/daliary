@@ -292,7 +292,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
           notification.onclick = (e) => {
             e.preventDefault();
             window.focus();
-            const url = newNotif.metadata?.deep_link || '/';
+            const url = newNotif.metadata?.url || '/home';
             // 만약 현재 SPA 라우팅을 유지하고 싶다면 브라우저의 navigate API나 
             // 상태를 통한 처리가 필요하지만, 알림 클릭은 보통 전체 페이지 이동으로 처리합니다.
             window.location.href = url;

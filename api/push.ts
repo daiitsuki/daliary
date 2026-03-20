@@ -57,8 +57,8 @@ export default async function handler(req: any, res: any) {
     }
 
     // 3. 실제 Push 발송
-    // metadata에 deep_link가 있으면 해당 URL을 사용하고, 없으면 기본값인 '/'를 사용합니다.
-    const deepLink = record.metadata?.deep_link || '/';
+    // metadata에 url이 있으면 해당 URL을 사용하고, 없으면 기본값인 '/'를 사용합니다.
+    const deepLink = record.metadata?.url || '/';
 
     const payload = JSON.stringify({
       title: record.title,
