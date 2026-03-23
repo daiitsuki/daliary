@@ -8,7 +8,6 @@ import { useCouplePoints } from "../hooks/useCouplePoints";
 // Sub Components
 import HomeHeader from "../components/home/HomeHeader";
 import HeartGauge from "../components/home/HeartGauge";
-import AttendanceButton from "../components/home/AttendanceButton";
 import DailyQuestionSection from "../components/home/DailyQuestionSection";
 import QuickLinksSection from "../components/home/QuickLinksSection";
 
@@ -104,15 +103,11 @@ export default function Home() {
           <HeartGauge />
         </motion.div>
 
-        <motion.div variants={itemVariants}>
-          <AttendanceButton />
-        </motion.div>
-
-        <main className="px-6 space-y-12 pb-10">
+        <main className="space-y-0 pb-10">
           {/* Invite Code Section (Partner missing case) */}
           {!partnerProfile && couple?.invite_code && (
-            <motion.div variants={itemVariants}>
-              <div className="bg-white border border-rose-100/50 rounded-[38px] p-8 text-center shadow-[0_10px_40px_rgba(0,0,0,0.03)] relative overflow-hidden group">
+            <motion.div variants={itemVariants} className="px-6 mb-8">
+              <div className="bg-white border border-rose-100/50 rounded-[32px] p-8 text-center shadow-[0_10px_40px_rgba(0,0,0,0.03)] relative overflow-hidden group">
                 <div className="absolute -right-4 -top-4 opacity-[0.05] group-hover:scale-110 transition-transform duration-700">
                   <Sparkles size={100} className="text-rose-400" />
                 </div>
@@ -154,7 +149,6 @@ export default function Home() {
             />
           </motion.div>
 
-          {/* Quick Links Section */}
           <motion.div variants={itemVariants}>
             <QuickLinksSection />
           </motion.div>

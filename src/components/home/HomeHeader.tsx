@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Heart, UserPlus, User, Bell } from "lucide-react";
+import { Heart, UserPlus, User } from "lucide-react";
 import ImageViewerModal from "../common/ImageViewerModal";
-import NotificationHistoryModal from "./NotificationHistoryModal";
+import AnniversaryModal from "../common/AnniversaryModal";
 import { Profile, Couple } from "../../types";
 
 interface HomeHeaderProps {
@@ -26,7 +26,8 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
     url: null,
     title: "",
   });
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  const [isAnniversaryModalOpen, setIsAnniversaryModalOpen] = useState(false);
 
   const openViewer = (url: string | null | undefined, title: string) => {
     if (!url) return;
@@ -45,114 +46,124 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
       (now.getTime() - lastActive.getTime()) / 1000,
     );
 
-    if (diffInSeconds < 300) return "접속중"; // Less than 5 minutes
+    if (diffInSeconds < 300) return "접속중";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
     if (diffInSeconds < 86400)
       return `${Math.floor(diffInSeconds / 3600)}시간 전`;
     if (diffInSeconds < 604800)
-      return `${Math.floor(diffInSeconds / 86400)}일 전`; // Up to 7 days
+      return `${Math.floor(diffInSeconds / 86400)}일 전`;
     return "오래전";
   };
 
   const activeStatus = getLastActiveLabel(partnerProfile?.last_active_at);
 
   return (
-    <header className="px-6 pt-10 pb-6 flex flex-col items-center sticky top-0 bg-white/70 backdrop-blur-lg z-20">
-      <button
-        onClick={() => setIsHistoryOpen(true)}
-        className="absolute right-6 top-10 p-2 hover:bg-gray-100 rounded-full transition-colors group"
-      >
-        <Bell size={20} className="text-gray-400 group-hover:text-rose-400" />
-      </button>
+    <header className="px-6 pt-6 pb-2 flex flex-col sticky top-0 bg-[#FDFDFE]/90 backdrop-blur-md z-20">
+      {/* Brand Row */}
+      <div className="flex items-center gap-2 mb-4">
+        <img src="/logo.png" alt="logo" className="w-6 h-6 object-contain" />
+        <span className="text-[17px] font-bold text-gray-900 tracking-tight">
+          달이어리
+        </span>
+      </div>
 
-      <div className="flex items-center justify-center space-x-10 mb-2">
-        {/* My Profile */}
-        <div className="flex flex-col items-center">
-          <div
-            onClick={() =>
-              openViewer(myProfile?.avatar_url, myProfile?.nickname || "나")
-            }
-            className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-50 border border-rose-100 overflow-hidden shadow-sm transition-transform active:scale-95 flex items-center justify-center ${myProfile?.avatar_url ? "cursor-pointer hover:scale-105" : ""}`}
-          >
-            {myProfile?.avatar_url ? (
-              <img
-                src={myProfile.avatar_url}
-                alt="Me"
-                className="w-full h-full object-cover opacity-90"
-              />
-            ) : (
-              <User size={20} className="text-gray-300" />
-            )}
-          </div>
-          <span className="text-[10px] mt-2 text-gray-400 font-bold tracking-[0.1em] uppercase">
-            {myProfile?.nickname || "나"}
-          </span>
-        </div>
-
-        {/* Heart & D-Day */}
-        <div className="flex gap-x-0.5 justify-center items-center px-2">
-          <Heart className="text-rose-400 fill-rose-400" size={16} />
-          <span className="text-rose-500 text-base tracking-tighter">
-            {couple ? `${dDay}` : "D-Day"}
-          </span>
-        </div>
-
-        {/* Partner Profile */}
-        <div className="flex flex-col items-center">
-          <div
-            onClick={() =>
-              openViewer(
-                partnerProfile?.avatar_url,
-                partnerProfile?.nickname || "상대방",
-              )
-            }
-            className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-50 border border-gray-100 overflow-hidden shadow-sm transition-transform active:scale-95 relative flex items-center justify-center ${partnerProfile?.avatar_url ? "cursor-pointer hover:scale-105" : ""}`}
-          >
-            {partnerProfile?.avatar_url ? (
-              <img
-                src={partnerProfile.avatar_url}
-                alt="Partner"
-                className="w-full h-full object-cover opacity-90"
-              />
-            ) : !partnerProfile ? (
-              <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-300">
-                <UserPlus size={18} />
-              </div>
-            ) : (
-              <User size={20} className="text-gray-300" />
-            )}
-          </div>
-          <div className="flex flex-col items-center mt-2">
-            <span className="text-[10px] text-gray-400 font-bold tracking-[0.1em] uppercase leading-none">
-              {partnerProfile?.nickname || "상대방"}
+      {/* Couple Row */}
+      <div className="flex items-center justify-center">
+        <div className="flex items-center gap-6">
+          {/* My Profile */}
+          <div className="flex flex-col items-center">
+            <div
+              onClick={() =>
+                openViewer(myProfile?.avatar_url, myProfile?.nickname || "나")
+              }
+              className={`w-12 h-12 rounded-full bg-white border border-rose-100 overflow-hidden shadow-sm transition-transform active:scale-95 flex items-center justify-center ${myProfile?.avatar_url ? "cursor-pointer" : ""}`}
+            >
+              {myProfile?.avatar_url ? (
+                <img
+                  src={myProfile.avatar_url}
+                  alt="Me"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User size={20} className="text-gray-200" />
+              )}
+            </div>
+            <span className="text-[11px] mt-1.5 text-gray-400 font-bold tracking-tight">
+              {myProfile?.nickname || "나"}
             </span>
-            {activeStatus && (
+          </div>
+
+          {/* D-Day */}
+          <div className="flex flex-col items-center px-4">
+            <div 
+              onClick={() => setIsAnniversaryModalOpen(true)}
+              className="bg-rose-50/50 px-3.5 py-1.5 rounded-full flex items-center gap-1.5 border border-rose-100/30 cursor-pointer transition-transform active:scale-95 hover:bg-rose-100/40"
+            >
+              <Heart className="text-rose-400 fill-rose-400" size={12} />
+              <span className="text-rose-500 font-bold text-[13px] tabular-nums">
+                {couple ? `${dDay}` : "D-Day"}
+              </span>
+            </div>
+          </div>
+
+          {/* Partner Profile */}
+          <div className="flex flex-col items-center">
+            <div className="relative">
               <div
-                className={`flex items-center gap-1 mt-1 ${activeStatus === "접속중" ? "text-green-500" : "text-gray-400"}`}
+                onClick={() =>
+                  openViewer(
+                    partnerProfile?.avatar_url,
+                    partnerProfile?.nickname || "상대방",
+                  )
+                }
+                className={`w-12 h-12 rounded-full bg-white border border-gray-100 overflow-hidden shadow-sm transition-transform active:scale-95 flex items-center justify-center ${partnerProfile?.avatar_url ? "cursor-pointer" : ""}`}
               >
-                {activeStatus === "접속중" && (
-                  <div className="w-1 h-1 rounded-full bg-green-500" />
+                {partnerProfile?.avatar_url ? (
+                  <img
+                    src={partnerProfile.avatar_url}
+                    alt="Partner"
+                    className="w-full h-full object-cover"
+                  />
+                ) : !partnerProfile ? (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-300">
+                    <UserPlus size={18} />
+                  </div>
+                ) : (
+                  <User size={20} className="text-gray-200" />
                 )}
-                <span className="text-[9px] font-medium leading-none">
+              </div>
+              {/* Active Indicator outside overflow-hidden */}
+              {activeStatus === "접속중" && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-[#FDFDFE] rounded-full shadow-sm" />
+              )}
+            </div>
+
+            <div className="flex flex-col items-center mt-1.5">
+              <span className="text-[11px] text-gray-400 font-bold tracking-tight leading-none">
+                {partnerProfile?.nickname || "상대방"}
+              </span>
+              {activeStatus && (
+                <span
+                  className={`text-[9px] font-bold mt-0.5 ${activeStatus === "접속중" ? "text-green-500" : "text-gray-300"}`}
+                >
                   {activeStatus}
                 </span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
-
-      <NotificationHistoryModal
-        isOpen={isHistoryOpen}
-        onClose={() => setIsHistoryOpen(false)}
-        userId={myProfile?.id || null}
-      />
 
       <ImageViewerModal
         isOpen={viewerState.isOpen}
         onClose={closeViewer}
         imageUrl={viewerState.url}
         title={viewerState.title}
+      />
+
+      <AnniversaryModal 
+        isOpen={isAnniversaryModalOpen}
+        onClose={() => setIsAnniversaryModalOpen(false)}
       />
     </header>
   );
