@@ -4,7 +4,29 @@
 
 이 문서는 Daliary 프로젝트의 디자인 철학, 코드 컨벤션 및 UI/UX 원칙을 정의합니다. Gemini는 향후 모든 수정 및 기능 추가 시 이 가이드를 최우선으로 참고해야 합니다.
 
-## 1. Design System: Glassmorphism (Apple Style)
+## 1. 아키텍처 (Architecture)
+
+프로젝트는 프론트엔드(React/Vite)와 백엔드/DB(Supabase)로 나뉘어 있으며, 프론트엔드 폴더 구조는 역할에 따라 명확히 분리되어 있습니다.
+
+- **`src/pages/`**: 라우팅되는 최상위 페이지 컴포넌트들이 위치합니다. (예: `Profile.tsx`) 상태와 비즈니스 로직을 서브 컴포넌트로 전달하는 컨테이너 역할을 합니다.
+- **`src/components/`**: 재사용 가능한 UI 컴포넌트들이 모여 있습니다. 도메인별(`profile/`, `map/dashboard/`) 및 공통(`common/`)으로 분리됩니다.
+- **`src/context/`**: 전역 및 도메인별 상태를 관리합니다. (예: `CoupleContext.tsx`)
+- **`src/hooks/`**: Context를 쉽게 사용하기 위한 래퍼 훅 (`useCouple`)이나 커스텀 비즈니스 로직이 위치합니다.
+- **`supabase/`**: 데이터베이스 마이그레이션 파일(`*.sql`), 시드 데이터(`seed_questions.sql`), 그리고 RPC 및 트리거와 같은 백엔드 로직의 핵심을 관리합니다.
+
+## 2. 코딩 스타일 (Coding Style)
+
+유지보수성과 가독성을 중시하는 패턴을 따르고 있습니다.
+
+- **컴포넌트 분할 (Container-Presenter 유사)**: 페이지 레벨 컴포넌트(`RegionDashboard.tsx`)는 상태와 데이터 페칭을 관리하고, 실제 UI 렌더링은 하위 컴포넌트(`RegionCardList`)로 위임합니다.
+- **명명 규칙 (Naming Convention)**:
+  - **컴포넌트/파일**: `PascalCase` (예: `VisitDetailModal.tsx`)
+  - **함수/훅**: `camelCase` (예: `useHomeData`, `handleAvatarSave`)
+  - **상수/키**: `UPPER_SNAKE_CASE` 또는 접두사 활용 (예: `VIEW_MODE_KEY`)
+- **TypeScript 활용**: `any` 타입을 지양하고, `ProfileType`, `VisitWithPlace` 등 명시적인 인터페이스를 정의하여 안정성을 확보합니다.
+- **커스텀 훅 래핑**: Context를 직접 가져오지 않고 `useHomeData`, `useCouple` 같은 훅으로 감싸 사용하여 캡슐화를 유지합니다.
+
+## 3. Design System: Glassmorphism (Apple Style)
 
 프로젝트의 핵심 UI 요소(특히 네비게이션 및 플로팅 요소)는 Apple의 Glassmorphism 스타일을 따릅니다.
 
@@ -13,7 +35,7 @@
 - **Depth**: 깊은 그림자(`shadow-[0_20px_50px_rgba(0,0,0,0.1)]`)와 안쪽 반사광(`shadow-[0_1px_2px_rgba(255,255,255,0.5)_inset]`)을 사용하여 입체감을 부여합니다.
 - **Active State**: 활성화된 요소는 `bg-white/40`과 미세한 안쪽 그림자를 가진 유리 캡슐 형태로 표현합니다.
 
-## 2. Responsive Strategy: iPadOS Dock Style
+## 4. Responsive Strategy: iPadOS Dock Style
 
 하단 네비게이션(`BottomNav`)은 기기에 따라 인터페이스가 가변적으로 변해야 합니다.
 
@@ -26,20 +48,20 @@
   - 호버 시 스케일 업 애니메이션 (`scale-105`~`110`).
 - **Positioning**: 항상 화면 하단에 가깝게 배치 (`bottom-4`).
 
-## 3. Layout & Spacing Convention
+## 5. Layout & Spacing Convention
 
 플로팅 하단바가 컨텐츠를 가리지 않도록 모든 페이지는 다음의 규칙을 준수해야 합니다.
 
 - **Bottom Padding**: 스크롤 가능한 메인 컨텐츠 영역은 반드시 `pb-24` 이상의 하단 여백을 확보해야 합니다. (예: `src/pages/Home.tsx`, `src/pages/Profile.tsx` 등)
 - **Fixed/Absolute Elements**: 하단에 고정되는 버튼이나 오버레이 요소(예: 장소 검색 액션바, 미분류 버튼)는 하단바와 겹치지 않도록 최소 `bottom-24` 이상의 위치에 배치해야 합니다.
 
-## 4. Interaction Principles
+## 6. Interaction Principles
 
 - 모든 버튼과 인터랙티브 요소는 `active:scale-95` 또는 `transition-all`을 포함하여 즉각적인 피드백을 제공해야 합니다.
 - 페이지 전환 및 모달 오픈 시 `framer-motion`을 활용한 부드러운 애니메이션을 권장합니다.
 - **Game Rewards**: 2048 타일 생성 등 게임 내 보상 획득 시, 사용자에게 명확한 피드백을 제공하기 위해 팝업 알림(또는 모달)을 사용합니다.
 
-## 5. Notification System
+## 7. Notification System
 
 알림 기능은 브라우저 Push API와 Supabase 실시간 연동, 그리고 Vercel 서버리스 함수를 기반으로 하며 다음의 원칙을 따릅니다.
 
@@ -55,7 +77,7 @@
 - **Stacking (Tagging)**: 동일한 유형의 알림이 단시간 내에 여러 번 발생할 경우, 알림이 난잡하게 쌓이지 않도록 `type` 필드를 `tag`로 활용하여 브라우저 수준에서 알림을 스택(Stack) 또는 그룹화하여 처리합니다.
 - **Permission UX**: 알림 권한이 거부되었을 경우 설정 페이지(`Settings.tsx`)에서 사용자에게 브라우저 설정 변경 방법을 친절하게 안내해야 합니다.
 
-## 6. Modal Animation & Implementation Standard
+## 8. Modal Animation & Implementation Standard
 
 모든 모달 컴포넌트는 기기 환경에 맞춰 일관된 디자인과 인터랙션을 제공해야 합니다.
 
@@ -70,7 +92,7 @@
 - **Back Button Support**: 모달이 열릴 때(`isOpen` 기준) 브라우저 히스토리에 상태를 추가(`history.pushState`)하여, 사용자가 기기의 뒤로가기 버튼을 눌렀을 때 페이지가 이동하는 대신 모달만 닫히도록 구현해야 합니다.
 - **Portals & AnimatePresence**: 레이아웃 간섭을 방지하기 위해 모든 모달은 `createPortal`을 통해 `document.body` 최하단에 렌더링되어야 하며, `AnimatePresence`를 통해 조건부 렌더링 시의 애니메이션을 보장해야 합니다.
 
-## 7. Data Fetching & Performance Optimization
+## 9. Data Fetching & Performance Optimization
 
 효율적인 서버 자원 활용과 확장성 있는 구조를 위해 **'하이브리드 영역별 데이터 창구'** 원칙을 엄격히 준수합니다.
 
@@ -85,7 +107,7 @@
 - **Selective Column Fetching**:
   - `select('*')` 사용을 엄격히 금지하며, 반드시 필요한 컬럼만 명시적으로 선택합니다.
 
-## 8. Data Structure & Processing Flow
+## 10. Data Structure & Processing Flow
 
 앱의 데이터 처리는 다음과 같은 계층화된 전문 창구 구조를 따릅니다.
 
@@ -102,26 +124,26 @@
 4.  **Level 3: Operational Action (Realtime & Mutation)**
     - 데이터 변경은 `useMutation`을 통한 즉시 반영과 `supabase.channel`을 통한 실시간 동기화로 처리합니다.
 
-## 9. TanStack Query (React Query) Usage Standard
+## 11. TanStack Query (React Query) Usage Standard
 
 - **Query Keys**: 커플 데이터는 `['..._data', couple?.id]`, 유저 데이터는 `['..._data', profile?.id]`.
 - **Domain Responsibility**: 각 기능별 데이터는 독립된 Query Key를 가져야 하며, 다른 도메인의 쿼리에 의존하지 않습니다.
 - **Invalidation**: `useMutation` 성공 시 관련 도메인의 쿼리 키만 `invalidateQueries`하여 영향 범위를 최소화합니다.
 - **Infinite Query**: 목록형 데이터는 `useInfiniteQuery`를 사용합니다.
 
-## 10. Database Migration Policy
+## 12. Database Migration Policy
 
 - **Immutable Past**: 이미 실행된 migration 파일은 절대로 수정하지 않습니다.
 - **Add-Only Strategy**: 모든 스키마 및 함수 변경은 항상 새로운 버전 번호의 파일을 추가하는 방식으로 진행합니다. (예: `2026022401_watermelon_game.sql`)
 - **Idempotency**: `create or replace function`을 사용하여 멱등성을 유지합니다.
 
-## 11. TypeScript & Code Quality
+## 13. TypeScript & Code Quality
 
 - **No Emit Errors**: 모든 코드 수정 후에는 반드시 `npx tsc --noEmit`을 실행하여 타입 에러가 없는지 확인해야 합니다.
 - **Explicit Typing**: 쿼리 결과나 함수의 인자/반환값에 명시적인 인터페이스와 타입을 지정하여 코드 안정성을 높입니다.
 - **Unused Imports**: 사용하지 않는 Hook이나 라이브러리 임포트는 즉시 제거하여 깨끗한 코드 상태를 유지합니다.
 
-## 12. Travel Plans Data Structure
+## 14. Travel Plans Data Structure
 
 여행 계획 기능은 다음과 같은 테이블 구조를 가집니다.
 
@@ -152,13 +174,13 @@
 - `created_at`: TIMESTAMPTZ
 - `updated_at`: TIMESTAMPTZ
 
-### 12.1. 여행 계획 구현 참고 사항
+### 14.1. 여행 계획 구현 참고 사항
 
 - **알림 트리거**: 여행 계획의 추가/수정/삭제 알림은 `trips` 테이블의 변경 사항을 감지하여 발송됩니다. 세부 계획(`trip_plans`)의 변경은 현재 트리거되어 있지 않으며, 필요 시 추가 구현이 필요합니다.
 - **날짜 계산**: 시작일과 종료일이 같은 경우 1일차 여행(당일치기)으로 처리됩니다.
 - **시간 선택**: `TimePicker` 컴포넌트는 `DatePicker`의 드롭다운 인터페이스 디자인을 계승하여 5분 단위 선택이 가능하도록 구현되었습니다.
 
-## 13. Database Schema Reference (Consolidated)
+## 15. Database Schema Reference (Consolidated)
 
 이 섹션은 2026년 2월 24일 기준 `supabase/consolidated_schema.sql` 및 최신 마이그레이션의 요약입니다. 모든 테이블은 RLS가 활성화되어 있습니다.
 
@@ -197,11 +219,11 @@
 - **`visit-photos`**: 방문 인증 사진 저장소.
 - **`diary-images`**: 프로필 사진(아바타), 커플 공유 이미지 등 저장소.
 
-## 14. Point Management System
+## 16. Point Management System
 
 포인트 시스템은 '레벨 계산용 누적 포인트'와 '상점 이용용 현재 잔액'을 분리하여 관리합니다.
 
-### 14.1. Point Types
+### 16.1. Point Types
 
 - **Cumulative Points (누적 포인트)**:
   - 사용자가 획득한 모든 포인트의 총합 (양수 값만 합산).
@@ -211,7 +233,7 @@
   - 획득한 포인트에서 사용한 포인트를 뺀 최종 잔액 (전체 합계).
   - 향후 포인트 상점에서 상품 구매 시 소모되는 수치입니다.
 
-### 14.3. Item System & Point Shop
+### 16.3. Item System & Point Shop
 
 - **System Logic**:
   - 포인트는 커플이 공유하며, 아이템 또한 커플이 공유하여 보유합니다 (`couple_items` 테이블).
@@ -230,7 +252,7 @@
   - 포인트 상점은 `PointHistoryModal.tsx` 내 '포인트 상점' 탭에 위치합니다.
   - 보유한 아이템은 '마이(프로필) > 보관함' (`InventorySection.tsx`)에서 확인할 수 있습니다.
 
-## 15. PostgreSQL Function Standards
+## 17. PostgreSQL Function Standards
 
 데이터 일관성과 SQL 가독성을 위해 RPC 및 트리거 함수 작성 시 다음 원칙을 준수합니다.
 
@@ -243,7 +265,7 @@
 - **Atomic Operations**:
   - 포인트 차감과 아이템 지급과 같이 연계된 작업은 반드시 하나의 RPC 함수 내에서 트랜잭션으로 처리하여 데이터 무결성을 보장합니다.
 
-## 16. PostgreSQL Trigger Best Practices
+## 18. PostgreSQL Trigger Best Practices
 
 트리거 함수가 여러 테이블에 공유될 때 발생할 수 있는 런타임 에러를 방지하기 위해 다음 원칙을 준수합니다.
 
@@ -253,11 +275,11 @@
 - **Minimal Logic**:
   - 트리거 함수는 가능한 가볍게 유지하며, 복잡한 비즈니스 로직은 RPC 또는 전용 서비스 함수로 분리하는 것을 권장합니다.
 
-## 17. Game System & Rewards
+## 19. Game System & Rewards
 
 사용자가 즐길 수 있는 미니게임과 그에 따른 보상 체계입니다.
 
-### 17.1. Game Score Management
+### 19.1. Game Score Management
 
 - **Table**: `game_scores`
 - **Fields**: `user_id`, `couple_id`, `game_type`, `high_score`, `last_reward_date`
@@ -265,7 +287,7 @@
   - 최고 점수는 개인별로 기록하며, 보상 수령 여부는 `last_reward_date`를 통해 일 단위로 체크합니다.
   - **일일 미션 제한**: 사용자는 총 4개의 일일 미션 게임(2048, 수박게임, 벽돌깨기, 스택 타워) 중 하루에 최대 **2개의 게임**에서만 포인트 보상을 획득할 수 있습니다.
 
-### 17.2. 2048 Challenge
+### 19.2. 2048 Challenge
 
 - **Game Type**: `'2048'`
 - **Reward Condition**: 게임 플레이 중 2048 타일을 처음 생성했을 때 (일 최대 2개 게임 제한 내).
@@ -273,12 +295,12 @@
 - **Controls**: PC(방향키), Mobile(스와이프 제스처).
 - **Theme**: Rose/Amber 그라데이션과 Glassmorphism 스타일을 유지하되, 타일별로 고유한 색상(Rose 계열)을 부여하여 시각적 즐거움을 제공합니다.
 
-### 17.3. Implementation Pattern
+### 19.3. Implementation Pattern
 
 - **Hook**: `useGameScore(gameType)`을 사용하여 점수 조회 및 결과 기록(`record_game_result` RPC 호출)을 관리합니다.
 - **RPC**: `record_game_result(p_game_type, p_score, p_reached_target)`는 원자적으로 최고 점수 갱신과 포인트 지급을 처리합니다.
 
-### 17.4. Blind Timer Challenge
+### 19.4. Blind Timer Challenge
 
 - **Game Type**: 'blind_timer'
 - **Concept**: 입장권을 사용하여 사라지는 타이머를 목표 시간(15.0~20.0초 랜덤)에 정확히 멈추는 게임.
@@ -300,7 +322,7 @@
   - `pg_cron`을 통해 매일 새벽 3시(KST)에 만료되거나 오래된(7일 이상) 세션을 자동 삭제합니다.
     (`cleanup_game_sessions` 태스크).
 
-### 17.5. Watermelon Challenge
+### 19.5. Watermelon Challenge
 
 - **Game Type**: `'watermelon'`
 - **Concept**: Physics-based Suika Game. Merge identical fruits to grow them and eventually create a Watermelon.
@@ -316,7 +338,7 @@
 - **State Persistence**: Current fruit positions, score, and watermelon achievement status are saved in LocalStorage (encrypted).
 - **Game Over**: If any fruit stays above the deadline (Y=80) for more than **5 seconds** while moving slowly. When overflowing, a red gradient appears at the top without a text warning.
 
-### 17.6. Swipe Brick Breaker Challenge
+### 19.6. Swipe Brick Breaker Challenge
 
 - **Game Type**: `'brick_breaker'`
 - **Concept**: Swipe to aim and shoot balls to break numbered bricks.
@@ -325,7 +347,7 @@
 - **Controls**: PC/Mobile (Drag/Swipe to aim, release to shoot).
 - **State Persistence**: Current stage, ball count, brick positions, and last reward date are saved in LocalStorage (encrypted).
 
-### 17.7. Stack Tower Challenge
+### 19.7. Stack Tower Challenge
 
 - **Game Type**: `'stack'`
 - **Concept**: 2D 플랫 디자인 기반의 타이밍 타워 쌓기 게임. 좌우로 움직이는 블록을 아래 블록 위에 정확히 맞춰 쌓습니다.
@@ -337,15 +359,15 @@
 - **Controls**: 화면 어디든 탭/클릭하여 블록 배치. (PC: Space 키 지원)
 - **UI/UX**: 2048 게임과 통일된 모바일 헤더 대시보드 및 하단 안내 디자인을 적용했습니다. 층수가 높아짐에 따라 블록 색상이 자연스럽게 변하는 그라데이션 팔레트를 사용합니다.
 
-## 18. Future Development Considerations
+## 20. Future Development Considerations
 
 - (현재 대기 중인 향후 과제가 없습니다.)
 
-## 19. Developer Mode & Debug Tools (Reference)
+## 21. Developer Mode & Debug Tools (Reference)
 
 향후 개발 및 테스트 시 필요한 디버그 도구들에 대한 기록입니다.
 
-### 19.1. Debug Points Acquisition (Deprecated from UI)
+### 21.1. Debug Points Acquisition (Deprecated from UI)
 
 테스트를 위해 대량의 포인트를 즉시 획득해야 할 경우 다음 RPC를 활용할 수 있습니다.
 

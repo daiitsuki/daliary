@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PlaceSearch from '../components/map/search/PlaceSearch';
 import RegionDashboard from '../components/map/dashboard/RegionDashboard';
@@ -9,11 +9,24 @@ import { Search, Map as MapIcon, Star, CalendarDays, Camera } from 'lucide-react
 import { Place } from '../context/PlacesContext';
 import { motion, Variants } from 'framer-motion';
 
+const LAST_VIEWED_TAB_KEY = 'daliary_last_map_tab';
+
 export default function Places() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [targetPlace, setTargetPlace] = useState<Place | null>(null);
   
-  const activeTab = (searchParams.get('tab') as 'dashboard' | 'search' | 'wishlist' | 'plans' | 'memory') || 'dashboard';
+  const activeTab = (searchParams.get('tab') as 'dashboard' | 'search' | 'wishlist' | 'plans' | 'memory') || null;
+
+  // 초기 탭 설정: URL에 없으면 localStorage에서 가져옴
+  useEffect(() => {
+    if (!activeTab) {
+      const savedTab = localStorage.getItem(LAST_VIEWED_TAB_KEY);
+      const initialTab = savedTab || 'dashboard';
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('tab', initialTab);
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [activeTab, searchParams, setSearchParams]);
 
   const setActiveTab = (tab: string) => {
     const newParams = new URLSearchParams(searchParams);
@@ -25,6 +38,9 @@ export default function Places() {
     }
     setTargetPlace(null);
     setSearchParams(newParams);
+    
+    // 마지막 탭 저장
+    localStorage.setItem(LAST_VIEWED_TAB_KEY, tab);
   };
 
   const handleShowOnMap = (place: Place) => {
@@ -32,6 +48,7 @@ export default function Places() {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('tab', 'search');
     setSearchParams(newParams);
+    localStorage.setItem(LAST_VIEWED_TAB_KEY, 'search');
   };
 
   const containerVariants: Variants = {
@@ -52,6 +69,8 @@ export default function Places() {
       transition: { duration: 0.4, ease: "easeOut" },
     },
   };
+
+  if (!activeTab) return null; // 초기 탭 설정 중에는 렌더링 방지
 
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">

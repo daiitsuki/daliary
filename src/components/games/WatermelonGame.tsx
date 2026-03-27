@@ -487,11 +487,18 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
     if (saved) {
       const parsed = decrypt(saved);
       if (parsed && parsed.fruits) {
+        const isHistorical = parsed.date !== today;
         setScore(parsed.score || 0);
-        setReachedWatermelon(parsed.reachedWatermelon || false);
-        setRewardConfirmed(parsed.rewardConfirmed || false);
-        setHintUsed(parsed.hintUsed || false);
-        if (parsed.rewardConfirmed) setRewardEarned(true);
+        
+        // Reset achievement flags if it's a new day
+        setReachedWatermelon(isHistorical ? false : (parsed.reachedWatermelon || false));
+        setRewardConfirmed(isHistorical ? false : (parsed.rewardConfirmed || false));
+        setHintUsed(isHistorical ? false : (parsed.hintUsed || false));
+        
+        if (!isHistorical && parsed.rewardConfirmed) {
+          setRewardEarned(true);
+        }
+        
         parsed.fruits.forEach((f: any) => {
           const body = createFruit(f.x, f.y, f.type as FruitType);
           Matter.World.add(engine.world, body);

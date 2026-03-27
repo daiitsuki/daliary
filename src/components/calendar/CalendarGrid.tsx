@@ -1,5 +1,6 @@
 import { useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Plus } from "lucide-react";
 import { Schedule } from "../../hooks/useSchedules";
 
 interface CalendarGridProps {
@@ -10,6 +11,7 @@ interface CalendarGridProps {
   isDateSelected: boolean;
   onDayClick: (day: number, month: number, year: number) => void;
   onMonthChange: (offset: number) => void;
+  onAddSchedule: () => void;
   today: Date;
 }
 
@@ -252,13 +254,14 @@ const CalendarGrid = ({
   isDateSelected,
   onDayClick,
   onMonthChange,
+  onAddSchedule,
   today,
 }: CalendarGridProps) => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
   const weeks = useMemo(() => {
-    // 1. Generate all days
+    // ... (same as before)
     const firstDay = new Date(year, month, 1).getDay();
     const lastDate = new Date(year, month + 1, 0).getDate();
     const days = [];
@@ -360,6 +363,16 @@ const CalendarGrid = ({
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Add Button */}
+      <motion.button
+        whileHover={{ scale: 1.05, y: -2 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={onAddSchedule}
+        className="absolute bottom-5 right-5 sm:hidden w-11 h-11 flex items-center justify-center bg-rose-500 text-white rounded-2xl shadow-[0_8px_25px_rgba(244,63,94,0.3)] hover:bg-rose-600 transition-all z-[20] border border-rose-400/20"
+      >
+        <Plus size={20} strokeWidth={3} />
+      </motion.button>
     </div>
   );
 };

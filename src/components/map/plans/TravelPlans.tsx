@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTrips } from '../../../hooks/useTrips';
 import { Plus, Calendar, ChevronRight, Trash2, Edit2 } from 'lucide-react';
 import { Trip } from '../../../types';
@@ -8,9 +9,16 @@ import { motion } from 'framer-motion';
 
 export default function TravelPlans() {
   const { trips, isTripsLoading, deleteTrip } = useTrips();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isTripModalOpen, setIsTripModalOpen] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
-  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+
+  // URL에서 선택된 여행 ID 가져오기
+  const selectedTripId = searchParams.get('tripId');
+  
+  const selectedTrip = useMemo(() => {
+    return trips?.find(t => t.id === selectedTripId) || null;
+  }, [trips, selectedTripId]);
 
   const handleAddTrip = () => {
     setEditingTrip(null);
@@ -30,8 +38,20 @@ export default function TravelPlans() {
     }
   };
 
+  const handleSelectTrip = (trip: Trip) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tripId', trip.id);
+    setSearchParams(newParams);
+  };
+
+  const handleBack = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('tripId');
+    setSearchParams(newParams);
+  };
+
   if (selectedTrip) {
-    return <TripDetail trip={selectedTrip} onBack={() => setSelectedTrip(null)} />;
+    return <TripDetail trip={selectedTrip} onBack={handleBack} />;
   }
 
   return (
@@ -68,7 +88,7 @@ export default function TravelPlans() {
             <motion.div
               layout
               key={trip.id}
-              onClick={() => setSelectedTrip(trip)}
+              onClick={() => handleSelectTrip(trip)}
               className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 hover:shadow-md transition-all group cursor-pointer active:scale-[0.98]"
             >
               <div className="flex justify-between items-start mb-3">

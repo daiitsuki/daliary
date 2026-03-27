@@ -213,7 +213,7 @@ const Calendar = () => {
         </motion.div>
 
         <div className="flex flex-col lg:flex-row gap-8 items-start mt-6 lg:flex-1 lg:min-h-0">
-          <motion.div variants={itemVariants} className="w-full lg:flex-1 lg:h-full lg:overflow-y-auto custom-scrollbar lg:pb-24">
+          <motion.div variants={itemVariants} className="w-full lg:flex-1 lg:h-full">
             <CalendarGrid
               currentDate={currentDate}
               direction={direction}
@@ -222,6 +222,7 @@ const Calendar = () => {
               isDateSelected={isDateSelected}
               onDayClick={handleDayClick}
               onMonthChange={handleMonthChange}
+              onAddSchedule={openAddModal}
               today={getKSTToday()}
             />
           </motion.div>
@@ -233,7 +234,6 @@ const Calendar = () => {
               isDateSelected={isDateSelected}
               isSearchActive={isSearchActive}
               month={month}
-              onClearSelection={handleClearSelection}
               onAddSchedule={openAddModal}
               onEditSchedule={openEditModal}
               myProfile={myProfile}
