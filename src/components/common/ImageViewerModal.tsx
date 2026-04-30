@@ -68,6 +68,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
               className="pointer-events-auto"
             >
               <h3 className="text-white text-sm font-black tracking-tight drop-shadow-md">{title}</h3>
@@ -75,6 +76,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
             <motion.div 
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
               className="flex items-center gap-3 pointer-events-auto"
             >
               <button

@@ -1,0 +1,27 @@
+node_modules/
+dist/
+.git/
+package-lock.json
+
+# Build and generated files
+public/version.json
+public/sw.js
+
+# Supabase temporary files and archives
+supabase/.temp/
+supabase/.branches/
+supabase/archive/
+supabase/migrations_old/
+
+# Media assets (images)
+src/assets/*.png
+src/assets/*.jpg
+src/assets/*.svg
+public/*.png
+public/*.ico
+
+# OS/IDE noise
+*.Identifier
+.DS_Store
+.vscode/
+.idea/

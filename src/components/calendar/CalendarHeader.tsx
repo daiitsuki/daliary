@@ -7,8 +7,10 @@ import {
   X,
   Calendar as CalendarIcon,
   ArrowLeft,
+  Settings,
 } from "lucide-react";
 import MonthYearPicker from "./MonthYearPicker";
+import { useNavigate } from "react-router-dom";
 
 interface CalendarHeaderProps {
   currentDate: Date;
@@ -32,6 +34,7 @@ const CalendarHeader = ({
   setSearchQuery,
 }: CalendarHeaderProps) => {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const navigate = useNavigate();
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -93,13 +96,21 @@ const CalendarHeader = ({
                 </button>
               </div>
 
-              {/* Right: Search Toggle */}
-              <button
-                onClick={() => setIsSearchActive(true)}
-                className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-50/50 rounded-full transition-all active:scale-90"
-              >
-                <Search className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={2.2} />
-              </button>
+              {/* Right: Actions */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setIsSearchActive(true)}
+                  className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-50/50 rounded-full transition-all active:scale-90"
+                >
+                  <Search className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={2.2} />
+                </button>
+                <button
+                  onClick={() => navigate("/settings")}
+                  className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-50/50 rounded-full transition-all active:scale-90"
+                >
+                  <Settings className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={2.2} />
+                </button>
+              </div>
             </motion.div>
           ) : (
             <motion.div

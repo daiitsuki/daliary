@@ -25,6 +25,7 @@ interface DailyQuestionSectionProps {
   currentUserId: string | null;
   couple?: any;
   myProfile?: any;
+  partnerProfile?: any;
 }
 
 const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
@@ -39,10 +40,12 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
   currentUserId,
   couple,
   myProfile,
+  partnerProfile,
 }) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const bothAnswered = !!(myAnswer && partnerAnswer);
+  const partnerNickname = partnerProfile?.nickname || "상대방";
 
   const handleRequestAnswer = async () => {
     if (!coupleId || !currentUserId || isRequesting) return;
@@ -155,8 +158,8 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
               ) : (
                 <div className="space-y-5">
                   <div className="flex flex-col gap-1.5">
-                    <p className="text-[9px] text-rose-400 font-bold uppercase tracking-[0.15em] flex items-center gap-1.5 pl-1">
-                      <Smile size={10} className="text-rose-300" /> My Answer
+                    <p className="text-[10px] text-rose-400 font-bold flex items-center gap-1.5 pl-1">
+                      <Smile size={11} className="text-rose-300" /> 나의 답변
                     </p>
                     <div className="bg-rose-50/40 p-4 rounded-2xl rounded-tl-none text-gray-700 text-[13px] font-medium leading-relaxed border border-rose-100/30 shadow-sm">
                       {myAnswer.content}
@@ -165,16 +168,17 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
 
                   <div className="pt-5 border-t border-gray-50">
                     <div className="flex items-center justify-between mb-2.5 pl-1">
-                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.15em] flex items-center gap-1.5">
-                        <Heart size={10} className="text-gray-300" /> Partner's
-                        Answer
+                      <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1.5">
+                        <Heart size={11} className="text-gray-300" /> {partnerNickname}의 답변
                       </p>
-                      <div
-                        className={`px-2 py-0.5 rounded-full text-[8px] font-bold tracking-widest flex items-center gap-1 border ${bothAnswered ? "bg-green-50 text-green-500 border-green-100" : "bg-gray-50 text-gray-400 border-gray-100"}`}
-                      >
-                        {bothAnswered ? <Unlock size={8} /> : <Lock size={8} />}
-                        {bothAnswered ? "OPENED" : "LOCKED"}
-                      </div>
+                      {bothAnswered && (
+                        <div
+                          className="px-2 py-0.5 rounded-full text-[8px] font-bold tracking-widest flex items-center gap-1 border bg-green-50 text-green-500 border-green-100"
+                        >
+                          <Unlock size={8} />
+                          OPENED
+                        </div>
+                      )}
                     </div>
 
                     {bothAnswered ? (
@@ -184,7 +188,7 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
                     ) : (
                       <div className="py-8 flex flex-col items-center justify-center text-center bg-gray-50/30 rounded-2xl border border-dashed border-gray-100">
                         <p className="text-[12px] text-gray-300 font-medium italic mb-4">
-                          상대방의 답변을 기다리고 있어요
+                          {partnerNickname}님의 답변을 기다리고 있어요
                         </p>
                         <button
                           onClick={handleRequestAnswer}
@@ -214,6 +218,7 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
         coupleId={coupleId}
         currentUserId={currentUserId}
         createdAt={couple?.created_at}
+        partnerNickname={partnerNickname}
       />
     </section>
   );

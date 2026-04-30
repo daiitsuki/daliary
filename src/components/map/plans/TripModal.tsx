@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check } from 'lucide-react';
-import DatePicker from '../../common/DatePicker';
-import { useTrips } from '../../../hooks/useTrips';
-import { Trip } from '../../../types';
-import { createPortal } from 'react-dom';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Check } from "lucide-react";
+import DatePicker from "../../common/DatePicker";
+import { useTrips } from "../../../hooks/useTrips";
+import { Trip } from "../../../types";
+import { createPortal } from "react-dom";
 
 interface TripModalProps {
   isOpen: boolean;
@@ -14,9 +14,13 @@ interface TripModalProps {
 
 export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
   const { createTrip, updateTrip } = useTrips();
-  const [title, setTitle] = useState(trip?.title || '');
-  const [startDate, setStartDate] = useState(trip?.start_date || new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(trip?.end_date || new Date().toISOString().split('T')[0]);
+  const [title, setTitle] = useState(trip?.title || "");
+  const [startDate, setStartDate] = useState(
+    trip?.start_date || new Date().toISOString().split("T")[0],
+  );
+  const [endDate, setEndDate] = useState(
+    trip?.end_date || new Date().toISOString().split("T")[0],
+  );
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -31,16 +35,16 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
       setStartDate(trip.start_date);
       setEndDate(trip.end_date);
     } else {
-      setTitle('');
-      setStartDate(new Date().toISOString().split('T')[0]);
-      setEndDate(new Date().toISOString().split('T')[0]);
+      setTitle("");
+      setStartDate(new Date().toISOString().split("T")[0]);
+      setEndDate(new Date().toISOString().split("T")[0]);
     }
   }, [trip, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      alert('여행 제목을 입력해주세요.');
+      alert("여행 제목을 입력해주세요.");
       return;
     }
 
@@ -61,23 +65,23 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
       }
       onClose();
     } catch (err: any) {
-      alert(err.message || '오류가 발생했습니다.');
+      alert(err.message || "오류가 발생했습니다.");
     }
   };
 
   // 브라우저 뒤로가기 대응
   useEffect(() => {
     if (isOpen) {
-      window.history.pushState({ modal: 'trip-modal' }, '');
+      window.history.pushState({ modal: "trip-modal" }, "");
       const handlePopState = (event: PopStateEvent) => {
-        if (event.state?.modal !== 'trip-modal') {
+        if (event.state?.modal !== "trip-modal") {
           onClose();
         }
       };
-      window.addEventListener('popstate', handlePopState);
+      window.addEventListener("popstate", handlePopState);
       return () => {
-        window.removeEventListener('popstate', handlePopState);
-        if (window.history.state?.modal === 'trip-modal') {
+        window.removeEventListener("popstate", handlePopState);
+        if (window.history.state?.modal === "trip-modal") {
           window.history.back();
         }
       };
@@ -85,9 +89,9 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
   }, [isOpen, onClose]);
 
   const modalVariants = {
-    initial: isMobile ? { y: '100%' } : { opacity: 0, scale: 0.95, y: 20 },
+    initial: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
     animate: isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 },
-    exit: isMobile ? { y: '100%' } : { opacity: 0, scale: 0.95, y: 20 },
+    exit: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
   };
 
   const modalContent = (
@@ -102,22 +106,25 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
             onClick={onClose}
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
-          
+
           <motion.div
             variants={modalVariants}
             initial="initial"
             animate="animate"
             exit="exit"
             transition={{ type: "tween", ease: "easeOut", duration: 0.25 }}
-            className={`relative w-full ${isMobile ? 'max-w-none mt-auto rounded-t-[32px]' : 'max-w-md rounded-[32px] mx-4'} bg-white shadow-2xl overflow-hidden transform-gpu border border-white/50`}
+            className={`relative w-full ${isMobile ? "max-w-none mt-auto rounded-t-[32px]" : "max-w-md rounded-[32px] mx-4"} bg-white shadow-2xl overflow-hidden transform-gpu border border-white/50`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-black text-gray-800">
-                  {trip ? '여행 계획 수정' : '새로운 여행 계획'}
+                  {trip ? "여행 계획 수정" : "새로운 여행 계획"}
                 </h2>
-                <button onClick={onClose} className="p-2 bg-gray-50/50 text-gray-400 rounded-full hover:bg-gray-100 transition-colors">
+                <button
+                  onClick={onClose}
+                  className="p-2 bg-gray-50/50 text-gray-400 rounded-full hover:bg-gray-100 transition-colors"
+                >
                   <X size={20} />
                 </button>
               </div>
@@ -166,7 +173,7 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
                     className="w-full py-4 bg-rose-500 text-white text-sm font-black rounded-2xl shadow-xl shadow-rose-100 flex items-center justify-center gap-2 hover:bg-rose-600 active:scale-[0.98] transition-all disabled:opacity-50"
                   >
                     <Check size={18} strokeWidth={3} />
-                    {trip ? '수정 완료' : '계획 시작하기'}
+                    {trip ? "수정 완료" : "계획 시작하기"}
                   </button>
                 </div>
               </form>

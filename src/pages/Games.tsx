@@ -1,5 +1,5 @@
 import { useSearchParams } from "react-router-dom";
-import { motion, Variants } from "framer-motion";
+import { motion, Variants, AnimatePresence } from "framer-motion";
 import {
   Gamepad2,
   Sparkles,
@@ -10,6 +10,8 @@ import {
   Star,
   Ticket,
   Layers,
+  ChevronRight,
+  Trophy,
 } from "lucide-react";
 import Game2048 from "../components/games/Game2048";
 import BlindTimerGame from "../components/games/BlindTimerGame";
@@ -64,384 +66,233 @@ export default function Games() {
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 15 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: "easeOut" },
+      transition: { duration: 0.4, ease: "easeOut" },
     },
   };
 
-  if (selectedGame === "2048") {
-    return <Game2048 onBack={handleBack} />;
-  }
+  if (selectedGame === "2048") return <Game2048 onBack={handleBack} />;
+  if (selectedGame === "blind-timer") return <BlindTimerGame onBack={handleBack} />;
+  if (selectedGame === "watermelon") return <WatermelonGame onBack={handleBack} />;
+  if (selectedGame === "brick-breaker") return <SwipeBrickBreaker onBack={handleBack} />;
+  if (selectedGame === "stack") return <StackGame onBack={handleBack} />;
 
-  if (selectedGame === "blind-timer") {
-    return <BlindTimerGame onBack={handleBack} />;
-  }
+  const gameList = [
+    {
+      id: "watermelon",
+      title: "수박 게임",
+      desc: "과일을 합쳐서 수박을 만드세요!",
+      icon: "🍉",
+      color: "bg-amber-50 text-amber-500 border-amber-100",
+      rewarded: isWatermelonRewarded,
+      mission: true,
+    },
+    {
+      id: "2048",
+      title: "2048",
+      desc: "타일을 합쳐서 2048을 완성하세요!",
+      icon: "2048",
+      isTextIcon: true,
+      color: "bg-rose-50 text-rose-500 border-rose-100",
+      rewarded: is2048Rewarded,
+      mission: true,
+    },
+    {
+      id: "brick-breaker",
+      title: "벽돌깨기",
+      desc: "스와이프하여 벽돌을 부수세요!",
+      icon: Grid3X3,
+      color: "bg-emerald-50 text-emerald-500 border-emerald-100",
+      rewarded: isBrickBreakerRewarded,
+      mission: true,
+    },
+    {
+      id: "stack",
+      title: "스택 타워",
+      desc: "블록을 타이밍 맞춰 높이 쌓으세요!",
+      icon: Layers,
+      color: "bg-violet-50 text-violet-500 border-violet-100",
+      rewarded: isStackRewarded,
+      mission: true,
+    },
+  ];
 
-  if (selectedGame === "watermelon") {
-    return <WatermelonGame onBack={handleBack} />;
-  }
-
-  if (selectedGame === "brick-breaker") {
-    return <SwipeBrickBreaker onBack={handleBack} />;
-  }
-
-  if (selectedGame === "stack") {
-    return <StackGame onBack={handleBack} />;
-  }
+  const specialGames = [
+    {
+      id: "blind-timer",
+      title: "Blind Timer",
+      desc: "보이지 않는 타이머를 멈춰라!",
+      icon: Timer,
+      color: "bg-gray-50 text-gray-700 border-gray-100",
+      rewardInfo: "최대 500PT",
+      ticket: true,
+    },
+  ];
 
   return (
-    <div className="flex-1 overflow-y-auto lg:overflow-hidden custom-scrollbar bg-gray-50/30 pb-24 lg:pb-0 lg:flex lg:flex-col lg:h-full">
+    <div className="flex-1 bg-[#FDFDFE] text-gray-800 pb-24 overflow-y-auto custom-scrollbar relative">
+      {/* Sticky Header */}
+      <header className="px-6 pt-6 pb-2 flex flex-col sticky top-0 bg-[#FDFDFE]/90 backdrop-blur-md z-20">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="bg-rose-500 p-1.5 rounded-lg shadow-sm shadow-rose-200">
+            <Gamepad2 className="text-white w-4 h-4" />
+          </div>
+          <span className="text-[17px] font-bold text-gray-900 tracking-tight">
+            미니 게임
+          </span>
+        </div>
+      </header>
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-[1600px] mx-auto px-4 py-6 lg:py-10 lg:h-full lg:flex lg:flex-col"
+        className="max-w-xl mx-auto px-6 space-y-4 pt-2"
       >
-        {/* Header Area */}
-        <motion.div
-          variants={itemVariants}
-          className="flex flex-col sm:flex-row sm:items-center justify-between px-2 mb-10 gap-4"
-        >
-          <div className="flex items-center gap-3">
-            <div className="bg-rose-500 p-2 rounded-xl shadow-lg shadow-rose-200">
-              <Gamepad2 className="text-white w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl lg:text-2xl font-black text-gray-900 tracking-tight">
-                미니 게임
-              </h1>
-              <p className="text-gray-400 text-[11px] lg:text-xs font-medium">
-                가볍게 즐기고 포인트를 획득하세요!
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white border border-rose-100 rounded-3xl px-6 py-3 flex items-center justify-between gap-6 shadow-sm min-w-full sm:min-w-[340px]">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <Star className="text-rose-500 w-3.5 h-3.5 fill-current" />
-                <span className="text-[10px] text-rose-500 font-black uppercase tracking-wider">
+        {/* Daily Mission Summary Card */}
+        <motion.div variants={itemVariants}>
+          <div className="bg-white rounded-[32px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-rose-50/50 relative overflow-hidden flex items-center justify-between">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1.5">
+                <Trophy className="text-amber-400 fill-amber-400" size={14} />
+                <span className="text-[11px] text-amber-500 font-black uppercase tracking-widest">
                   Daily Mission
                 </span>
               </div>
-              <p className="text-[11px] text-gray-500 font-bold leading-tight">
-                아래 게임 중{" "}
-                <span className="text-rose-500 font-black">2개</span> 달성 시{" "}
-                <span className="text-gray-900 font-black">300 PT</span> 획득
+              <p className="text-[13px] text-gray-600 font-bold">
+                게임 <span className="text-rose-500">2개</span> 달성 시 <span className="text-gray-900">300 PT</span> 획득
               </p>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="h-8 w-[1px] bg-gray-100" />
-              <div className="flex gap-1.5">
-                {[1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${
-                      currentRewardedCount >= i
-                        ? "bg-rose-500 border-rose-500 text-white shadow-sm shadow-rose-200"
-                        : "bg-gray-50 border-gray-100 text-gray-300"
-                    }`}
-                  >
-                    <Check size={14} strokeWidth={4} />
-                  </div>
-                ))}
-              </div>
+            <div className="flex items-center gap-2">
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className={`w-9 h-9 rounded-2xl flex items-center justify-center border-2 transition-all ${
+                    currentRewardedCount >= i
+                      ? "bg-rose-500 border-rose-500 text-white shadow-sm shadow-rose-200"
+                      : "bg-gray-50 border-gray-100 text-gray-200"
+                  }`}
+                >
+                  <Check size={18} strokeWidth={4} />
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>
 
-        {/* Content Area */}
-        <div className="lg:flex-1 lg:min-h-0 overflow-y-auto custom-scrollbar px-2">
-          {/* Section 1: Daily Mission Games */}
-          <motion.div variants={itemVariants} className="mb-12">
-            <div className="flex items-center gap-2 mb-6 ml-1">
-              <div className="w-1.5 h-4 bg-rose-500 rounded-full" />
-              <h2 className="text-sm lg:text-base font-black text-gray-800">
-                일일 미션 게임{" "}
-                <span className="text-[11px] text-gray-400 font-bold ml-2">
-                  (목표 달성 시 150 PT 지급, 일일 최대 2회)
-                </span>
-              </h2>
-            </div>
+        {/* Daily Mission Games Section */}
+        <motion.div variants={itemVariants} className="pt-2">
+          <div className="flex items-center justify-between mb-4 px-1">
+            <h2 className="text-[13px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+              <Star size={12} className="text-rose-300" /> Daily Mission
+            </h2>
+            {isLimitReached && (
+              <span className="text-[10px] font-black text-rose-400 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100/50">
+                오늘의 보상 완료
+              </span>
+            )}
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* 2048 Game Card */}
-              <motion.div variants={itemVariants} className="group relative">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-rose-500 to-amber-500 rounded-[28px] blur opacity-[0.08] group-hover:opacity-[0.15] transition duration-500"></div>
-                <div className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-lg transition-all flex flex-col h-full overflow-hidden">
-                  <div className="flex items-start justify-between mb-8">
-                    <div className="w-16 h-16 bg-rose-50 rounded-[20px] flex items-center justify-center text-3xl font-black text-rose-500 border border-rose-100 shadow-inner transition-transform duration-500 group-hover:scale-110">
-                      2048
-                    </div>
-                    {is2048Rewarded ? (
-                      <div className="bg-rose-500 text-white text-[9px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-md shadow-rose-100 animate-in fade-in zoom-in duration-300">
-                        <Check size={10} strokeWidth={3} />
-                        <span>오늘의 목표 달성</span>
-                      </div>
-                    ) : isLimitReached ? (
-                      <div className="bg-gray-100 text-gray-400 text-[9px] font-black px-3 py-1.5 rounded-lg border border-gray-200 flex items-center gap-1 shadow-sm">
-                        <span>오늘의 보상 완료</span>
-                      </div>
-                    ) : (
-                      <div className="bg-white text-rose-500 text-[10px] font-black px-3 py-1.5 rounded-lg border-2 border-rose-50 flex items-center gap-1 shadow-sm">
-                        <Sparkles size={10} fill="currentColor" />
-                        <span>150 PT</span>
+          <div className="space-y-3">
+            {gameList.map((game) => (
+              <button
+                key={game.id}
+                onClick={() => handleSelectGame(game.id)}
+                className="w-full bg-white rounded-[28px] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-gray-50 flex items-center gap-4 transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.98] group relative overflow-hidden text-left"
+              >
+                {/* Game Icon */}
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 border ${game.color} shadow-inner transition-transform group-hover:scale-105`}>
+                  {game.isTextIcon ? (
+                    <span className="text-[14px] font-black">{game.icon}</span>
+                  ) : typeof game.icon === "string" ? (
+                    <span className="text-2xl">{game.icon}</span>
+                  ) : (
+                    <game.icon size={24} />
+                  )}
+                </div>
+
+                {/* Game Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="text-[15px] font-black text-gray-800">{game.title}</h3>
+                    {game.rewarded && (
+                      <div className="bg-green-50 text-green-500 p-0.5 rounded-full">
+                        <Check size={10} strokeWidth={4} />
                       </div>
                     )}
                   </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="px-2 py-0.5 bg-rose-50 text-rose-500 text-[9px] font-black rounded-md">
-                        DAILY MISSION
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-black text-gray-900 mb-1.5">
-                      2048
-                    </h3>
-                    <p className="text-gray-500 text-xs leading-relaxed mb-10 font-medium">
-                      타일을 합쳐서 2048을 완성하세요!
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => handleSelectGame("2048")}
-                    className="w-full py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md shadow-rose-100 active:scale-[0.98] bg-rose-500 text-white hover:bg-rose-600"
-                  >
-                    <Play size={16} fill="currentColor" />
-                    플레이
-                  </button>
+                  <p className="text-[11px] font-bold text-gray-400 truncate">{game.desc}</p>
                 </div>
-              </motion.div>
 
-              {/* Watermelon Game Card */}
-              <motion.div variants={itemVariants} className="group relative">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-green-500 rounded-[28px] blur opacity-[0.08] group-hover:opacity-[0.15] transition duration-500"></div>
-                <div className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-lg transition-all flex flex-col h-full overflow-hidden">
-                  <div className="flex items-start justify-between mb-8">
-                    <div className="w-16 h-16 bg-amber-50 rounded-[20px] flex items-center justify-center text-3xl font-black text-amber-500 border border-amber-100 shadow-inner transition-transform duration-500 group-hover:scale-110">
-                      🍉
+                {/* Status / Play Button */}
+                <div className="flex items-center gap-3">
+                  {game.rewarded ? (
+                    <span className="text-[10px] font-black text-rose-400 bg-rose-50 px-2 py-0.5 rounded-lg">DONE</span>
+                  ) : !isLimitReached && (
+                    <div className="flex items-center gap-1 text-[10px] font-black text-amber-500">
+                      <Sparkles size={10} fill="currentColor" />
+                      <span>150PT</span>
                     </div>
-                    {isWatermelonRewarded ? (
-                      <div className="bg-amber-500 text-white text-[9px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-md shadow-amber-100 animate-in fade-in zoom-in duration-300">
-                        <Check size={10} strokeWidth={3} />
-                        <span>오늘의 목표 달성</span>
-                      </div>
-                    ) : isLimitReached ? (
-                      <div className="bg-gray-100 text-gray-400 text-[9px] font-black px-3 py-1.5 rounded-lg border border-gray-200 flex items-center gap-1 shadow-sm">
-                        <span>오늘의 보상 완료</span>
-                      </div>
-                    ) : (
-                      <div className="bg-white text-amber-600 text-[10px] font-black px-3 py-1.5 rounded-lg border-2 border-amber-50 flex items-center gap-1 shadow-sm">
-                        <Sparkles size={10} fill="currentColor" />
-                        <span>150 PT</span>
-                      </div>
+                  )}
+                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-rose-50 group-hover:text-rose-500 transition-colors">
+                    <ChevronRight size={18} strokeWidth={3} />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Special Challenge Section */}
+        <motion.div variants={itemVariants} className="pt-6 pb-10">
+          <div className="flex items-center mb-4 px-1">
+            <h2 className="text-[13px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+              <Sparkles size={12} className="text-rose-300" /> Special Challenge
+            </h2>
+          </div>
+
+          <div className="space-y-3">
+            {specialGames.map((game) => (
+              <button
+                key={game.id}
+                onClick={() => handleSelectGame(game.id)}
+                className="w-full bg-white rounded-[28px] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-gray-50 flex items-center gap-4 transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.98] group relative overflow-hidden text-left"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-rose-50/10 via-amber-50/10 to-blue-50/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                {/* Game Icon */}
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 border ${game.color} shadow-inner transition-transform group-hover:scale-105`}>
+                  <game.icon size={24} />
+                </div>
+
+                {/* Game Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="text-[15px] font-black text-gray-800">{game.title}</h3>
+                    {game.ticket && (
+                      <Ticket size={12} className="text-rose-400 fill-rose-400/20" />
                     )}
                   </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[9px] font-black rounded-md">
-                        DAILY MISSION
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-black text-gray-900 mb-1.5">
-                      수박 게임
-                    </h3>
-                    <p className="text-gray-500 text-xs leading-relaxed mb-10 font-medium">
-                      과일을 합쳐서 수박을 만드세요!
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => handleSelectGame("watermelon")}
-                    className="w-full py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md shadow-amber-100 active:scale-[0.98] bg-amber-500 text-white hover:bg-amber-600"
-                  >
-                    <Play size={16} fill="currentColor" />
-                    플레이
-                  </button>
+                  <p className="text-[11px] font-bold text-gray-400 truncate">{game.desc}</p>
                 </div>
-              </motion.div>
 
-              {/* Swipe Brick Breaker Game Card */}
-              <motion.div variants={itemVariants} className="group relative">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-[28px] blur opacity-[0.08] group-hover:opacity-[0.15] transition duration-500"></div>
-                <div className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-lg transition-all flex flex-col h-full overflow-hidden">
-                  <div className="flex items-start justify-between mb-8">
-                    <div className="w-16 h-16 bg-emerald-50 rounded-[20px] flex items-center justify-center text-3xl font-black text-emerald-500 border border-emerald-100 shadow-inner transition-transform duration-500 group-hover:scale-110">
-                      <Grid3X3 size={32} />
-                    </div>
-                    {isBrickBreakerRewarded ? (
-                      <div className="bg-emerald-500 text-white text-[9px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-md shadow-emerald-100 animate-in fade-in zoom-in duration-300">
-                        <Check size={10} strokeWidth={3} />
-                        <span>오늘의 목표 달성</span>
-                      </div>
-                    ) : isLimitReached ? (
-                      <div className="bg-gray-100 text-gray-400 text-[9px] font-black px-3 py-1.5 rounded-lg border border-gray-200 flex items-center gap-1 shadow-sm">
-                        <span>오늘의 보상 완료</span>
-                      </div>
-                    ) : (
-                      <div className="bg-white text-emerald-600 text-[10px] font-black px-3 py-1.5 rounded-lg border-2 border-emerald-50 flex items-center gap-1 shadow-sm">
-                        <Sparkles size={10} fill="currentColor" />
-                        <span>150 PT</span>
-                      </div>
-                    )}
+                {/* Status / Play Button */}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 text-[10px] font-black bg-gradient-to-r from-rose-500 via-amber-500 to-blue-500 bg-clip-text text-transparent uppercase tracking-wider">
+                    {game.rewardInfo}
                   </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-black rounded-md">
-                        DAILY MISSION
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-black text-gray-900 mb-1.5">
-                      벽돌깨기
-                    </h3>
-                    <p className="text-gray-500 text-xs leading-relaxed mb-10 font-medium">
-                      스와이프하여 벽돌을 부수세요! (100단계)
-                    </p>
+                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-rose-50 group-hover:text-rose-500 transition-colors">
+                    <ChevronRight size={18} strokeWidth={3} />
                   </div>
-
-                  <button
-                    onClick={() => handleSelectGame("brick-breaker")}
-                    className="w-full py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md shadow-emerald-100 active:scale-[0.98] bg-emerald-500 text-white hover:bg-emerald-600"
-                  >
-                    <Play size={16} fill="currentColor" />
-                    플레이
-                  </button>
                 </div>
-              </motion.div>
-
-              {/* Stack Game Card */}
-              <motion.div variants={itemVariants} className="group relative">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-[28px] blur opacity-[0.08] group-hover:opacity-[0.15] transition duration-500"></div>
-                <div className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-lg transition-all flex flex-col h-full overflow-hidden">
-                  <div className="flex items-start justify-between mb-8">
-                    <div className="w-16 h-16 bg-violet-50 rounded-[20px] flex items-center justify-center text-3xl font-black text-violet-500 border border-violet-100 shadow-inner transition-transform duration-500 group-hover:scale-110">
-                      <Layers size={32} />
-                    </div>
-                    {isStackRewarded ? (
-                      <div className="bg-violet-500 text-white text-[9px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-md shadow-violet-100 animate-in fade-in zoom-in duration-300">
-                        <Check size={10} strokeWidth={3} />
-                        <span>오늘의 목표 달성</span>
-                      </div>
-                    ) : isLimitReached ? (
-                      <div className="bg-gray-100 text-gray-400 text-[9px] font-black px-3 py-1.5 rounded-lg border border-gray-200 flex items-center gap-1 shadow-sm">
-                        <span>오늘의 보상 완료</span>
-                      </div>
-                    ) : (
-                      <div className="bg-white text-violet-600 text-[10px] font-black px-3 py-1.5 rounded-lg border-2 border-violet-50 flex items-center gap-1 shadow-sm">
-                        <Sparkles size={10} fill="currentColor" />
-                        <span>150 PT</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="px-2 py-0.5 bg-violet-50 text-violet-600 text-[9px] font-black rounded-md">
-                        DAILY MISSION
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-black text-gray-900 mb-1.5">
-                      스택 타워
-                    </h3>
-                    <p className="text-gray-500 text-xs leading-relaxed mb-10 font-medium">
-                      블록을 타이밍 맞춰 높이 쌓으세요! (30층)
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => handleSelectGame("stack")}
-                    className="w-full py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md shadow-violet-100 active:scale-[0.98] bg-violet-500 text-white hover:bg-violet-600"
-                  >
-                    <Play size={16} fill="currentColor" />
-                    플레이
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Section 2: Special Challenge Games */}
-          <motion.div variants={itemVariants} className="mb-24">
-            <div className="flex items-center gap-2 mb-6 ml-1">
-              <div className="w-1.5 h-4 bg-gradient-to-b from-rose-500 via-yellow-500 to-blue-500 rounded-full" />
-              <h2 className="text-sm lg:text-base font-black text-gray-800">
-                특별 챌린지{" "}
-                <span className="text-[11px] text-gray-400 font-bold ml-2">
-                  (일일 미션 제한 없음)
-                </span>
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Blind Timer Game Card */}
-              <motion.div variants={itemVariants} className="group relative">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-rose-500 via-amber-500 via-emerald-500 via-blue-500 to-violet-500 rounded-[28px] blur opacity-[0.15] group-hover:opacity-[0.3] transition duration-500"></div>
-                <div className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-lg transition-all flex flex-col h-full overflow-hidden">
-                  <div className="flex items-start justify-between mb-8">
-                    <div className="w-16 h-16 bg-gray-50 rounded-[20px] flex items-center justify-center text-3xl font-black border border-gray-100 shadow-inner transition-transform duration-500 group-hover:scale-110 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-rose-500/10 via-yellow-500/10 to-blue-500/10" />
-                      <Timer
-                        size={32}
-                        className="text-gray-700 relative z-10"
-                      />
-                    </div>
-                    <div className="bg-gradient-to-r from-rose-500 via-amber-500 via-emerald-500 via-blue-500 to-violet-500 p-[1px] rounded-lg shadow-sm">
-                      <div className="bg-white rounded-[7px] px-3 py-1.5 flex items-center gap-1">
-                        <Ticket
-                          size={10}
-                          className="text-rose-500 fill-current"
-                        />
-                        <span className="text-[9px] font-black bg-gradient-to-r from-rose-500 via-amber-500 to-blue-500 bg-clip-text text-transparent">
-                          TICKET REQUIRED
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="px-2 py-0.5 bg-gradient-to-r from-rose-500 via-amber-500 to-blue-500 text-white text-[9px] font-black rounded-md shadow-sm">
-                        SPECIAL CHALLENGE
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-black text-gray-900 mb-1.5">
-                      Blind Timer
-                    </h3>
-                    <p className="text-gray-500 text-xs leading-relaxed mb-10 font-medium">
-                      보이지 않는 타이머를 멈춰라!
-                      <br />
-                      정확도에 따라 최대{" "}
-                      <span className="font-black bg-gradient-to-r from-rose-500 via-amber-500 to-blue-500 bg-clip-text text-transparent">
-                        500포인트
-                      </span>
-                      를 획득하세요.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => handleSelectGame("blind-timer")}
-                    className="w-full relative py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.98] group/btn overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-rose-500 via-amber-500 via-emerald-500 via-blue-500 to-violet-500 transition-transform duration-500 group-hover/btn:scale-110" />
-                    <Play
-                      size={16}
-                      fill="currentColor"
-                      className="relative z-10 text-white"
-                    />
-                    <span className="relative z-10 text-white">플레이</span>
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
+              </button>
+            ))}
+          </div>
+        </motion.div>
       </motion.div>
     </div>
   );

@@ -146,6 +146,7 @@ export default function Home() {
               currentUserId={currentUserId}
               couple={couple}
               myProfile={myProfile}
+              partnerProfile={partnerProfile}
             />
           </motion.div>
 

@@ -62,11 +62,11 @@ export default function Places() {
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 15 },
+    hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.4, ease: "easeOut" },
+      transition: { duration: 0.5, ease: "easeOut" },
     },
   };
 
@@ -162,31 +162,11 @@ export default function Places() {
         )}
         
         {activeTab === 'wishlist' && (
-          <motion.div 
-            key="wishlist"
-            variants={containerVariants} 
-            initial="hidden" 
-            animate="visible" 
-            className="h-full"
-          >
-            <motion.div variants={itemVariants} className="h-full">
-              <Wishlist onShowOnMap={handleShowOnMap} />
-            </motion.div>
-          </motion.div>
+          <Wishlist onShowOnMap={handleShowOnMap} />
         )}
 
         {activeTab === 'plans' && (
-          <motion.div 
-            key="plans"
-            variants={containerVariants} 
-            initial="hidden" 
-            animate="visible" 
-            className="h-full"
-          >
-            <motion.div variants={itemVariants} className="h-full">
-              <TravelPlans />
-            </motion.div>
-          </motion.div>
+          <TravelPlans />
         )}
       </main>
     </div>

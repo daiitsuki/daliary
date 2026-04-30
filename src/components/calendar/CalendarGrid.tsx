@@ -184,7 +184,7 @@ const WeekRow = memo(
               onClick={() => onDayClick(day, month, year)}
               className={`relative h-24 sm:h-28 cursor-pointer transition-all group border-r border-b border-gray-50/30 ${
                 !currentMonth ? "bg-gray-50/10 text-opacity-30" : ""
-              } ${isActive ? "bg-rose-50/20" : "hover:bg-gray-50/50"}`}
+              } ${isActive ? "bg-rose-50/20" : ""}`}
             >
               {/* Day Number */}
               <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
@@ -198,7 +198,7 @@ const WeekRow = memo(
                           ? "text-gray-300"
                           : isHoliday
                             ? "text-red-500"
-                            : "text-gray-600 group-hover:bg-white group-hover:shadow-sm"
+                            : "text-gray-600"
                   }`}
                 >
                   {day}
@@ -369,7 +369,7 @@ const CalendarGrid = ({
         whileHover={{ scale: 1.05, y: -2 }}
         whileTap={{ scale: 0.95 }}
         onClick={onAddSchedule}
-        className="absolute bottom-5 right-5 sm:hidden w-11 h-11 flex items-center justify-center bg-rose-500 text-white rounded-2xl shadow-[0_8px_25px_rgba(244,63,94,0.3)] hover:bg-rose-600 transition-all z-[20] border border-rose-400/20"
+        className="absolute bottom-5 right-5 w-11 h-11 flex items-center justify-center bg-rose-500 text-white rounded-2xl shadow-[0_8px_25px_rgba(244,63,94,0.3)] hover:bg-rose-600 transition-all z-[20] border border-rose-400/20"
       >
         <Plus size={20} strokeWidth={3} />
       </motion.button>

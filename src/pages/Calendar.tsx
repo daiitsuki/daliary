@@ -233,12 +233,11 @@ const Calendar = () => {
               selectedDate={selectedDate}
               isDateSelected={isDateSelected}
               isSearchActive={isSearchActive}
-              month={month}
-              onAddSchedule={openAddModal}
               onEditSchedule={openEditModal}
               myProfile={myProfile}
               partnerProfile={partnerProfile}
               today={getKSTToday()}
+              onClearSelection={handleClearSelection}
             />
           </motion.div>
         </div>

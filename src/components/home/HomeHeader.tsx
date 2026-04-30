@@ -95,7 +95,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
 
           {/* D-Day */}
           <div className="flex flex-col items-center px-4">
-            <div 
+            <div
               onClick={() => setIsAnniversaryModalOpen(true)}
               className="bg-rose-50/50 px-3.5 py-1.5 rounded-full flex items-center gap-1.5 border border-rose-100/30 cursor-pointer transition-transform active:scale-95 hover:bg-rose-100/40"
             >
@@ -161,7 +161,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
         title={viewerState.title}
       />
 
-      <AnniversaryModal 
+      <AnniversaryModal
         isOpen={isAnniversaryModalOpen}
         onClose={() => setIsAnniversaryModalOpen(false)}
       />

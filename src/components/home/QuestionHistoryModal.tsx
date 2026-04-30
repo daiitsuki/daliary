@@ -12,6 +12,7 @@ interface QuestionHistoryModalProps {
   coupleId: string | undefined;
   currentUserId: string | null;
   createdAt?: string;
+  partnerNickname?: string;
 }
 
 export default function QuestionHistoryModal({
@@ -20,6 +21,7 @@ export default function QuestionHistoryModal({
   coupleId,
   currentUserId,
   createdAt,
+  partnerNickname = "상대방",
 }: QuestionHistoryModalProps) {
   const { history, loading, initialLoading, hasMore, loadMore, refresh } =
     useQuestionHistory(coupleId, currentUserId, createdAt);
@@ -33,9 +35,9 @@ export default function QuestionHistoryModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const handleResize = () => window.innerWidth < 768;
+    window.addEventListener("resize", () => setIsMobile(window.innerWidth < 768));
+    return () => window.removeEventListener("resize", () => setIsMobile(window.innerWidth < 768));
   }, []);
 
   // 뒤로가기 시 모달 닫기 로직
@@ -265,8 +267,8 @@ export default function QuestionHistoryModal({
                           <div className="space-y-4 pt-2">
                             {/* My Answer */}
                             <div className="space-y-1.5">
-                              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.15em] flex items-center gap-1">
-                                <Smile size={10} /> My Answer
+                              <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
+                                <Smile size={11} /> 나의 답변
                               </p>
                               <div className="bg-rose-50/50 p-4 rounded-2xl text-gray-700 text-xs leading-relaxed">
                                 {item.myAnswer ? (
@@ -282,22 +284,18 @@ export default function QuestionHistoryModal({
                             {/* Partner Answer */}
                             <div className="space-y-1.5 pt-1">
                               <div className="flex items-center justify-between">
-                                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.15em] flex items-center gap-1">
-                                  <Heart size={10} /> Partner's Answer
+                                <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
+                                  <Heart size={11} /> {partnerNickname}의 답변
                                 </p>
                                 {item.myAnswer && item.partnerAnswer ? (
                                   <div className="text-[9px] font-bold text-green-400 flex items-center gap-1">
                                     <Unlock size={9} /> OPEN
                                   </div>
                                 ) : item.partnerAnswer ? (
-                                  <div className="text-[9px] font-bold text-green-500 flex items-center gap-1">
+                                  <div className="text-[9px] font-bold text-rose-400 flex items-center gap-1">
                                     <Lock size={9} /> LOCKED
                                   </div>
-                                ) : (
-                                  <div className="text-[9px] font-bold text-gray-300 flex items-center gap-1">
-                                    <Lock size={9} /> NON
-                                  </div>
-                                )}
+                                ) : null}
                               </div>
                               <div className="bg-gray-50/50 p-4 rounded-2xl text-gray-600 text-xs leading-relaxed">
                                 {item.myAnswer && item.partnerAnswer ? (
@@ -314,7 +312,7 @@ export default function QuestionHistoryModal({
                                   </div>
                                 ) : (
                                   <span className="text-gray-300 italic">
-                                    상대방이 아직 답변하지 않았습니다.
+                                    {partnerNickname}님이 아직 답변하지 않았습니다.
                                   </span>
                                 )}
                               </div>
