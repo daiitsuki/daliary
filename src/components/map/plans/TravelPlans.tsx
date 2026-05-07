@@ -8,6 +8,7 @@ import {
   Trash2,
   Edit2,
   MapPin,
+  Loader2,
 } from "lucide-react";
 import { Trip } from "../../../types";
 import TripModal from "./TripModal";
@@ -83,7 +84,7 @@ export default function TravelPlans() {
   if (isTripsLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-400"></div>
+        <Loader2 className="animate-spin text-rose-400" size={32} />
       </div>
     );
   }
@@ -101,9 +102,7 @@ export default function TravelPlans() {
         className="px-6 py-6 pb-2 flex justify-between items-start"
       >
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-800 mb-1">
-            여행 계획 📅
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">여행 계획</h1>
           <p className="text-gray-500 text-sm">
             <span className="text-rose-500 font-bold">
               {trips?.length || 0}개
@@ -135,13 +134,6 @@ export default function TravelPlans() {
           </motion.div>
         ) : (
           <motion.div variants={itemVariants} className="space-y-4">
-            <div className="flex items-center gap-2 px-1">
-              <div className="w-1 h-3 bg-rose-400 rounded-full"></div>
-              <h2 className="text-xs font-black text-gray-600 uppercase tracking-tight">
-                나의 여행 목록 ({trips.length})
-              </h2>
-            </div>
-
             <div className="space-y-4">
               {trips.map((trip) => (
                 <div

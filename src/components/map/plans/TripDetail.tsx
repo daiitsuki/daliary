@@ -15,6 +15,7 @@ import {
   Camera,
   Map as MapIcon,
   Navigation,
+  Loader2,
 } from "lucide-react";
 import PlanItemModal from "./PlanItemModal";
 import TripMapModal from "./TripMapModal";
@@ -158,7 +159,7 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
           </button>
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-gray-800 truncate">
-              {trip.title} ✈️
+              {trip.title}
             </h2>
             <p className="text-xs font-bold text-rose-500 uppercase tracking-widest mt-0.5">
               {trip.start_date} ~ {trip.end_date}
@@ -200,7 +201,7 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
         >
           {isPlansLoading ? (
             <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-400"></div>
+              <Loader2 className="animate-spin text-rose-400" size={32} />
             </div>
           ) : (plansByDay[activeDay] || []).length === 0 ? (
             <motion.div
@@ -217,16 +218,6 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
             </motion.div>
           ) : (
             <div className="space-y-4">
-              <motion.div
-                variants={itemVariants}
-                className="flex items-center gap-2 px-1"
-              >
-                <div className="w-1 h-3 bg-rose-400 rounded-full"></div>
-                <h2 className="text-xs font-black text-gray-600 uppercase tracking-tight">
-                  Day {activeDay} 일정 ({(plansByDay[activeDay] || []).length})
-                </h2>
-              </motion.div>
-
               {/* 리스트 아이템들 */}
               <motion.div className="space-y-4" variants={itemVariants}>
                 {(plansByDay[activeDay] || []).map((plan) => {

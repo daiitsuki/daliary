@@ -5,9 +5,9 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig({
   server: {
-    // 1. 캐시 설정 삭제: 개발 서버에서는 브라우저 캐시가 필요 없습니다.
-    // 2. 웹소켓(HMR) 연결 설정: 주소를 localhost로 고정해서 연결 오류를 방지합니다.
-    host: "localhost",
+    port: 5173,
+    strictPort: true, // 포트가 사용 중이면 다음으로 넘어가지 않고 즉시 에러 발생 (원인 파악 용이)
+    host: true, // 'localhost' 대신 true를 사용하면 모든 로컬 주소(0.0.0.0)를 수신합니다.
     hmr: {
       host: "localhost",
     },
