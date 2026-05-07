@@ -314,19 +314,19 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
       {/* Floating Buttons */}
       <motion.div
         variants={itemVariants}
-        className="absolute bottom-28 right-6 flex items-center gap-3 z-30"
+        className="absolute bottom-24 right-5 flex items-center gap-2 z-30"
       >
         <button
           onClick={() => setIsMapModalOpen(true)}
-          className="w-14 h-14 bg-white text-rose-500 rounded-2xl shadow-xl border border-rose-100 flex items-center justify-center active:scale-95 transition-all hover:bg-rose-50"
+          className="w-11 h-11 bg-white text-rose-500 rounded-2xl shadow-xl border border-rose-100 flex items-center justify-center active:scale-95 transition-all hover:bg-rose-50"
         >
-          <MapIcon size={28} />
+          <MapIcon size={20} />
         </button>
         <button
           onClick={handleAddPlan}
-          className="w-14 h-14 bg-rose-500 text-white rounded-2xl shadow-2xl shadow-rose-200 flex items-center justify-center active:scale-95 transition-all hover:bg-rose-600"
+          className="w-11 h-11 bg-rose-500 text-white rounded-2xl shadow-2xl shadow-rose-200 flex items-center justify-center active:scale-95 transition-all hover:bg-rose-600"
         >
-          <Plus size={28} strokeWidth={3} />
+          <Plus size={20} strokeWidth={3} />
         </button>
       </motion.div>
 
