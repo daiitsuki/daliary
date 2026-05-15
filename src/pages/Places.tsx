@@ -20,6 +20,14 @@ export default function Places() {
   // 초기 탭 설정: URL에 없으면 localStorage에서 가져옴
   useEffect(() => {
     if (!activeTab) {
+      // visitId가 있으면 memory 탭으로 우선 설정
+      if (searchParams.get('visitId')) {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('tab', 'memory');
+        setSearchParams(newParams, { replace: true });
+        return;
+      }
+
       const savedTab = localStorage.getItem(LAST_VIEWED_TAB_KEY);
       const initialTab = savedTab || 'dashboard';
       const newParams = new URLSearchParams(searchParams);

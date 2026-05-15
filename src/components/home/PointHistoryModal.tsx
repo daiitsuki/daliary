@@ -33,18 +33,55 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
   history,
   initialTab = "history",
 }) => {
+  const tabs = ["history", "guide", "shop"] as const;
   const [activeTab, setActiveTab] = useState<"history" | "guide" | "shop">(
     initialTab,
   );
   const { purchaseItem } = useCouplePointsContext();
   const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [direction, setDirection] = useState(0);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setCurrentUserId(data.user?.id || null);
     });
   }, []);
+
+  const handleTabChange = (newTab: "history" | "guide" | "shop") => {
+    const currentIndex = tabs.indexOf(activeTab);
+    const nextIndex = tabs.indexOf(newTab);
+    setDirection(nextIndex > currentIndex ? 1 : -1);
+    setActiveTab(newTab);
+  };
+
+  const handleDragEnd = (
+    _event: MouseEvent | TouchEvent | PointerEvent,
+    info: { offset: { x: number }; velocity: { x: number } },
+  ) => {
+    const swipeThreshold = 50;
+    const velocityThreshold = 500;
+
+    if (
+      info.offset.x < -swipeThreshold ||
+      info.velocity.x < -velocityThreshold
+    ) {
+      // Swipe left -> Next tab
+      const currentIndex = tabs.indexOf(activeTab);
+      if (currentIndex < tabs.length - 1) {
+        handleTabChange(tabs[currentIndex + 1]);
+      }
+    } else if (
+      info.offset.x > swipeThreshold ||
+      info.velocity.x > velocityThreshold
+    ) {
+      // Swipe right -> Previous tab
+      const currentIndex = tabs.indexOf(activeTab);
+      if (currentIndex > 0) {
+        handleTabChange(tabs[currentIndex - 1]);
+      }
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -174,6 +211,23 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
     }
   };
 
+  const variants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? "20%" : "-20%",
+      opacity: 0,
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? "20%" : "-20%",
+      opacity: 0,
+    }),
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -225,7 +279,7 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
               {/* Tabs */}
               <div className="flex gap-2 p-1 bg-gray-50 rounded-2xl">
                 <button
-                  onClick={() => setActiveTab("history")}
+                  onClick={() => handleTabChange("history")}
                   className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${
                     activeTab === "history"
                       ? "bg-white text-rose-500 shadow-sm"
@@ -235,7 +289,7 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
                   적립 내역
                 </button>
                 <button
-                  onClick={() => setActiveTab("guide")}
+                  onClick={() => handleTabChange("guide")}
                   className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${
                     activeTab === "guide"
                       ? "bg-white text-rose-500 shadow-sm"
@@ -245,7 +299,7 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
                   획득 방법
                 </button>
                 <button
-                  onClick={() => setActiveTab("shop")}
+                  onClick={() => handleTabChange("shop")}
                   className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${
                     activeTab === "shop"
                       ? "bg-white text-rose-500 shadow-sm"
@@ -257,198 +311,224 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 pt-0 custom-scrollbar">
-              {activeTab === "history" ? (
-                <div className="space-y-4 pt-4 pb-10">
-                  {history.length === 0 ? (
-                    <div className="py-24 text-center">
-                      <p className="text-gray-400 text-sm font-bold italic">
-                        아직 포인트 내역이 없습니다.
-                      </p>
+            <div className="flex-1 relative overflow-hidden">
+              <AnimatePresence initial={false} custom={direction} mode="popLayout">
+                <motion.div
+                  key={activeTab}
+                  custom={direction}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{
+                    x: { type: "spring", stiffness: 500, damping: 45, mass: 0.8 },
+                    opacity: { duration: 0.1 },
+                  }}
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={handleDragEnd}
+                  className="w-full h-full overflow-y-auto p-6 pt-0 custom-scrollbar"
+                >
+                  {activeTab === "history" ? (
+                    <div className="space-y-4 pt-4 pb-10">
+                      {history.length === 0 ? (
+                        <div className="py-24 text-center">
+                          <p className="text-gray-400 text-sm font-bold italic">
+                            아직 포인트 내역이 없습니다.
+                          </p>
+                        </div>
+                      ) : (
+                        history.map((log, index) => (
+                          <motion.div
+                            key={log.id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 border border-gray-50"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="bg-white p-2.5 rounded-xl shadow-sm">
+                                {log.points > 0 ? (
+                                  <PlusCircle
+                                    size={18}
+                                    className="text-rose-400"
+                                  />
+                                ) : (
+                                  <MinusCircle
+                                    size={18}
+                                    className="text-gray-400"
+                                  />
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-[13px] font-bold text-gray-800 mb-0.5">
+                                  {log.description}
+                                </p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">
+                                  {new Date(log.created_at).toLocaleDateString(
+                                    "ko-KR",
+                                    {
+                                      month: "long",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <span
+                              className={`text-sm font-black ${log.points > 0 ? "text-rose-500" : "text-gray-400"}`}
+                            >
+                              {log.points > 0 ? `+${log.points}` : log.points}
+                            </span>
+                          </motion.div>
+                        ))
+                      )}
+                    </div>
+                  ) : activeTab === "guide" ? (
+                    <div className="space-y-6 pt-4 pb-10">
+                      <div className="bg-gray-50/50 rounded-[32px] border border-gray-100/50 overflow-hidden">
+                        {pointRules.map((rule, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className={`flex items-center justify-between p-5 transition-colors hover:bg-white/50 ${
+                              index !== pointRules.length - 1
+                                ? "border-b border-gray-100/50"
+                                : ""
+                            }`}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-gray-50">
+                                {rule.icon}
+                              </div>
+                              <div>
+                                <p className="text-[13px] font-black text-gray-800 mb-0.5">
+                                  {rule.title}
+                                </p>
+                                <p className="text-[10px] text-gray-400 font-bold leading-none">
+                                  {rule.desc}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="text-sm font-black text-rose-500">
+                                +{rule.points}
+                              </span>
+                              <span className="text-[8px] font-black text-rose-200 uppercase tracking-tighter">
+                                Points
+                              </span>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
                     </div>
                   ) : (
-                    history.map((log, index) => (
+                    /* Point Shop Tab - Reverted to Original Layout with Synced Animation */
+                    <div className="space-y-6 pt-4 pb-10">
                       <motion.div
-                        key={log.id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 border border-gray-50"
+                        transition={{ delay: 0 }}
+                        className="bg-gradient-to-br from-rose-400 to-rose-500 rounded-[28px] p-6 text-white shadow-lg shadow-rose-100 relative overflow-hidden"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="bg-white p-2.5 rounded-xl shadow-sm">
-                            {log.points > 0 ? (
-                              <PlusCircle size={18} className="text-rose-400" />
-                            ) : (
-                              <MinusCircle
-                                size={18}
-                                className="text-gray-400"
-                              />
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-[13px] font-bold text-gray-800 mb-0.5">
-                              {log.description}
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">
-                              {new Date(log.created_at).toLocaleDateString(
-                                "ko-KR",
-                                {
-                                  month: "long",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )}
-                            </p>
-                          </div>
+                        <div className="absolute right-[-10%] bottom-[-20%] opacity-10">
+                          <ShoppingBag size={120} />
                         </div>
-                        <span
-                          className={`text-sm font-black ${log.points > 0 ? "text-rose-500" : "text-gray-400"}`}
-                        >
-                          {log.points > 0 ? `+${log.points}` : log.points}
-                        </span>
-                      </motion.div>
-                    ))
-                  )}
-                </div>
-              ) : activeTab === "guide" ? (
-                <div className="space-y-6 pt-4 pb-10">
-                  <div className="bg-gray-50/50 rounded-[32px] border border-gray-100/50 overflow-hidden">
-                    {pointRules.map((rule, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className={`flex items-center justify-between p-5 transition-colors hover:bg-white/50 ${
-                          index !== pointRules.length - 1
-                            ? "border-b border-gray-100/50"
-                            : ""
-                        }`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-gray-50">
-                            {rule.icon}
-                          </div>
-                          <div>
-                            <p className="text-[13px] font-black text-gray-800 mb-0.5">
-                              {rule.title}
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-bold leading-none">
-                              {rule.desc}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-0.5">
-                          <span className="text-sm font-black text-rose-500">
-                            +{rule.points}
-                          </span>
-                          <span className="text-[8px] font-black text-rose-200 uppercase tracking-tighter">
-                            Points
-                          </span>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                /* Point Shop Tab - Reverted to Original Layout with Synced Animation */
-                <div className="space-y-6 pt-4 pb-10">
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0 }}
-                    className="bg-gradient-to-br from-rose-400 to-rose-500 rounded-[28px] p-6 text-white shadow-lg shadow-rose-100 relative overflow-hidden"
-                  >
-                    <div className="absolute right-[-10%] bottom-[-20%] opacity-10">
-                      <ShoppingBag size={120} />
-                    </div>
-                    <div className="relative z-10">
-                      <p className="text-[11px] font-black uppercase tracking-widest opacity-80 mb-1">
-                        현재 포인트
-                      </p>
-                      <h4 className="text-3xl font-black flex items-baseline gap-1">
-                        {currentPoints.toLocaleString()}{" "}
-                        <span className="text-sm opacity-90 font-bold">PT</span>
-                      </h4>
-                    </div>
-                  </motion.div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    {shopItems.map((item, index) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: (index + 1) * 0.05 }}
-                        className="bg-white rounded-[32px] border border-gray-100 p-5 flex flex-col gap-5 shadow-sm relative overflow-hidden"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-400 shrink-0">
-                            {item.icon}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <h4 className="text-[14px] font-black text-gray-800">
-                                {item.name}
-                              </h4>
-                              {item.limit && (
-                                <span className="bg-amber-100 text-amber-600 text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">
-                                  {item.limit}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-gray-400 font-bold leading-tight">
-                              {item.description}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() =>
-                            handlePurchase(item.id, item.price, item.name)
-                          }
-                          disabled={isPurchasing === item.id || item.isSoldOut}
-                          className={`w-full py-3.5 rounded-2xl text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-2 ${
-                            item.isSoldOut
-                              ? "bg-gray-100 text-gray-400 border border-gray-100 cursor-not-allowed"
-                              : currentPoints >= item.price
-                                ? "bg-rose-500 text-white shadow-md shadow-rose-100 hover:bg-rose-600"
-                                : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-50"
-                          }`}
-                        >
-                          {isPurchasing === item.id ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          ) : item.isSoldOut ? (
-                            <span className="flex items-center gap-1.5 text-gray-400">
-                              <Clock size={14} /> 구매 완료
+                        <div className="relative z-10">
+                          <p className="text-[11px] font-black uppercase tracking-widest opacity-80 mb-1">
+                            현재 포인트
+                          </p>
+                          <h4 className="text-3xl font-black flex items-baseline gap-1">
+                            {currentPoints.toLocaleString()}{" "}
+                            <span className="text-sm opacity-90 font-bold">
+                              PT
                             </span>
-                          ) : (
-                            `${item.price.toLocaleString()} PT  |  구매하기`
-                          )}
-                        </button>
+                          </h4>
+                        </div>
                       </motion.div>
-                    ))}
 
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: (shopItems.length + 1) * 0.05 }}
-                      className="py-10 text-center bg-gray-50/50 rounded-[32px] border border-dashed border-gray-200"
-                    >
-                      <p className="text-[11px] text-gray-400 font-bold leading-relaxed">
-                        새로운 아이템들이 곧 추가될 예정이에요!
-                      </p>
-                    </motion.div>
-                  </div>
-                </div>
-              )}
+                      <div className="grid grid-cols-1 gap-4">
+                        {shopItems.map((item, index) => (
+                          <motion.div
+                            key={item.id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: (index + 1) * 0.05 }}
+                            className="bg-white rounded-[32px] border border-gray-100 p-5 flex flex-col gap-5 shadow-sm relative overflow-hidden"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-400 shrink-0">
+                                {item.icon}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <h4 className="text-[14px] font-black text-gray-800">
+                                    {item.name}
+                                  </h4>
+                                  {item.limit && (
+                                    <span className="bg-amber-100 text-amber-600 text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">
+                                      {item.limit}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-gray-400 font-bold leading-tight">
+                                  {item.description}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() =>
+                                handlePurchase(item.id, item.price, item.name)
+                              }
+                              disabled={
+                                isPurchasing === item.id || item.isSoldOut
+                              }
+                              className={`w-full py-3.5 rounded-2xl text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                                item.isSoldOut
+                                  ? "bg-gray-100 text-gray-400 border border-gray-100 cursor-not-allowed"
+                                  : currentPoints >= item.price
+                                    ? "bg-rose-500 text-white shadow-md shadow-rose-100 hover:bg-rose-600"
+                                    : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-50"
+                              }`}
+                            >
+                              {isPurchasing === item.id ? (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              ) : item.isSoldOut ? (
+                                <span className="flex items-center gap-1.5 text-gray-400">
+                                  <Clock size={14} /> 구매 완료
+                                </span>
+                              ) : (
+                                `${item.price.toLocaleString()} PT  |  구매하기`
+                              )}
+                            </button>
+                          </motion.div>
+                        ))}
+
+                        <motion.div
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: (shopItems.length + 1) * 0.05 }}
+                          className="py-10 text-center bg-gray-50/50 rounded-[32px] border border-dashed border-gray-200"
+                        >
+                          <p className="text-[11px] text-gray-400 font-bold leading-relaxed">
+                            새로운 아이템들이 곧 추가될 예정이에요!
+                          </p>
+                        </motion.div>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </motion.div>
         </div>
       )}
     </AnimatePresence>
-  );
-};
+  );};
 
 export default PointHistoryModal;

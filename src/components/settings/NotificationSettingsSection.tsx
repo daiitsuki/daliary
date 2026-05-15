@@ -29,13 +29,14 @@ const NotificationSettingsSection: React.FC<
     toggleNotifications,
     updateGranularSetting,
     permissionStatus,
+    isDeviceActive,
   } = useNotifications();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   if (!settings) return null;
 
-  const isToggleOn = settings.is_enabled;
+  const isToggleOn = isDeviceActive;
 
   const handleToggle = async () => {
     setIsProcessing(true);

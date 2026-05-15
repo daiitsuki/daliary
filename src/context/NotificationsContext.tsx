@@ -198,12 +198,9 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   }, [profile?.id]);
 
   useEffect(() => {
-    if (settings?.is_enabled && !isDeviceActive && permissionStatus === 'granted' && !coupleLoading) {
-      registerPushSubscription().then(success => {
-        if (success) setIsDeviceActive(true);
-      });
-    }
-  }, [settings?.is_enabled, isDeviceActive, permissionStatus, coupleLoading, registerPushSubscription]);
+    // We removed the auto-subscription effect to ensure explicit per-device control.
+    // Notifications will only be enabled on a device when the user explicitly toggles it ON.
+  }, []);
 
   const toggleNotifications = async (targetState: boolean) => {
     if (!profile?.id) return false;
@@ -219,6 +216,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         return false;
       }
 
+      // Ensure account-level is enabled when at least one device is turned on
       const { error } = await supabase
         .from('notification_settings')
         .update({ is_enabled: true })
@@ -227,20 +225,17 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
       if (!error) {
         queryClient.setQueryData(['notification_settings', profile.id], (prev: any) => ({ ...prev, is_enabled: true }));
       }
+      setIsDeviceActive(true);
     } else {
-      const { error } = await supabase
-        .from('notification_settings')
-        .update({ is_enabled: false })
-        .eq('user_id', profile.id);
-
-      if (!error) {
-        queryClient.setQueryData(['notification_settings', profile.id], (prev: any) => ({ ...prev, is_enabled: false }));
-        await unregisterPushSubscription();
+      // When turning OFF, we only unregister this device. 
+      // We DO NOT set is_enabled: false globally, so other devices stay active.
+      const success = await unregisterPushSubscription();
+      if (success) {
+        setIsDeviceActive(false);
       } else {
         return false;
       }
     }
-    checkDeviceActive();
     return true;
   };
 

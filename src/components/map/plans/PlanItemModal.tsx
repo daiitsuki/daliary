@@ -69,6 +69,7 @@ export default function PlanItemModal({
   onClose,
 }: PlanItemModalProps) {
   const { createPlan, updatePlan } = useTripPlans(tripId);
+  const isSubmitting = createPlan.isPending || updatePlan.isPending;
   const { searchPlaces, results, isSearching } = usePlaceSearch();
 
   const [category, setCategory] = useState(plan?.category || "restaurant");
@@ -503,9 +504,14 @@ export default function PlanItemModal({
             <div className="p-8 shrink-0 border-t border-gray-50 bg-white">
               <button
                 onClick={handleSubmit}
-                className="w-full py-5 bg-rose-500 text-white text-[15px] font-black rounded-[24px] shadow-2xl shadow-rose-100 flex items-center justify-center gap-2 hover:bg-rose-600 active:scale-[0.98] transition-all"
+                disabled={isSubmitting}
+                className="w-full py-5 bg-rose-500 text-white text-[15px] font-black rounded-[24px] shadow-2xl shadow-rose-100 flex items-center justify-center gap-2 hover:bg-rose-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Check size={20} strokeWidth={3} />
+                {isSubmitting ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/20 border-t-white" />
+                ) : (
+                  <Check size={20} strokeWidth={3} />
+                )}
                 {plan ? "일정 수정하기" : "일정 저장하기"}
               </button>
             </div>

@@ -1,15 +1,24 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { useMemoryFeed, MemoryFeedItem } from '../../../hooks/useMemoryFeed';
+import { useSearchParams } from 'react-router-dom';
+import { useMemoryFeed, useVisitById, MemoryFeedItem } from '../../../hooks/useMemoryFeed';
 import MemoryCard from './MemoryCard';
-import { Camera, Loader2 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import { Camera, Loader2, ArrowLeft, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import VisitDetailModal from '../dashboard/VisitDetailModal';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function MemoryFeed() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const observerTarget = useRef<HTMLDivElement>(null);
   const [selectedVisit, setSelectedVisit] = useState<MemoryFeedItem | null>(null);
+  const hasHandledUrlVisit = useRef(false);
+
+  const visitIdFromUrl = searchParams.get('visitId');
+  const regionFilter = searchParams.get('region');
+  const subRegionFilter = searchParams.get('subRegion');
+  
+  const { data: sharedVisit, isLoading: isSharedVisitLoading } = useVisitById(visitIdFromUrl);
 
   const {
     data,
@@ -17,7 +26,20 @@ export default function MemoryFeed() {
     hasNextPage,
     isFetchingNextPage,
     status,
-  } = useMemoryFeed();
+  } = useMemoryFeed(regionFilter, subRegionFilter);
+
+  // Reset handled flag if visitId changes
+  useEffect(() => {
+    hasHandledUrlVisit.current = false;
+  }, [visitIdFromUrl]);
+
+  // Handle shared visit from URL
+  useEffect(() => {
+    if (sharedVisit && !hasHandledUrlVisit.current) {
+      setSelectedVisit(sharedVisit);
+      hasHandledUrlVisit.current = true;
+    }
+  }, [sharedVisit]);
 
   useEffect(() => {
     if (!observerTarget.current || !hasNextPage) return;
@@ -43,18 +65,33 @@ export default function MemoryFeed() {
       ...selectedVisit,
       places: selectedVisit.place
     };
-  }, [selectedVisit?.id]); // Only re-create if the ID actually changes
+  }, [selectedVisit?.id]);
 
   const handleCloseModal = useCallback(() => {
     setSelectedVisit(null);
-  }, []);
+    if (searchParams.get('visitId')) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('visitId');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleUpdateRefresh = useCallback(async () => {
     queryClient.invalidateQueries({ queryKey: ['memory_feed'] });
+    if (visitIdFromUrl) {
+      queryClient.invalidateQueries({ queryKey: ['visit_detail', visitIdFromUrl] });
+    }
     return true;
-  }, [queryClient]);
+  }, [queryClient, visitIdFromUrl]);
 
-  if (status === 'pending') {
+  const clearFilters = useCallback(() => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('region');
+    newParams.delete('subRegion');
+    setSearchParams(newParams);
+  }, [searchParams, setSearchParams]);
+
+  if (status === 'pending' || (visitIdFromUrl && isSharedVisitLoading)) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
         <Loader2 className="animate-spin text-rose-500" size={32} />
@@ -65,25 +102,42 @@ export default function MemoryFeed() {
 
   const allItems: MemoryFeedItem[] = (data as any)?.pages.flatMap((page: any) => page.data) || [];
 
-  if (allItems.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full px-10 text-center gap-6">
-        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center">
-          <Camera size={40} className="text-gray-200" />
-        </div>
-        <div>
-          <h3 className="text-lg font-black text-gray-900 mb-2">아직 추억 사진이 없어요</h3>
-          <p className="text-sm text-gray-400 font-medium leading-relaxed">
-            지도에서 방문 인증을 하고<br />첫 번째 추억 피드를 장식해보세요!
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-full relative overflow-hidden flex flex-col">
-      {/* SINGLE MODAL INSTANCE - Placed outside scroll area for stability */}
+    <div className="h-full relative overflow-hidden flex flex-col bg-white">
+      {/* Filter Header */}
+      <AnimatePresence>
+        {regionFilter && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-white border-b border-gray-100 px-4 py-3 shrink-0"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={clearFilters}
+                  className="p-1.5 hover:bg-gray-50 rounded-full transition-colors text-gray-500"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <h2 className="text-sm font-black text-gray-800">
+                  {subRegionFilter ? `${regionFilter} ${subRegionFilter}` : regionFilter}의 추억
+                </h2>
+              </div>
+              <button 
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-full transition-all"
+              >
+                <span className="text-[10px] font-bold text-gray-500">필터 해제</span>
+                <X size={12} className="text-gray-400" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* SINGLE MODAL INSTANCE */}
       <AnimatePresence>
         {selectedVisit && (
           <VisitDetailModal 
@@ -98,19 +152,43 @@ export default function MemoryFeed() {
 
       <div className="flex-1 overflow-y-auto custom-scrollbar pb-32 pt-4 px-4">
         <div className="max-w-md mx-auto space-y-6">
-          {allItems.map((item: MemoryFeedItem) => (
-            <MemoryCard 
-              key={item.id} 
-              item={item} 
-              onOpenDetail={() => setSelectedVisit(item)} 
-            />
-          ))}
+          {allItems.length === 0 && !sharedVisit ? (
+            <div className="flex flex-col items-center justify-center py-20 px-10 text-center gap-6">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center">
+                <Camera size={40} className="text-gray-200" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-gray-900 mb-2">아직 추억 사진이 없어요</h3>
+                <p className="text-sm text-gray-400 font-medium leading-relaxed">
+                  {regionFilter ? "해당 지역에는 아직 등록된 추억이 없습니다." : "지도에서 방문 인증을 하고 첫 번째 추억 피드를 장식해보세요!"}
+                </p>
+              </div>
+              {regionFilter && (
+                <button 
+                  onClick={clearFilters}
+                  className="px-6 py-2.5 bg-rose-50 text-rose-500 rounded-2xl text-xs font-bold hover:bg-rose-100 transition-colors"
+                >
+                  모든 추억 보기
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              {allItems.map((item: MemoryFeedItem) => (
+                <MemoryCard 
+                  key={item.id} 
+                  item={item} 
+                  onOpenDetail={() => setSelectedVisit(item)} 
+                />
+              ))}
 
-          <div ref={observerTarget} className="py-8 flex justify-center">
-            {isFetchingNextPage && (
-              <Loader2 className="animate-spin text-rose-500" size={24} />
-            )}
-          </div>
+              <div ref={observerTarget} className="py-8 flex justify-center">
+                {isFetchingNextPage && (
+                  <Loader2 className="animate-spin text-rose-500" size={24} />
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

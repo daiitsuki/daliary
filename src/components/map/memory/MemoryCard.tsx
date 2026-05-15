@@ -79,15 +79,17 @@ export default function MemoryCard({ item, onOpenDetail }: Props) {
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = window.location.href;
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?visitId=${item.id}`;
+    
     if (navigator.share) {
       navigator.share({
         title: 'Daliary 추억',
         text: `${item.place.name}에서의 추억을 확인해보세요!`,
-        url: url,
+        url: shareUrl,
       });
     } else {
-      navigator.clipboard.writeText(url);
+      navigator.clipboard.writeText(shareUrl);
       alert('링크가 복사되었습니다!');
     }
     setShowMenu(false);

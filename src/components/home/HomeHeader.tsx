@@ -1,7 +1,10 @@
 import React, { useState } from "react";
-import { Heart, UserPlus, User } from "lucide-react";
+import { Heart, UserPlus, User, Menu, Bell } from "lucide-react";
 import ImageViewerModal from "../common/ImageViewerModal";
 import AnniversaryModal from "../common/AnniversaryModal";
+import MenuDrawer from "../common/MenuDrawer";
+import NotificationHistoryModal from "./NotificationHistoryModal";
+import { useNotifications } from "../../hooks/useNotifications";
 import { Profile, Couple } from "../../types";
 
 interface HomeHeaderProps {
@@ -17,6 +20,9 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
   dDay,
   couple,
 }) => {
+  const { notifications } = useNotifications();
+  const hasUnread = notifications.some((n) => !n.is_read);
+
   const [viewerState, setViewerState] = useState<{
     isOpen: boolean;
     url: string | null;
@@ -28,6 +34,8 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
   });
 
   const [isAnniversaryModalOpen, setIsAnniversaryModalOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const openViewer = (url: string | null | undefined, title: string) => {
     if (!url) return;
@@ -58,13 +66,25 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
   const activeStatus = getLastActiveLabel(partnerProfile?.last_active_at);
 
   return (
-    <header className="px-6 pt-6 pb-2 flex flex-col sticky top-0 bg-[#FDFDFE]/90 backdrop-blur-md z-20">
-      {/* Brand Row */}
-      <div className="flex items-center gap-2 mb-4">
-        <img src="/logo.png" alt="logo" className="w-6 h-6 object-contain" />
-        <span className="text-[17px] font-bold text-gray-900 tracking-tight">
-          달이어리
-        </span>
+    <header className="px-6 pt-4 pb-2 flex flex-col sticky top-0 bg-[#FDFDFE]/90 backdrop-blur-md z-20">
+      {/* Navigation Row */}
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => setIsMenuOpen(true)}
+          className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors relative"
+        >
+          <Menu size={24} className="text-gray-900" />
+        </button>
+
+        <button
+          onClick={() => setIsNotificationOpen(true)}
+          className="p-2 -mr-2 hover:bg-gray-100 rounded-full transition-colors relative"
+        >
+          <Bell size={24} className="text-gray-900" />
+          {hasUnread && (
+            <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+          )}
+        </button>
       </div>
 
       {/* Couple Row */}
@@ -164,6 +184,18 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
       <AnniversaryModal
         isOpen={isAnniversaryModalOpen}
         onClose={() => setIsAnniversaryModalOpen(false)}
+      />
+
+      <MenuDrawer
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        myProfile={myProfile}
+      />
+
+      <NotificationHistoryModal
+        isOpen={isNotificationOpen}
+        onClose={() => setIsNotificationOpen(false)}
+        userId={myProfile?.id || null}
       />
     </header>
   );

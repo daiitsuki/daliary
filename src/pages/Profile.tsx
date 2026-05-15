@@ -11,7 +11,6 @@ import ImageEditorModal from "../components/common/ImageEditorModal";
 // Sub-components
 import ProfileHeader from "../components/profile/ProfileHeader";
 import ProfileSection from "../components/profile/ProfileSection";
-import CoupleSettingsSection from "../components/profile/CoupleSettingsSection";
 import InventorySection from "../components/profile/InventorySection";
 import DangerZoneSection from "../components/settings/DangerZoneSection";
 
@@ -36,16 +35,9 @@ const itemVariants: Variants = {
 
 export default function Profile() {
   const navigate = useNavigate();
-  const {
-    couple,
-    profile: contextProfile,
-    fetchCoupleInfo,
-    signOut,
-    isCoupleFormed,
-  } = useCouple();
+  const { profile: contextProfile, fetchCoupleInfo, signOut } = useCouple();
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [nickname, setNickname] = useState("");
-  const [anniversary, setAnniversary] = useState("");
   const [loading, setLoading] = useState(false);
 
   // 이미지 편집 관련 상태
@@ -59,10 +51,7 @@ export default function Profile() {
       setProfile(contextProfile);
       setNickname(contextProfile.nickname || "");
     }
-    if (couple?.anniversary_date) {
-      setAnniversary(couple.anniversary_date);
-    }
-  }, [contextProfile, couple]);
+  }, [contextProfile]);
 
   // 파일 선택 시 편집 모달 열기
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,15 +145,17 @@ export default function Profile() {
     }
   };
 
-  const handleSave = async (newAnniversary?: string) => {
+  const handleSave = async () => {
     if (!profile) return;
 
-    const targetAnniversary = newAnniversary || anniversary;
-    const isNicknameChanged = nickname !== profile.nickname;
-    const isAnniversaryChanged =
-      couple && targetAnniversary !== couple.anniversary_date;
+    if (!nickname.trim()) {
+      alert("프로필명을 입력해주세요.");
+      return;
+    }
 
-    if (!isNicknameChanged && !isAnniversaryChanged) return;
+    const isNicknameChanged = nickname !== profile.nickname;
+
+    if (!isNicknameChanged) return;
 
     const now = Date.now();
     const COOLDOWN_MS = 5 * 60 * 1000;
@@ -178,10 +169,6 @@ export default function Profile() {
       alert(
         `저장은 5분에 한 번씩만 가능합니다. ${minutesRemaining}분 후에 다시 시도해주세요.`,
       );
-
-      if (newAnniversary && couple?.anniversary_date) {
-        setAnniversary(couple.anniversary_date);
-      }
       return;
     }
 
@@ -190,34 +177,19 @@ export default function Profile() {
         "설정 변경은 5분에 한 번씩만 가능합니다. 정말로 변경하시겠습니까?",
       )
     ) {
-      if (newAnniversary && couple?.anniversary_date) {
-        setAnniversary(couple.anniversary_date);
-      }
       return;
     }
 
     try {
       setLoading(true);
 
-      // 1. 프로필 업데이트 (닉네임)
-      if (isNicknameChanged) {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({ nickname })
-          .eq("id", profile.id);
+      // 프로필 업데이트 (닉네임)
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ nickname })
+        .eq("id", profile.id);
 
-        if (profileError) throw profileError;
-      }
-
-      // 2. 커플 업데이트 (기념일)
-      if (isAnniversaryChanged) {
-        const { error: coupleError } = await supabase
-          .from("couples")
-          .update({ anniversary_date: targetAnniversary })
-          .eq("id", couple.id);
-
-        if (coupleError) throw coupleError;
-      }
+      if (profileError) throw profileError;
 
       await fetchCoupleInfo();
       const currentTimestamp = Date.now();
@@ -230,9 +202,6 @@ export default function Profile() {
     } catch (error) {
       console.error(error);
       alert("저장 실패");
-      if (newAnniversary && couple?.anniversary_date) {
-        setAnniversary(couple.anniversary_date);
-      }
     } finally {
       setLoading(false);
     }
@@ -258,16 +227,6 @@ export default function Profile() {
             onAvatarChange={handleAvatarSelect}
             onSave={() => handleSave()}
             showSave={!!hasNicknameChanged}
-          />
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <CoupleSettingsSection
-            couple={couple}
-            anniversary={anniversary}
-            onAnniversaryChange={setAnniversary}
-            isCoupleFormed={isCoupleFormed}
-            onSave={handleSave}
           />
         </motion.div>
 
