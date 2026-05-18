@@ -1,32 +1,35 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useMemoryFeed, useVisitById, MemoryFeedItem } from '../../../hooks/useMemoryFeed';
-import MemoryCard from './MemoryCard';
-import { Camera, Loader2, ArrowLeft, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import VisitDetailModal from '../dashboard/VisitDetailModal';
-import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import {
+  useMemoryFeed,
+  useVisitById,
+  MemoryFeedItem,
+} from "../../../hooks/useMemoryFeed";
+import MemoryCard from "./MemoryCard";
+import { Camera, Loader2, ArrowLeft, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import VisitDetailModal from "../dashboard/VisitDetailModal";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function MemoryFeed() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const observerTarget = useRef<HTMLDivElement>(null);
-  const [selectedVisit, setSelectedVisit] = useState<MemoryFeedItem | null>(null);
+  const [selectedVisit, setSelectedVisit] = useState<MemoryFeedItem | null>(
+    null,
+  );
   const hasHandledUrlVisit = useRef(false);
 
-  const visitIdFromUrl = searchParams.get('visitId');
-  const regionFilter = searchParams.get('region');
-  const subRegionFilter = searchParams.get('subRegion');
-  
-  const { data: sharedVisit, isLoading: isSharedVisitLoading } = useVisitById(visitIdFromUrl);
+  const visitIdFromUrl = searchParams.get("visitId");
+  const regionFilter = searchParams.get("region");
+  const subRegionFilter = searchParams.get("subRegion");
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    status,
-  } = useMemoryFeed(regionFilter, subRegionFilter);
+  const { data: sharedVisit, isLoading: isSharedVisitLoading } =
+    useVisitById(visitIdFromUrl);
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
+    useMemoryFeed(regionFilter, subRegionFilter);
 
   // Reset handled flag if visitId changes
   useEffect(() => {
@@ -50,7 +53,7 @@ export default function MemoryFeed() {
           fetchNextPage();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     observer.observe(observerTarget.current);
@@ -63,75 +66,77 @@ export default function MemoryFeed() {
     if (!selectedVisit) return null;
     return {
       ...selectedVisit,
-      places: selectedVisit.place
+      places: selectedVisit.place,
     };
   }, [selectedVisit?.id]);
 
   const handleCloseModal = useCallback(() => {
     setSelectedVisit(null);
-    if (searchParams.get('visitId')) {
+    if (searchParams.get("visitId")) {
       const newParams = new URLSearchParams(searchParams);
-      newParams.delete('visitId');
+      newParams.delete("visitId");
       setSearchParams(newParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 
   const handleUpdateRefresh = useCallback(async () => {
-    queryClient.invalidateQueries({ queryKey: ['memory_feed'] });
+    queryClient.invalidateQueries({ queryKey: ["memory_feed"] });
+    queryClient.invalidateQueries({ queryKey: ["places_data"] });
     if (visitIdFromUrl) {
-      queryClient.invalidateQueries({ queryKey: ['visit_detail', visitIdFromUrl] });
+      queryClient.invalidateQueries({
+        queryKey: ["visit_detail", visitIdFromUrl],
+      });
     }
     return true;
   }, [queryClient, visitIdFromUrl]);
 
-  const clearFilters = useCallback(() => {
+  const handleBack = useCallback(() => {
     const newParams = new URLSearchParams(searchParams);
-    newParams.delete('region');
-    newParams.delete('subRegion');
+    newParams.set("tab", "dashboard");
+    // We keep region/subRegion so the map can show the selected state
     setSearchParams(newParams);
   }, [searchParams, setSearchParams]);
 
-  if (status === 'pending' || (visitIdFromUrl && isSharedVisitLoading)) {
+  if (status === "pending" || (visitIdFromUrl && isSharedVisitLoading)) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
         <Loader2 className="animate-spin text-rose-500" size={32} />
-        <p className="text-gray-400 text-sm font-bold">우리의 추억을 불러오는 중...</p>
+        <p className="text-gray-400 text-sm font-bold">
+          우리의 추억을 불러오는 중...
+        </p>
       </div>
     );
   }
 
-  const allItems: MemoryFeedItem[] = (data as any)?.pages.flatMap((page: any) => page.data) || [];
+  const allItems: MemoryFeedItem[] =
+    (data as any)?.pages.flatMap((page: any) => page.data) || [];
 
   return (
     <div className="h-full relative overflow-hidden flex flex-col bg-white">
       {/* Filter Header */}
       <AnimatePresence>
         {regionFilter && (
-          <motion.div 
+          <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="bg-white border-b border-gray-100 px-4 py-3 shrink-0"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <button 
-                  onClick={clearFilters}
+                <button
+                  onClick={handleBack}
                   className="p-1.5 hover:bg-gray-50 rounded-full transition-colors text-gray-500"
                 >
                   <ArrowLeft size={20} />
                 </button>
                 <h2 className="text-sm font-black text-gray-800">
-                  {subRegionFilter ? `${regionFilter} ${subRegionFilter}` : regionFilter}의 추억
+                  {subRegionFilter
+                    ? `${regionFilter} ${subRegionFilter}`
+                    : regionFilter}
+                  의 추억
                 </h2>
               </div>
-              <button 
-                onClick={clearFilters}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-full transition-all"
-              >
-                <span className="text-[10px] font-bold text-gray-500">필터 해제</span>
-                <X size={12} className="text-gray-400" />
-              </button>
             </div>
           </motion.div>
         )}
@@ -140,7 +145,7 @@ export default function MemoryFeed() {
       {/* SINGLE MODAL INSTANCE */}
       <AnimatePresence>
         {selectedVisit && (
-          <VisitDetailModal 
+          <VisitDetailModal
             key={`modal-${selectedVisit.id}`}
             visit={modalVisit as any}
             onClose={handleCloseModal}
@@ -158,27 +163,31 @@ export default function MemoryFeed() {
                 <Camera size={40} className="text-gray-200" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-gray-900 mb-2">아직 추억 사진이 없어요</h3>
+                <h3 className="text-lg font-black text-gray-900 mb-2">
+                  아직 {subRegionFilter ? subRegionFilter : regionFilter} 지역을
+                  방문하지 않았어요.
+                </h3>
                 <p className="text-sm text-gray-400 font-medium leading-relaxed">
-                  {regionFilter ? "해당 지역에는 아직 등록된 추억이 없습니다." : "지도에서 방문 인증을 하고 첫 번째 추억 피드를 장식해보세요!"}
+                  방문 인증을 통해
+                  <br />첫 번째 추억 피드를 장식해보세요!
                 </p>
               </div>
               {regionFilter && (
-                <button 
-                  onClick={clearFilters}
+                <button
+                  onClick={() => navigate("/places?tab=search")}
                   className="px-6 py-2.5 bg-rose-50 text-rose-500 rounded-2xl text-xs font-bold hover:bg-rose-100 transition-colors"
                 >
-                  모든 추억 보기
+                  방문 인증 하기
                 </button>
               )}
             </div>
           ) : (
             <>
               {allItems.map((item: MemoryFeedItem) => (
-                <MemoryCard 
-                  key={item.id} 
-                  item={item} 
-                  onOpenDetail={() => setSelectedVisit(item)} 
+                <MemoryCard
+                  key={item.id}
+                  item={item}
+                  onOpenDetail={() => setSelectedVisit(item)}
                 />
               ))}
 

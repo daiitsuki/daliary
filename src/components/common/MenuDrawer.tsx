@@ -9,6 +9,7 @@ import { changelog } from "../../data/changelog";
 import ChangelogModal from "./ChangelogModal";
 import { useCouple } from "../../hooks/useCouple";
 import { useCouplePoints } from "../../hooks/useCouplePoints";
+import { useHomeContext } from "../../context/HomeContext";
 import { differenceInSeconds, parseISO, startOfDay } from "date-fns";
 
 interface MenuDrawerProps {
@@ -26,6 +27,7 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
   const { couple } = useCouple();
   const { currentPoints } = useCouplePoints();
+  const { partnerProfile } = useHomeContext();
 
   // changelog 배열의 마지막 항목(최신) 버전을 가져옵니다.
   const latestVersion = changelog[changelog.length - 1]?.version || "1.0.0";
@@ -180,7 +182,7 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="text-[10px] font-bold text-rose-300 tracking-tight mb-0.5">
-                          함께한 시간
+                          {partnerProfile?.nickname ? `${partnerProfile.nickname}님과 함께한 시간` : "함께한 시간"}
                         </span>
                         <span className="text-[14px] font-black text-rose-500 tabular-nums">
                           {elapsedTime}

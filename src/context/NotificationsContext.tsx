@@ -36,6 +36,7 @@ interface NotificationsContextType {
   updateGranularSetting: (key: keyof NotificationSettings, value: boolean) => Promise<boolean>;
   requestPermission: () => Promise<boolean>;
   markAsRead: (notificationId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -267,6 +268,21 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   };
 
+  const markAllAsRead = async () => {
+    if (!profile?.id) return;
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', profile.id)
+      .eq('is_read', false);
+
+    if (!error) {
+      queryClient.setQueryData(['notifications', profile.id], (prev: any) => 
+        prev?.map((n: AppNotification) => ({ ...n, is_read: true }))
+      );
+    }
+  };
+
   // Realtime Sync & Click Handling
   useEffect(() => {
     if (!profile?.id) return;
@@ -316,6 +332,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
         return p === 'granted';
       },
       markAsRead,
+      markAllAsRead,
       refresh: async () => { await refetch(); }
     }}>
       {children}

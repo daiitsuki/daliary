@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DetailedKoreaMapProps, MapData, CurrentStats } from "./types";
 
 const OPTIMIZED_MAP_URL = "/data/optimized-korea-map.json";
@@ -8,10 +9,12 @@ export const useKoreaMap = ({
   subRegionStats,
   onRegionSelect,
 }: DetailedKoreaMapProps) => {
+  const [searchParams] = useSearchParams();
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
+  
+  const regionFromUrl = searchParams.get("region");
 
   const zoomConfig = useMemo(
     () => ({
@@ -22,8 +25,35 @@ export const useKoreaMap = ({
     [isMobile],
   );
 
+  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [zoom, setZoom] = useState(zoomConfig.initial);
   const [center, setCenter] = useState<[number, number]>([127.5, 36]);
+
+  // Handle URL parameters for initial state and changes
+  useEffect(() => {
+    if (!mapData) return;
+
+    if (regionFromUrl) {
+      const targetGeo = mapData.detailed.find(
+        (f) => f.properties.province === regionFromUrl && !f.properties.isMetro
+      );
+      
+      if (targetGeo && targetGeo.labelCoord) {
+        setSelectedProvince(regionFromUrl);
+        setCenter(targetGeo.labelCoord);
+        setZoom(zoomConfig.detailed);
+      } else {
+        // For Metro cities or if not found in detailed (outlines)
+        setSelectedProvince(null);
+        setCenter([127.5, 36]);
+        setZoom(zoomConfig.initial);
+      }
+    } else {
+      setSelectedProvince(null);
+      setCenter([127.5, 36]);
+      setZoom(zoomConfig.initial);
+    }
+  }, [regionFromUrl, mapData, zoomConfig]);
 
   // Load Map Data
   useEffect(() => {

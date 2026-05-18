@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Map, MapMarker, CustomOverlayMap } from "react-kakao-maps-sdk";
 import { usePlaceSearch, KakaoPlace } from "../../../hooks/usePlaceSearch";
 import {
@@ -11,12 +11,14 @@ import {
 } from "lucide-react";
 import VisitForm from "../shared/VisitForm";
 import { Place, usePlaces } from "../../../context/PlacesContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PlaceSearchProps {
   targetPlace?: Place | null;
 }
 
 const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
+  const queryClient = useQueryClient();
   const { searchPlaces, results, savePlace, isSearching, isSaving } =
     usePlaceSearch();
   const { refresh } = usePlaces();
@@ -31,50 +33,11 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
   const [isVisitFormOpen, setIsVisitFormOpen] = useState(false);
 
-  // 모바일 패널 높이 조절을 위한 상태 (기본 45%)
-  const [panelHeight, setPanelHeight] = useState(45);
-  const isDragging = useRef(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
   // 네이버 지도 열기 함수 (장소명만 검색)
   const openNaverMap = (name: string) => {
     const query = encodeURIComponent(name);
     window.open(`https://map.naver.com/v5/search/${query}`, "_blank");
   };
-
-  // 패널 높이 조절 로직 (모바일용)
-  const handleTouchStart = () => {
-    isDragging.current = true;
-    document.body.style.overflow = "hidden"; // 드래그 중 스크롤 방지
-  };
-
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!isDragging.current || !containerRef.current) return;
-
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const touchY = e.touches[0].clientY;
-    const relativeY = touchY - containerRect.top;
-    const heightPercentage = 100 - (relativeY / containerRect.height) * 100;
-
-    // 최소 40% ~ 최대 85% 사이로 제한
-    if (heightPercentage >= 40 && heightPercentage <= 85) {
-      setPanelHeight(heightPercentage);
-    }
-  }, []);
-
-  const handleTouchEnd = () => {
-    isDragging.current = false;
-    document.body.style.overflow = "";
-  };
-
-  useEffect(() => {
-    window.addEventListener("touchmove", handleTouchMove, { passive: false });
-    window.addEventListener("touchend", handleTouchEnd);
-    return () => {
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [handleTouchMove]);
 
   // 1. 현재 위치 가져오기
   useEffect(() => {
@@ -146,21 +109,16 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
 
   const handleVisitFormSuccess = useCallback(() => {
     setIsVisitFormOpen(false);
+    setKeyword("");
+    setSelectedPlace(null);
+    queryClient.invalidateQueries({ queryKey: ["memory_feed"] });
     refresh();
-  }, [refresh]);
+  }, [refresh, queryClient]);
 
   return (
-    <div
-      ref={containerRef}
-      className="flex flex-col md:flex-row h-full w-full bg-white overflow-hidden relative"
-    >
-      {/* 지도 영역: 모바일 상단, PC 우측 */}
-      <div
-        className="order-1 md:order-2 flex-1 relative min-h-0 bg-gray-100 z-10"
-        style={{
-          height: window.innerWidth < 768 ? `${100 - panelHeight}%` : "100%",
-        }}
-      >
+    <div className="relative w-full h-full bg-white overflow-hidden">
+      {/* 지도 영역: 전체 화면 */}
+      <div className="absolute inset-0 z-10">
         <Map
           center={center}
           level={3}
@@ -191,7 +149,6 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
                 onClick={() => openNaverMap(selectedPlace.place_name)}
                 className="group relative flex flex-col items-center cursor-pointer pointer-events-auto active:scale-95 transition-all duration-200 animate-float"
               >
-                {/* Pin Body */}
                 <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.15)] border-2 border-rose-500 mb-[-2px] whitespace-nowrap">
                   <div className="p-1 bg-rose-50 rounded-lg">
                     <MapPin size={12} className="text-rose-500 fill-rose-500" />
@@ -201,7 +158,6 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
                   </span>
                   <ExternalLink size={10} className="text-rose-300" />
                 </div>
-                {/* Pin Tip */}
                 <div className="w-3 h-3 bg-white rotate-45 border-r-2 border-b-2 border-rose-500 shadow-[4px_4px_10px_rgba(0,0,0,0.05)]"></div>
               </div>
             </CustomOverlayMap>
@@ -216,7 +172,6 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
                 onClick={() => openNaverMap(targetPlace.name)}
                 className="group relative flex flex-col items-center cursor-pointer pointer-events-auto active:scale-95 transition-all duration-200 animate-float"
               >
-                {/* Pin Body */}
                 <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.15)] border-2 border-rose-500 mb-[-2px] whitespace-nowrap">
                   <div className="p-1 bg-rose-50 rounded-lg">
                     <MapPin size={12} className="text-rose-500 fill-rose-500" />
@@ -226,120 +181,154 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
                   </span>
                   <ExternalLink size={10} className="text-rose-300" />
                 </div>
-                {/* Pin Tip */}
                 <div className="w-3 h-3 bg-white rotate-45 border-r-2 border-b-2 border-rose-500 shadow-[4px_4px_10px_rgba(0,0,0,0.05)]"></div>
               </div>
             </CustomOverlayMap>
           )}
         </Map>
 
-        {/* 내 위치 버튼: z-index 50 보장 */}
+        {/* 내 위치 버튼 */}
         <button
           onClick={handleCenterToCurrent}
-          className="absolute bottom-6 right-6 z-50 p-3 bg-white text-rose-500 rounded-full shadow-2xl border border-gray-100 hover:bg-rose-50 active:scale-95 transition-all"
+          className={`absolute ${selectedPlace ? "bottom-62" : "bottom-24"} md:bottom-24 right-6 z-50 p-3.5 bg-white/90 backdrop-blur-md text-gray-700 rounded-full shadow-xl border border-white/50 hover:bg-white active:scale-95 transition-all`}
           aria-label="현재 위치"
         >
-          <Navigation size={20} fill="currentColor" fillOpacity={0.2} />
+          <Navigation
+            size={22}
+            className="text-rose-500"
+            fill="currentColor"
+            fillOpacity={0.1}
+          />
         </button>
       </div>
 
-      {/* 사이드바 영역: 모바일 하단, PC 좌측 */}
-      <div
-        className="order-2 md:order-1 w-full md:w-[360px] flex flex-col bg-white border-t md:border-t-0 md:border-r border-gray-100 z-20 min-h-0"
-        style={{ height: window.innerWidth < 768 ? `${panelHeight}%` : "100%" }}
-      >
-        {/* 모바일 전용 드래그 핸들 */}
-        <div
-          className="md:hidden flex flex-col items-center py-2 cursor-ns-resize shrink-0"
-          onTouchStart={handleTouchStart}
-        >
-          <div className="w-12 h-1 bg-gray-300 rounded-full mb-1"></div>
-        </div>
-
-        <div className="p-4 border-b border-gray-50 bg-white shrink-0">
+      {/* 상단 플로팅 검색 바 및 결과 */}
+      <div className="absolute top-4 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[420px] z-[40] flex flex-col gap-2">
+        <div className="group p-1 bg-white backdrop-blur-xl rounded-3xl shadow-lg border border-white/60 transition-all duration-300 focus-within:shadow-xl focus-within:bg-white focus-within:border-rose-100">
           <form onSubmit={handleSearch} className="relative">
             <input
               type="text"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              placeholder="장소 검색..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 rounded-xl focus:ring-2 focus:ring-rose-200 outline-none text-sm transition-all"
+              placeholder="장소를 입력하세요"
+              className="w-full pl-11 pr-4 py-3 bg-white rounded-xl outline-none text-sm transition-all placeholder:text-gray-400 font-medium"
             />
-            <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-4 top-3.5 text-gray-400 w-4.5 h-4.5 group-focus-within:text-rose-400 transition-colors" />
           </form>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/50 min-h-0 pb-24">
-          {isSearching ? (
-            <div className="flex flex-col justify-center items-center h-full py-10">
-              <div className="animate-spin rounded-full h-6 w-6 border-2 border-rose-200 border-t-rose-500 mb-2"></div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                Searching
-              </p>
+        {/* 검색 결과 드롭다운 */}
+        {(isSearching ||
+          results.length > 0 ||
+          (keyword && results.length === 0)) &&
+          !selectedPlace && (
+            <div className="bg-white/90 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden flex flex-col max-h-[60vh] animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+                {isSearching ? (
+                  <div className="flex flex-col justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-7 w-7 border-2 border-rose-100 border-t-rose-500 mb-3"></div>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em]">
+                      Searching
+                    </p>
+                  </div>
+                ) : results.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 px-8 text-center">
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                      <MapPin className="w-6 h-6 text-gray-300" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-800 mb-1">
+                      검색 결과가 없어요
+                    </p>
+                    <p className="text-[11px] text-gray-400">
+                      다른 키워드로 검색해볼까요?
+                    </p>
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-gray-100">
+                    {results.map((place) => (
+                      <li
+                        key={place.id}
+                        onClick={() => handleSelectPlace(place)}
+                        className="p-4 cursor-pointer hover:bg-rose-50/30 transition-colors group/item"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center group-hover/item:bg-white transition-colors">
+                            <MapPin
+                              size={14}
+                              className="text-gray-400 group-hover/item:text-rose-400"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-sm text-gray-800 group-hover/item:text-rose-600 transition-colors">
+                              {place.place_name}
+                            </h3>
+                            <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">
+                              {place.road_address_name || place.address_name}
+                            </p>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
-          ) : results.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center text-black">
-              <MapPin className="w-10 h-10 mb-3 opacity-30" />
-              <p className="text-xs font-medium text-gray-400">
-                함께 가고 싶은 장소나
-                <br />
-                다녀온 장소를 검색하세요
-              </p>
-            </div>
-          ) : (
-            <ul className="divide-y divide-gray-50 bg-white">
-              {results.map((place) => (
-                <li
-                  key={place.id}
-                  onClick={() => handleSelectPlace(place)}
-                  className={`p-4 cursor-pointer transition-all ${
-                    selectedPlace?.id === place.id
-                      ? "bg-rose-50/50 border-l-4 border-rose-500 shadow-inner"
-                      : "hover:bg-gray-50"
-                  }`}
-                >
-                  <h3
-                    className={`font-bold text-sm ${selectedPlace?.id === place.id ? "text-rose-600" : "text-gray-800"}`}
-                  >
-                    {place.place_name}
-                  </h3>
-                  <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">
-                    {place.road_address_name || place.address_name}
-                  </p>
-                </li>
-              ))}
-            </ul>
           )}
-        </div>
-
-        {selectedPlace && (
-          <div className="p-4 pb-24 md:pb-4 bg-white border-t border-gray-100 shrink-0 grid grid-cols-2 gap-2 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
-            <button
-              onClick={async () => {
-                try {
-                  await savePlace(selectedPlace);
-                  alert("위시리스트에 저장되었습니다!");
-                  refresh();
-                } catch (e: any) {
-                  alert(e.message || "저장 실패");
-                }
-              }}
-              disabled={isSaving}
-              className="flex items-center justify-center gap-2 py-3 bg-white border border-rose-200 text-rose-500 rounded-xl text-xs font-black"
-            >
-              <Plus size={16} /> Wishlist
-            </button>
-            <button
-              onClick={() => {
-                setIsVisitFormOpen(true);
-              }}
-              className="flex items-center justify-center gap-2 py-3 bg-rose-500 text-white rounded-xl text-xs font-black shadow-lg shadow-rose-100"
-            >
-              <CheckCircle size={16} /> 방문 인증
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* 하단 플로팅 액션 카드 */}
+      {selectedPlace && (
+        <div className="absolute bottom-24 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[400px] z-[40] animate-in slide-in-from-bottom-8 duration-500 ease-out">
+          <div className="bg-white/95 backdrop-blur-2xl rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/60 p-4 flex flex-col gap-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-black text-lg text-gray-900 truncate tracking-tight">
+                    {selectedPlace.place_name}
+                  </h3>
+                  <span className="shrink-0 px-2 py-0.5 bg-rose-50 text-rose-500 text-[9px] font-black rounded-full uppercase">
+                    {selectedPlace.category_group_name || "장소"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                  {selectedPlace.road_address_name ||
+                    selectedPlace.address_name}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedPlace(null)}
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-all text-gray-300 hover:text-gray-500 active:scale-90"
+              >
+                <Plus className="rotate-45 w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                onClick={async () => {
+                  try {
+                    await savePlace(selectedPlace);
+                    alert("위시리스트에 저장되었습니다!");
+                    refresh();
+                  } catch (e: any) {
+                    alert(e.message || "저장 실패");
+                  }
+                }}
+                disabled={isSaving}
+                className="flex items-center justify-center gap-2 py-2.5 bg-white border border-rose-100 text-rose-500 rounded-xl text-[13px] font-black hover:bg-rose-50 hover:border-rose-200 transition-all active:scale-[0.98]"
+              >
+                <Plus size={16} strokeWidth={3} /> Wishlist
+              </button>
+              <button
+                onClick={() => setIsVisitFormOpen(true)}
+                className="flex items-center justify-center gap-2 py-2.5 bg-rose-500 text-white rounded-xl text-[13px] font-black shadow-lg shadow-rose-200 hover:bg-rose-600 hover:shadow-rose-300 transition-all active:scale-[0.98]"
+              >
+                <CheckCircle size={16} strokeWidth={3} /> 방문 인증
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isVisitFormOpen && selectedPlace && (
         <VisitForm

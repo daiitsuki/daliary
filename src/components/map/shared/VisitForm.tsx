@@ -36,6 +36,7 @@ const VisitForm = ({
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showRegionSelection, setShowRegionSelection] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -84,6 +85,7 @@ const VisitForm = ({
 
         if (matchedRegion && KOREA_REGIONS.includes(matchedRegion)) {
           setRegion(matchedRegion);
+          setShowRegionSelection(false);
           if (
             !METROPOLITAN_CITIES.includes(matchedRegion) &&
             parts.length >= 2
@@ -97,8 +99,14 @@ const VisitForm = ({
               setSubRegion(matchedSubRegion);
             }
           }
+        } else {
+          setShowRegionSelection(true);
         }
+      } else {
+        setShowRegionSelection(true);
       }
+    } else {
+      setShowRegionSelection(true);
     }
   }, [placeAddress]);
 
@@ -161,6 +169,10 @@ const VisitForm = ({
     let targetPlaceId = initialPlaceId;
 
     try {
+      if (!selectedFile) {
+        throw new Error("인증 사진을 업로드해주세요.");
+      }
+
       // If no placeId but we have kakaoPlace, save it first
       if (!targetPlaceId && kakaoPlace) {
         const savedPlace = await savePlace(kakaoPlace, "visited");
@@ -228,8 +240,15 @@ const VisitForm = ({
 
             {/* 2. Photo Upload */}
             <div className="space-y-3">
-              <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
-                <Camera className="w-4 h-4 text-rose-400" /> 인증 사진
+              <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5 justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Camera className="w-4 h-4 text-rose-400" /> 인증 사진
+                </span>
+                {!selectedFile && (
+                  <span className="text-[10px] text-rose-500 font-medium">
+                    * 필수 업로드
+                  </span>
+                )}
               </label>
               <div
                 className={`group relative w-full aspect-video bg-gray-50 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
@@ -279,62 +298,90 @@ const VisitForm = ({
                 <span className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-rose-400" /> 행정구역 선택
                 </span>
+                {region && !showRegionSelection && (
+                  <button
+                    type="button"
+                    onClick={() => setShowRegionSelection(true)}
+                    className="text-[10px] text-rose-500 font-bold hover:underline"
+                  >
+                    지역 수정하기
+                  </button>
+                )}
                 {!region && (
                   <span className="text-[10px] text-rose-500 font-medium">
                     * 필수 선택
                   </span>
                 )}
               </label>
-              <div className="grid grid-cols-4 gap-2">
-                {KOREA_REGIONS.map((r) => (
-                  <button
-                    type="button"
-                    key={r}
-                    onClick={() => handleRegionSelect(r)}
-                    className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
-                      region === r
-                        ? "bg-rose-500 border-rose-500 text-white shadow-md shadow-rose-200"
-                        : "bg-white border-gray-100 text-gray-400 hover:border-rose-200 hover:text-rose-500"
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            {/* 4. Sub-Region Selection (if applicable) */}
-            {region && SUB_REGIONS[region] && (
-              <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5 justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <ChevronRight className="w-4 h-4 text-rose-400" /> 상세 지역
-                    선택
-                  </span>
-                  {!subRegion && (
-                    <span className="text-[10px] text-rose-500 font-medium">
-                      * 필수 선택
+              {!showRegionSelection && region ? (
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
+                      <MapPin size={14} className="text-rose-500" />
+                    </div>
+                    <span className="text-sm font-black text-gray-700">
+                      {region} {subRegion}
                     </span>
-                  )}
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {SUB_REGIONS[region].map((sr) => (
-                    <button
-                      type="button"
-                      key={sr}
-                      onClick={() => setSubRegion(sr)}
-                      className={`py-2 rounded-xl text-[10px] font-bold transition-all border ${
-                        subRegion === sr
-                          ? "bg-rose-400 border-rose-400 text-white shadow-md"
-                          : "bg-white border-gray-100 text-gray-400 hover:border-rose-200 hover:text-rose-400"
-                      }`}
-                    >
-                      {sr}
-                    </button>
-                  ))}
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-400 bg-white px-2 py-1 rounded-lg border border-gray-100">
+                    자동 인식됨
+                  </span>
                 </div>
-              </div>
-            )}
+              ) : (
+                <>
+                  <div className="grid grid-cols-4 gap-2">
+                    {KOREA_REGIONS.map((r) => (
+                      <button
+                        type="button"
+                        key={r}
+                        onClick={() => handleRegionSelect(r)}
+                        className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                          region === r
+                            ? "bg-rose-500 border-rose-500 text-white shadow-md shadow-rose-200"
+                            : "bg-white border-gray-100 text-gray-400 hover:border-rose-200 hover:text-rose-500"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 4. Sub-Region Selection (if applicable) */}
+                  {region && SUB_REGIONS[region] && (
+                    <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="text-xs font-bold text-gray-500 flex items-center gap-1.5 justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <ChevronRight className="w-3 h-3 text-rose-400" /> 상세
+                          지역 선택
+                        </span>
+                        {!subRegion && (
+                          <span className="text-[10px] text-rose-500 font-medium">
+                            * 필수 선택
+                          </span>
+                        )}
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {SUB_REGIONS[region].map((sr) => (
+                          <button
+                            type="button"
+                            key={sr}
+                            onClick={() => setSubRegion(sr)}
+                            className={`py-2 rounded-xl text-[10px] font-bold transition-all border ${
+                              subRegion === sr
+                                ? "bg-rose-400 border-rose-400 text-white shadow-md"
+                                : "bg-white border-gray-100 text-gray-400 hover:border-rose-200 hover:text-rose-400"
+                            }`}
+                          >
+                            {sr}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
             {/* Error Message */}
             {error && (
@@ -351,7 +398,7 @@ const VisitForm = ({
             form="visit-form"
             type="submit"
             disabled={
-              isSubmitting || !region || (SUB_REGIONS[region] && !subRegion)
+              isSubmitting || !selectedFile || !region || (SUB_REGIONS[region] && !subRegion)
             }
             className="w-full py-4 bg-rose-500 text-white rounded-2xl font-bold text-base hover:bg-rose-600 active:scale-[0.98] transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed shadow-lg shadow-rose-100 disabled:shadow-none flex items-center justify-center gap-2"
           >

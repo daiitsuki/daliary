@@ -21,6 +21,7 @@ export interface Place {
   lat: number;
   lng: number;
   status: 'wishlist' | 'visited';
+  category?: string;
 }
 
 interface PlacesContextType {
@@ -55,7 +56,7 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       const [visitsRes, wishlistRes] = await Promise.all([
         supabase.from('visits').select('*, places!inner(name, address, couple_id), visit_comments(count)').eq('places.couple_id', couple.id).order('visited_at', { ascending: false }),
-        supabase.from('places').select('id, name, address, lat, lng, status, created_at').eq('couple_id', couple.id).eq('status', 'wishlist').order('created_at', { ascending: false })
+        supabase.from('places').select('id, name, address, lat, lng, status, created_at, category').eq('couple_id', couple.id).eq('status', 'wishlist').order('created_at', { ascending: false })
       ]);
 
       const visits = (visitsRes.data || []) as any[];

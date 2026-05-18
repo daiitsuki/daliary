@@ -13,6 +13,7 @@ import {
   Edit2,
   Check,
   ChevronRight,
+  Camera,
 } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
 import imageCompression from "browser-image-compression";
@@ -151,6 +152,11 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
 
     if (!isDateChanged && !isImageChanged && !isRegionChanged) {
       setIsFullEditing(false);
+      return;
+    }
+
+    if (!editImage) {
+      alert("인증 사진을 업로드해주세요.");
       return;
     }
 
@@ -354,6 +360,23 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
           <div className="px-6 py-4">
             {isFullEditing ? (
               <div className="space-y-6">
+                {/* Photo Validation Hint */}
+                <div className="space-y-3">
+                  <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5 justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Camera className="w-4 h-4 text-rose-400" /> 인증 사진
+                    </span>
+                    {!editImage && (
+                      <span className="text-[10px] text-rose-500 font-medium">
+                        * 필수 업로드
+                      </span>
+                    )}
+                  </label>
+                  {!editImage && (
+                    <p className="text-[10px] text-gray-400">사진이 없으면 추억 피드에 표시되지 않습니다.</p>
+                  )}
+                </div>
+
                 {/* Edit Date */}
                 <div className="space-y-3">
                   <label className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
@@ -520,6 +543,7 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
               onClick={handleFullSave}
               disabled={
                 loading ||
+                !editImage ||
                 !editRegion ||
                 (SUB_REGIONS[editRegion] && !editSubRegion)
               }

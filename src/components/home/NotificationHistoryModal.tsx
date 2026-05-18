@@ -14,7 +14,7 @@ interface NotificationHistoryModalProps {
 }
 
 const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isOpen, onClose }) => {
-  const { notifications, loading, markAsRead } = useNotifications();
+  const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const navigate = useNavigate();
 
@@ -23,6 +23,13 @@ const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isO
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // 알림창을 열면 모든 알림을 읽음 처리합니다.
+  useEffect(() => {
+    if (isOpen) {
+      markAllAsRead();
+    }
+  }, [isOpen, markAllAsRead]);
 
   // 뒤로가기 시 모달 닫기 로직
   useEffect(() => {

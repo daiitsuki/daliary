@@ -52,7 +52,7 @@ export const useVisitComments = (visitId: string | undefined) => {
       ]);
 
       // 2. Update memory_feed cache manually (comment_count & preview)
-      queryClient.setQueryData(["memory_feed"], (oldData: any) => {
+      queryClient.setQueriesData({ queryKey: ["memory_feed"] }, (oldData: any) => {
         if (!oldData) return oldData;
         return {
           ...oldData,
@@ -63,7 +63,7 @@ export const useVisitComments = (visitId: string | undefined) => {
                 const updatedComments = [...(comments || []), newComment];
                 return {
                   ...v,
-                  comment_count: v.comment_count + 1,
+                  comment_count: (v.comment_count || 0) + 1,
                   preview_comments: updatedComments.slice(-2).map((c: any) => ({
                     id: c.id,
                     content: c.content,
@@ -75,6 +75,23 @@ export const useVisitComments = (visitId: string | undefined) => {
               }
               return v;
             }),
+          })),
+        };
+      });
+
+      // 3. Update visit_detail cache manually
+      queryClient.setQueryData(["visit_detail", visitId], (old: any) => {
+        if (!old) return old;
+        const updatedComments = [...(comments || []), newComment];
+        return {
+          ...old,
+          comment_count: (old.comment_count || 0) + 1,
+          preview_comments: updatedComments.slice(-2).map((c: any) => ({
+            id: c.id,
+            content: c.content,
+            writer: {
+              nickname: c.writer?.nickname || profile?.nickname,
+            },
           })),
         };
       });
@@ -97,7 +114,7 @@ export const useVisitComments = (visitId: string | undefined) => {
       );
 
       // 2. Update memory_feed cache manually
-      queryClient.setQueryData(["memory_feed"], (oldData: any) => {
+      queryClient.setQueriesData({ queryKey: ["memory_feed"] }, (oldData: any) => {
         if (!oldData) return oldData;
         return {
           ...oldData,
@@ -110,7 +127,7 @@ export const useVisitComments = (visitId: string | undefined) => {
                 );
                 return {
                   ...v,
-                  comment_count: Math.max(0, v.comment_count - 1),
+                  comment_count: Math.max(0, (v.comment_count || 1) - 1),
                   preview_comments: remainingComments
                     .slice(-2)
                     .map((c: any) => ({
@@ -122,6 +139,21 @@ export const useVisitComments = (visitId: string | undefined) => {
               }
               return v;
             }),
+          })),
+        };
+      });
+
+      // 3. Update visit_detail cache manually
+      queryClient.setQueryData(["visit_detail", visitId], (old: any) => {
+        if (!old) return old;
+        const remainingComments = comments.filter((c) => c.id !== deletedId);
+        return {
+          ...old,
+          comment_count: Math.max(0, (old.comment_count || 1) - 1),
+          preview_comments: remainingComments.slice(-2).map((c: any) => ({
+            id: c.id,
+            content: c.content,
+            writer: { nickname: c.writer?.nickname },
           })),
         };
       });
