@@ -11,8 +11,12 @@ const containerVariants: Variants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.08,
     },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.15 },
   },
 };
 
@@ -21,7 +25,11 @@ const itemVariants: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: "easeOut" },
+    transition: { duration: 0.4, ease: "easeOut" },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.15 },
   },
 };
 
@@ -157,16 +165,13 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="flex flex-col h-full bg-white"
-    >
+    <div className="flex flex-col h-full bg-white">
       {/* Category Tabs */}
       {wishlist.length > 0 && (
         <motion.div
           variants={itemVariants}
+          initial="hidden"
+          animate="visible"
           className="px-4 py-4 flex gap-2 overflow-x-auto no-scrollbar scroll-smooth"
         >
           {categoriesWithCounts.map((cat) => {
@@ -232,20 +237,20 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
           ) : (
             <motion.div
               key={selectedCategory}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
               className="space-y-8"
             >
               {Object.entries(groupedWishlist).map(([region, places]) => (
                 <div key={region} className="space-y-4">
-                  <div className="flex items-center gap-2 px-1">
+                  <motion.div variants={itemVariants} initial="hidden" animate="visible" className="flex items-center gap-2 px-1">
                     <div className="w-1 h-3 bg-rose-400 rounded-full"></div>
                     <h2 className="text-xs font-black text-gray-600 uppercase tracking-tight">
                       {region} ({places.length})
                     </h2>
-                  </div>
+                  </motion.div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     {places.map((place) => (
                       <WishlistCard
@@ -254,6 +259,7 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
                         onShowOnMap={onShowOnMap}
                         onDelete={handleDelete}
                         onVerifyVisit={handleVerifyVisit}
+                        variants={itemVariants}
                       />
                     ))}
                   </div>
@@ -273,7 +279,7 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
           onSuccess={handleVisitFormSuccess}
         />
       )}
-    </motion.div>
+    </div>
   );
 };
 

@@ -2,12 +2,14 @@ import React from "react";
 import { Trash2, MapPin, Navigation, CheckCircle } from "lucide-react";
 import { Place } from "../../../context/PlacesContext";
 import { extractCityCounty } from "../../../lib/address";
+import { motion } from "framer-motion";
 
 interface WishlistCardProps {
   place: Place;
   onShowOnMap: (place: Place) => void;
   onDelete: (id: string, e: React.MouseEvent) => void;
   onVerifyVisit: (place: Place, e: React.MouseEvent) => void;
+  variants?: any;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -24,9 +26,16 @@ const WishlistCard: React.FC<WishlistCardProps> = ({
   onShowOnMap,
   onDelete,
   onVerifyVisit,
+  variants,
 }) => {
   return (
-    <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between aspect-square relative active:scale-[0.98] transition-transform overflow-hidden">
+    <motion.div
+      variants={variants}
+      initial="hidden"
+      animate="visible"
+      whileTap={{ scale: 0.98 }}
+      className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between aspect-square relative transition-shadow duration-200 overflow-hidden cursor-pointer"
+    >
       {/* Delete Button - Top Right */}
       <button
         onClick={(e) => onDelete(place.id, e)}
@@ -78,7 +87,7 @@ const WishlistCard: React.FC<WishlistCardProps> = ({
           <CheckCircle size={18} />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

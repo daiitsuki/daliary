@@ -214,4 +214,12 @@ export const changelog: ChangelogEntry[] = [
       "다양한 버그를 수정했어요.",
     ],
   },
+  {
+    version: "1.0.24",
+    date: "2026-05-21",
+    changes: [
+      "여행 계획 탭의 사용성을 개선했어요.",
+      "애니메이션 효과를 최적화했어요.",
+    ],
+  },
 ];

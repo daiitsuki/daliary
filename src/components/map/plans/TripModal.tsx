@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check } from "lucide-react";
+import { X, Check, Plane, Tent, Map, Heart, Palmtree, Building } from "lucide-react";
 import DatePicker from "../../common/DatePicker";
 import { useTrips } from "../../../hooks/useTrips";
 import { Trip } from "../../../types";
 import { createPortal } from "react-dom";
+import {
+  parseTripTitle,
+  serializeTripTitle,
+  TRIP_ICONS,
+} from "../../../utils/tripHelpers";
 
 interface TripModalProps {
   isOpen: boolean;
@@ -12,14 +17,24 @@ interface TripModalProps {
   onClose: () => void;
 }
 
+const ICON_COMPONENTS: Record<string, any> = {
+  plane: Plane,
+  tent: Tent,
+  map: Map,
+  heart: Heart,
+  palmtree: Palmtree,
+  building: Building,
+};
+
 export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
   const { createTrip, updateTrip } = useTrips();
-  const [title, setTitle] = useState(trip?.title || "");
+  const [title, setTitle] = useState("");
+  const [iconIndex, setIconIndex] = useState(0);
   const [startDate, setStartDate] = useState(
-    trip?.start_date || new Date().toISOString().split("T")[0],
+    new Date().toISOString().split("T")[0]
   );
   const [endDate, setEndDate] = useState(
-    trip?.end_date || new Date().toISOString().split("T")[0],
+    new Date().toISOString().split("T")[0]
   );
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -31,11 +46,14 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
 
   useEffect(() => {
     if (trip) {
-      setTitle(trip.title);
+      const parsed = parseTripTitle(trip.title);
+      setTitle(parsed.rawTitle);
+      setIconIndex(parsed.iconIndex);
       setStartDate(trip.start_date);
       setEndDate(trip.end_date);
     } else {
       setTitle("");
+      setIconIndex(0);
       setStartDate(new Date().toISOString().split("T")[0]);
       setEndDate(new Date().toISOString().split("T")[0]);
     }
@@ -49,16 +67,17 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
     }
 
     try {
+      const serializedTitle = serializeTripTitle(title.trim(), iconIndex);
       if (trip) {
         await updateTrip.mutateAsync({
           id: trip.id,
-          title,
+          title: serializedTitle,
           start_date: startDate,
           end_date: endDate,
         });
       } else {
         await createTrip.mutateAsync({
-          title,
+          title: serializedTitle,
           start_date: startDate,
           end_date: endDate,
         });
@@ -122,6 +141,7 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
                   {trip ? "여행 계획 수정" : "새로운 여행 계획"}
                 </h2>
                 <button
+                  type="button"
                   onClick={onClose}
                   className="p-2 bg-gray-50/50 text-gray-400 rounded-full hover:bg-gray-100 transition-colors"
                 >
@@ -131,7 +151,7 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2 px-1">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
                     여행 제목
                   </label>
                   <input
@@ -141,6 +161,39 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
                     placeholder="어디로 떠나시나요?"
                     className="w-full px-5 py-4 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-rose-200 outline-none text-sm font-bold transition-all placeholder:text-gray-300"
                   />
+                </div>
+
+                {/* 아이콘 선택 */}
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
+                    아이콘 선택
+                  </label>
+                  <div className="grid grid-cols-6 gap-2">
+                    {TRIP_ICONS.map((ico, idx) => {
+                      const IconComponent = ICON_COMPONENTS[ico.id];
+                      const isActive = iconIndex === idx;
+                      return (
+                        <button
+                          key={ico.id}
+                          type="button"
+                          onClick={() => setIconIndex(idx)}
+                          className={`h-11 rounded-2xl flex items-center justify-center transition-all cursor-pointer border ${
+                            isActive
+                              ? "bg-rose-500 border-transparent text-white shadow-lg shadow-rose-100"
+                              : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+                          }`}
+                          title={ico.label}
+                        >
+                          {IconComponent && (
+                            <IconComponent
+                              size={18}
+                              strokeWidth={isActive ? 3 : 2}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
