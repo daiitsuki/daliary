@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Calendar as CalendarIcon, ChevronRight } from "lucide-react";
 import { Schedule } from "../../hooks/useSchedules";
@@ -8,7 +9,6 @@ interface ScheduleListProps {
   selectedDate: Date;
   isDateSelected: boolean;
   isSearchActive: boolean;
-  month: number;
   onClearSelection: () => void;
   onEditSchedule: (schedule: Schedule) => void;
   myProfile: Profile | null;
@@ -34,12 +34,14 @@ const ScheduleCard = ({
   myProfile,
   partnerProfile,
   isToday,
+  isPast,
 }: {
   schedule: Schedule;
   onClick: () => void;
   myProfile: Profile | null;
   partnerProfile: Profile | null;
   isToday?: boolean;
+  isPast?: boolean;
 }) => {
   const isClickable =
     !schedule.id.startsWith("holiday-") &&
@@ -62,6 +64,8 @@ const ScheduleCard = ({
       transition={{ duration: 0.2 }}
       onClick={isClickable ? onClick : undefined}
       className={`group relative flex items-center gap-4 p-4 mb-3 transition-all duration-200 bg-white rounded-3xl border border-gray-100/50 shadow-[0_4px_20px_rgba(0,0,0,0.02)] ${
+        isPast ? "opacity-55" : ""
+      } ${
         isClickable
           ? "cursor-pointer hover:shadow-md hover:scale-[1.01] active:scale-[0.98]"
           : "cursor-default"
@@ -100,11 +104,13 @@ const ScheduleCard = ({
               ? "공휴일"
               : schedule.id.startsWith("anniversary-")
                 ? "기념일"
-                : schedule.category === "me"
-                  ? myProfile?.nickname || "나"
-                  : schedule.category === "partner"
-                    ? partnerProfile?.nickname || "상대방"
-                    : "우리"}
+                : schedule.id.startsWith("trip-")
+                  ? "여행"
+                  : schedule.category === "me"
+                    ? myProfile?.nickname || "나"
+                    : schedule.category === "partner"
+                      ? partnerProfile?.nickname || "상대방"
+                      : "우리"}
           </span>
           {isToday && (
             <span className="shrink-0 text-[8px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
@@ -136,10 +142,10 @@ const ScheduleCard = ({
 
 const ScheduleList = ({
   schedules,
-  selectedDate,
+  selectedDate: _selectedDate,
   isDateSelected,
   isSearchActive,
-  onClearSelection,
+  onClearSelection: _onClearSelection,
   onEditSchedule,
   myProfile,
   partnerProfile,
@@ -153,12 +159,24 @@ const ScheduleList = ({
   };
 
   const todayStr = formatDate(today);
-  const todaySchedules = schedules.filter(
-    (s) => todayStr >= s.start_date && todayStr <= s.end_date,
-  );
-  const otherSchedules = schedules.filter(
-    (s) => !(todayStr >= s.start_date && todayStr <= s.end_date),
-  );
+
+  const todaySchedules = useMemo(() => {
+    return schedules.filter(
+      (s) => todayStr >= s.start_date && todayStr <= s.end_date,
+    );
+  }, [schedules, todayStr]);
+
+  const upcomingSchedules = useMemo(() => {
+    return schedules
+      .filter((s) => s.start_date > todayStr)
+      .sort((a, b) => a.start_date.localeCompare(b.start_date));
+  }, [schedules, todayStr]);
+
+  const pastSchedules = useMemo(() => {
+    return schedules
+      .filter((s) => s.end_date < todayStr)
+      .sort((a, b) => a.start_date.localeCompare(b.start_date));
+  }, [schedules, todayStr]);
 
   const isEmpty = schedules.length === 0;
 
@@ -212,41 +230,73 @@ const ScheduleList = ({
               key={isDateSelected || isSearchActive ? "filtered" : "all"}
               className="space-y-6"
             >
-              {!isDateSelected &&
-              !isSearchActive &&
-              todaySchedules.length > 0 ? (
+              {!isDateSelected && !isSearchActive ? (
                 <>
-                  <div>
-                    <h3 className="text-[11px] font-black text-gray-300 px-1 mb-3 uppercase tracking-widest">
-                      Today
-                    </h3>
-                    <div className="space-y-1">
-                      {todaySchedules.map((s) => (
-                        <ScheduleCard
-                          key={s.id}
-                          schedule={s}
-                          onClick={() => onEditSchedule(s)}
-                          myProfile={myProfile}
-                          partnerProfile={partnerProfile}
-                          isToday={true}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {otherSchedules.length > 0 && (
+                  {/* Today Section */}
+                  {todaySchedules.length > 0 && (
                     <div>
-                      <h3 className="text-[11px] font-black text-gray-300 px-1 mb-3 uppercase tracking-widest">
-                        Upcoming
-                      </h3>
+                      <div className="flex items-center gap-2 mb-3 px-1">
+                        <span className="w-1.5 h-3 bg-rose-500 rounded-full" />
+                        <h3 className="text-[11px] font-black text-rose-500 uppercase tracking-widest">
+                          오늘의 일정
+                        </h3>
+                      </div>
                       <div className="space-y-1">
-                        {otherSchedules.map((s) => (
+                        {todaySchedules.map((s) => (
                           <ScheduleCard
                             key={s.id}
                             schedule={s}
                             onClick={() => onEditSchedule(s)}
                             myProfile={myProfile}
                             partnerProfile={partnerProfile}
+                            isToday={true}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upcoming Section */}
+                  {upcomingSchedules.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3 px-1">
+                        <span className="w-1.5 h-3 bg-emerald-500 rounded-full" />
+                        <h3 className="text-[11px] font-black text-emerald-600 uppercase tracking-widest">
+                          다가오는 일정
+                        </h3>
+                      </div>
+                      <div className="space-y-1">
+                        {upcomingSchedules.map((s) => (
+                          <ScheduleCard
+                            key={s.id}
+                            schedule={s}
+                            onClick={() => onEditSchedule(s)}
+                            myProfile={myProfile}
+                            partnerProfile={partnerProfile}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Past Section */}
+                  {pastSchedules.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3 px-1">
+                        <span className="w-1.5 h-3 bg-gray-400 rounded-full" />
+                        <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                          지나간 일정
+                        </h3>
+                      </div>
+                      <div className="space-y-1">
+                        {pastSchedules.map((s) => (
+                          <ScheduleCard
+                            key={s.id}
+                            schedule={s}
+                            onClick={() => onEditSchedule(s)}
+                            myProfile={myProfile}
+                            partnerProfile={partnerProfile}
+                            isPast={true}
                           />
                         ))}
                       </div>
@@ -266,6 +316,7 @@ const ScheduleList = ({
                         formatDate(today) >= s.start_date &&
                         formatDate(today) <= s.end_date
                       }
+                      isPast={formatDate(today) > s.end_date}
                     />
                   ))}
                 </div>

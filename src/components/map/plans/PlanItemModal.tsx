@@ -14,6 +14,7 @@ import {
   Clock,
   AlignLeft,
   Flag,
+  Equal,
 } from "lucide-react";
 import TimePicker from "../../common/TimePicker";
 import { useTripPlans } from "../../../hooks/useTrips";
@@ -262,7 +263,7 @@ export default function PlanItemModal({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 bg-white/40 backdrop-blur-md border-b border-white/20 pb-0 shrink-0">
+            <div className="flex items-center justify-between p-6 pb-5 bg-white border-b border-gray-50 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="bg-rose-50 p-2 rounded-xl">
                   <Flag className="text-rose-400" size={16} />
@@ -283,7 +284,7 @@ export default function PlanItemModal({
 
             <form
               onSubmit={handleSubmit}
-              className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar pb-10"
+              className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar pb-10"
             >
               {/* Day Selection */}
               <div className="flex overflow-x-auto no-scrollbar gap-2 pb-1">
@@ -340,76 +341,129 @@ export default function PlanItemModal({
               </div>
 
               {/* Time Section */}
-              <div className="space-y-3">
-                <div className="flex justify-end px-1">
-                  <button
-                    type="button"
-                    onClick={setTimeUndecided}
-                    className="text-[10px] font-bold text-gray-400 hover:text-rose-500 transition-colors flex items-center gap-1"
-                  >
-                    <Clock size={10} />
-                    나중에 정하기
-                  </button>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-[11px] font-black text-gray-400 tracking-wider"></span>
+                  <div className="flex items-center gap-3">
+                    {startTime && startTime !== endTime ? (
+                      <button
+                        type="button"
+                        onClick={() => setEndTime(startTime)}
+                        className="text-[10px] font-bold text-gray-400 hover:text-rose-500 transition-colors flex items-center gap-1"
+                      >
+                        <Equal size={10} />
+                        시작시간과 같게
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={setTimeUndecided}
+                      className="text-[10px] font-bold text-gray-400 hover:text-rose-500 transition-colors flex items-center gap-1"
+                    >
+                      <Clock size={10} />
+                      나중에 정하기
+                    </button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <TimePicker
-                    value={startTime || ""}
-                    onChange={(time) => {
-                      setStartTime(time);
-                      if (endTime && time > endTime) setEndTime(time);
-                    }}
-                  />
-                  <TimePicker
-                    value={endTime || ""}
-                    onChange={(time) => {
-                      setEndTime(time);
-                      if (startTime && time < startTime) setEndTime(startTime);
-                    }}
-                  />
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <TimePicker
+                      value={startTime || ""}
+                      onChange={(time) => {
+                        setStartTime(time);
+                        if (endTime && time > endTime) setEndTime(time);
+                      }}
+                    />
+                  </div>
+                  <span className="text-gray-500 font-extrabold px-1 pb-4 self-end text-sm">
+                    →
+                  </span>
+                  <div className="flex-1">
+                    <TimePicker
+                      value={endTime || ""}
+                      onChange={(time) => {
+                        setEndTime(time);
+                        if (startTime && time < startTime)
+                          setEndTime(startTime);
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Place Section */}
-              <div className="space-y-3">
-                <div className="flex justify-end px-1">
-                  <button
-                    type="button"
-                    onClick={setPlaceUndecided}
-                    className="text-[10px] font-bold text-gray-400 hover:text-rose-500 transition-colors flex items-center gap-1"
-                  >
-                    <MapPin size={10} />
-                    장소 미정
-                  </button>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-[11px] font-black text-gray-400 tracking-wider"></span>
+                  {!placeName && (
+                    <button
+                      type="button"
+                      onClick={setPlaceUndecided}
+                      className="text-[10px] font-bold text-gray-400 hover:text-rose-500 transition-colors flex items-center gap-1"
+                    >
+                      <MapPin size={10} />
+                      장소 미정
+                    </button>
+                  )}
                 </div>
 
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      value={searchKeyword}
-                      onChange={(e) => setSearchKeyword(e.target.value)}
-                      onFocus={() => {
-                        if (results.length > 0) setShowSearchResults(true);
-                      }}
-                      onKeyDown={handleSearchKeyDown}
-                      placeholder="어디로 가시나요?"
-                      className="w-full pl-11 pr-4 py-4 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-rose-100 outline-none text-sm font-bold transition-all placeholder:text-gray-300"
-                    />
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
+                {!placeName ? (
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={searchKeyword}
+                        onChange={(e) => setSearchKeyword(e.target.value)}
+                        onFocus={() => {
+                          if (results.length > 0) setShowSearchResults(true);
+                        }}
+                        onKeyDown={handleSearchKeyDown}
+                        placeholder="어디로 가시나요?"
+                        className="w-full pl-11 pr-4 py-3.5 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-rose-100 outline-none text-sm font-bold transition-all placeholder:text-gray-300"
+                      />
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleSearch()}
+                      disabled={isSearching}
+                      className="px-5 bg-gray-800 text-white rounded-2xl text-xs font-black active:scale-95 transition-all shadow-md shadow-gray-100"
+                    >
+                      검색
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleSearch()}
-                    disabled={isSearching}
-                    className="px-6 bg-gray-800 text-white rounded-2xl text-xs font-black active:scale-95 transition-all shadow-md shadow-gray-100"
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-4 bg-gray-50 rounded-[20px] border border-gray-100/50 relative group"
                   >
-                    검색
-                  </button>
-                </div>
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 bg-white rounded-xl shadow-sm text-rose-500">
+                        <MapPin size={16} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-black text-gray-800 text-[13px] mb-0.5">
+                          {placeName}
+                        </h4>
+                        <p className="text-[10px] font-bold text-gray-400 truncate">
+                          {address || "상세 주소 정보 없음"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleClearPlace}
+                        className="px-3 py-1.5 text-[10px] font-bold text-gray-400 hover:text-rose-500 bg-white rounded-xl shadow-sm transition-colors border border-gray-100 self-center"
+                      >
+                        재검색
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* Search Results */}
                 <AnimatePresence>
-                  {showSearchResults && (
+                  {!placeName && showSearchResults && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -454,36 +508,6 @@ export default function PlanItemModal({
                     </motion.div>
                   )}
                 </AnimatePresence>
-
-                {/* Selected Place Card */}
-                {placeName && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="p-5 bg-rose-50/30 rounded-[24px] border border-rose-100/50 relative group mt-2"
-                  >
-                    <button
-                      type="button"
-                      onClick={handleClearPlace}
-                      className="absolute top-3 right-3 p-1.5 text-rose-300 hover:text-rose-500 bg-white rounded-full shadow-sm transition-colors"
-                    >
-                      <X size={12} />
-                    </button>
-                    <div className="flex items-start gap-4">
-                      <div className="p-2.5 bg-white rounded-2xl shadow-sm border border-rose-100 text-rose-500">
-                        <MapPin size={18} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-black text-gray-800 text-[13px] mb-1">
-                          {placeName}
-                        </h4>
-                        <p className="text-[10px] font-bold text-rose-400 truncate">
-                          {address || "상세 주소 정보 없음"}
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
               </div>
 
               {/* Memo Section */}
@@ -501,7 +525,7 @@ export default function PlanItemModal({
             </form>
 
             {/* Footer Action */}
-            <div className="p-8 shrink-0 border-t border-gray-50 bg-white">
+            <div className="p-6 shrink-0 border-t border-gray-50 bg-white">
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}

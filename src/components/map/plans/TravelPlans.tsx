@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useSwipe } from "../../../hooks/useSwipe";
 import { useTrips } from "../../../hooks/useTrips";
 import {
   Plus,
@@ -20,10 +21,7 @@ import { Trip } from "../../../types";
 import TripModal from "./TripModal";
 import TripDetail from "./TripDetail";
 import { motion, Variants, AnimatePresence } from "framer-motion";
-import {
-  parseTripTitle,
-  TRIP_ICONS,
-} from "../../../utils/tripHelpers";
+import { parseTripTitle, TRIP_ICONS } from "../../../utils/tripHelpers";
 
 const ICON_COMPONENTS: Record<string, any> = {
   plane: Plane,
@@ -68,7 +66,32 @@ export default function TravelPlans() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isTripModalOpen, setIsTripModalOpen] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
-  const [activeFilter, setActiveFilter] = useState<"all" | "upcoming" | "ongoing" | "past">("all");
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "upcoming" | "ongoing" | "past"
+  >("all");
+
+  const filterOrder: Array<"all" | "upcoming" | "ongoing" | "past"> = [
+    "all",
+    "upcoming",
+    "ongoing",
+    "past",
+  ];
+
+  const handleSwipeLeft = useCallback(() => {
+    const currentIndex = filterOrder.indexOf(activeFilter);
+    if (currentIndex !== -1 && currentIndex < filterOrder.length - 1) {
+      setActiveFilter(filterOrder[currentIndex + 1]);
+    }
+  }, [activeFilter]);
+
+  const handleSwipeRight = useCallback(() => {
+    const currentIndex = filterOrder.indexOf(activeFilter);
+    if (currentIndex > 0) {
+      setActiveFilter(filterOrder[currentIndex - 1]);
+    }
+  }, [activeFilter]);
+
+  const swipeHandlers = useSwipe(handleSwipeLeft, handleSwipeRight);
 
   const selectedTripId = searchParams.get("tripId");
   const selectedTrip = useMemo(() => {
@@ -197,10 +220,30 @@ export default function TravelPlans() {
         >
           <div className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth">
             {[
-              { id: "all", label: "전체", count: counts.all, activeClass: "bg-rose-500 text-white shadow-rose-100" },
-              { id: "upcoming", label: "예정", count: counts.upcoming, activeClass: "bg-rose-500 text-white shadow-rose-100" },
-              { id: "ongoing", label: "진행 중", count: counts.ongoing, activeClass: "bg-emerald-500 text-white shadow-emerald-100" },
-              { id: "past", label: "지난 여행", count: counts.past, activeClass: "bg-gray-500 text-white shadow-gray-100" },
+              {
+                id: "all",
+                label: "전체",
+                count: counts.all,
+                activeClass: "bg-rose-500 text-white shadow-rose-100",
+              },
+              {
+                id: "upcoming",
+                label: "예정",
+                count: counts.upcoming,
+                activeClass: "bg-rose-500 text-white shadow-rose-100",
+              },
+              {
+                id: "ongoing",
+                label: "진행 중",
+                count: counts.ongoing,
+                activeClass: "bg-emerald-500 text-white shadow-emerald-100",
+              },
+              {
+                id: "past",
+                label: "지난 여행",
+                count: counts.past,
+                activeClass: "bg-gray-500 text-white shadow-gray-100",
+              },
             ].map((tab) => {
               const isActive = activeFilter === tab.id;
               return (
@@ -230,7 +273,7 @@ export default function TravelPlans() {
 
           <button
             onClick={handleAddTrip}
-            className="flex items-center justify-center w-9 h-9 bg-rose-500 text-white rounded-full shadow-md shadow-rose-100 active:scale-95 transition-all hover:bg-rose-600 cursor-pointer shrink-0"
+            className="w-9 h-9 bg-rose-500 hover:bg-rose-600 text-white rounded-xl flex items-center justify-center active:scale-95 transition-all shadow-sm shrink-0"
             title="새 계획"
           >
             <Plus size={16} strokeWidth={3} />
@@ -238,7 +281,10 @@ export default function TravelPlans() {
         </motion.div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 pt-2 custom-scrollbar pb-32">
+      <div
+        {...swipeHandlers}
+        className="flex-1 overflow-y-auto p-4 pt-2 custom-scrollbar pb-32"
+      >
         <AnimatePresence mode="wait">
           {!trips || trips.length === 0 ? (
             <motion.div
@@ -262,8 +308,7 @@ export default function TravelPlans() {
                 onClick={handleAddTrip}
                 className="px-5 py-3 bg-rose-500 text-white rounded-2xl text-xs font-black shadow-lg shadow-rose-100 hover:bg-rose-600 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                <Plus size={14} strokeWidth={3} />
-                첫 계획 세우기
+                <Plus size={14} strokeWidth={3} />첫 계획 세우기
               </button>
             </motion.div>
           ) : filteredTrips.length === 0 ? (
@@ -282,8 +327,8 @@ export default function TravelPlans() {
                 {activeFilter === "upcoming"
                   ? "예정된 여행 계획이 없어요"
                   : activeFilter === "ongoing"
-                  ? "현재 진행 중인 여행이 없어요"
-                  : "지난 여행 계획이 없어요"}
+                    ? "현재 진행 중인 여행이 없어요"
+                    : "지난 여행 계획이 없어요"}
               </h3>
               <p className="text-gray-400 text-[11px]">
                 필터를 변경하거나 새로운 계획을 추가해 보세요!
@@ -299,11 +344,12 @@ export default function TravelPlans() {
               className="space-y-4"
             >
               {filteredTrips.map((trip) => {
-                const { rawTitle, iconIndex } = parseTripTitle(
-                  trip.title
-                );
+                const { rawTitle, iconIndex } = parseTripTitle(trip.title);
                 const status = getTripStatus(trip.start_date, trip.end_date);
-                const duration = getDurationText(trip.start_date, trip.end_date);
+                const duration = getDurationText(
+                  trip.start_date,
+                  trip.end_date,
+                );
                 const IconComponent =
                   ICON_COMPONENTS[TRIP_ICONS[iconIndex]?.id] || MapPin;
 

@@ -1,10 +1,12 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, Variants } from "framer-motion";
 import { useSchedules, Schedule, ScheduleInput } from "../hooks/useSchedules";
 import { useHolidays } from "../hooks/useHolidays";
 import { useAnniversaries } from "../hooks/useAnniversaries";
 import { useHomeData } from "../hooks/useHomeData";
+import { useTrips } from "../hooks/useTrips";
+import { parseTripTitle } from "../utils/tripHelpers";
 import CalendarHeader from "../components/calendar/CalendarHeader";
 import CalendarGrid from "../components/calendar/CalendarGrid";
 import ScheduleList from "../components/calendar/ScheduleList";
@@ -31,15 +33,41 @@ const itemVariants: Variants = {
 
 const Calendar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { schedules, addSchedule, updateSchedule, deleteSchedule } = useSchedules();
   const { holidaySchedules } = useHolidays();
   const { anniversarySchedules } = useAnniversaries();
   const { myProfile, partnerProfile } = useHomeData();
+  const { trips } = useTrips();
+
+  const [syncTrips] = useState<boolean>(() => {
+    const stored = localStorage.getItem("syncTripsToCalendar");
+    return stored === null ? true : stored === "true";
+  });
+
+  const tripSchedules = useMemo(() => {
+    if (!syncTrips || !trips) return [];
+    return trips.map((trip) => {
+      const { rawTitle } = parseTripTitle(trip.title);
+      return {
+        id: `trip-${trip.id}`,
+        created_at: trip.created_at || new Date().toISOString(),
+        couple_id: trip.couple_id,
+        writer_id: "system",
+        title: `✈️ [여행] ${rawTitle}`,
+        description: "여행 계획",
+        start_date: trip.start_date,
+        end_date: trip.end_date,
+        color: "#0d9488", // teal-600
+        category: "couple" as const,
+      };
+    });
+  }, [trips, syncTrips]);
 
   const allSchedules = useMemo(() => {
-    const combined = [...schedules, ...holidaySchedules, ...anniversarySchedules];
+    const combined = [...schedules, ...holidaySchedules, ...anniversarySchedules, ...tripSchedules];
     return combined.sort((a, b) => a.start_date.localeCompare(b.start_date));
-  }, [schedules, holidaySchedules, anniversarySchedules]);
+  }, [schedules, holidaySchedules, anniversarySchedules, tripSchedules]);
 
   // 1. Date & View States
   const getKSTToday = useCallback(() => {
@@ -165,6 +193,11 @@ const Calendar = () => {
 
   const openEditModal = (s: Schedule) => {
     if (s.id.startsWith("holiday-") || s.id.startsWith("anniversary-")) return;
+    if (s.id.startsWith("trip-")) {
+      const tripId = s.id.replace("trip-", "");
+      navigate(`/places?tab=plans&tripId=${tripId}`);
+      return;
+    }
     setEditingSchedule(s);
     setShowModal(true);
   };

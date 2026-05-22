@@ -172,6 +172,22 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
               {trip.start_date} ~ {trip.end_date}
             </p>
           </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => setIsMapModalOpen(true)}
+              className="w-9 h-9 bg-gray-50 hover:bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-gray-100"
+              title="지도 보기"
+            >
+              <MapIcon size={16} />
+            </button>
+            <button
+              onClick={handleAddPlan}
+              className="w-9 h-9 bg-rose-500 hover:bg-rose-600 text-white rounded-xl flex items-center justify-center active:scale-95 transition-all shadow-sm"
+              title="계획 추가"
+            >
+              <Plus size={16} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
 
         {/* Day Selector */}
@@ -328,26 +344,7 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
         )}
       </div>
 
-      {/* Floating Buttons */}
-      <motion.div
-        variants={itemVariants}
-        initial="hidden"
-        animate="visible"
-        className="absolute bottom-24 right-5 flex items-center gap-2 z-30"
-      >
-        <button
-          onClick={() => setIsMapModalOpen(true)}
-          className="w-11 h-11 bg-white text-rose-500 rounded-2xl shadow-xl border border-rose-100 flex items-center justify-center active:scale-95 transition-all hover:bg-rose-50"
-        >
-          <MapIcon size={20} />
-        </button>
-        <button
-          onClick={handleAddPlan}
-          className="w-11 h-11 bg-rose-500 text-white rounded-2xl shadow-2xl shadow-rose-200 flex items-center justify-center active:scale-95 transition-all hover:bg-rose-600"
-        >
-          <Plus size={20} strokeWidth={3} />
-        </button>
-      </motion.div>
+
 
       <PlanItemModal
         isOpen={isPlanModalOpen}

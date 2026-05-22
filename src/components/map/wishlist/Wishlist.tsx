@@ -5,6 +5,7 @@ import VisitForm from "../shared/VisitForm";
 import { motion, Variants, AnimatePresence } from "framer-motion";
 import { getRegionFromAddress } from "../../../lib/address";
 import WishlistCard from "./WishlistCard";
+import { useSwipe } from "../../../hooks/useSwipe";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -94,6 +95,22 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
         count: counts[cat] || 0,
       }));
   }, [wishlist]);
+
+  const handleSwipeLeft = useCallback(() => {
+    const currentIndex = categoriesWithCounts.findIndex((c) => c.name === selectedCategory);
+    if (currentIndex !== -1 && currentIndex < categoriesWithCounts.length - 1) {
+      setSelectedCategory(categoriesWithCounts[currentIndex + 1].name);
+    }
+  }, [categoriesWithCounts, selectedCategory]);
+
+  const handleSwipeRight = useCallback(() => {
+    const currentIndex = categoriesWithCounts.findIndex((c) => c.name === selectedCategory);
+    if (currentIndex > 0) {
+      setSelectedCategory(categoriesWithCounts[currentIndex - 1].name);
+    }
+  }, [categoriesWithCounts, selectedCategory]);
+
+  const swipeHandlers = useSwipe(handleSwipeLeft, handleSwipeRight);
 
   useEffect(() => {
     if (
@@ -205,7 +222,10 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
       )}
 
       {/* List Section */}
-      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar pb-32">
+      <div
+        {...swipeHandlers}
+        className="flex-1 overflow-y-auto p-4 custom-scrollbar pb-32"
+      >
         <AnimatePresence mode="wait">
           {wishlist.length === 0 ? (
             <motion.div

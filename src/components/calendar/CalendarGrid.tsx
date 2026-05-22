@@ -191,9 +191,11 @@ const WeekRow = memo(
                 <span
                   className={`text-[12px] sm:text-[13px] font-black transition-all flex items-center justify-center w-6 h-6 rounded-full ${
                     isToday
-                      ? "bg-rose-500 text-white shadow-sm"
+                      ? isActive
+                        ? "bg-rose-500 text-white scale-110 ring-2 ring-rose-500 ring-offset-2 shadow-md"
+                        : "bg-rose-500 text-white shadow-sm"
                       : isActive
-                        ? "text-rose-500 scale-110 bg-white shadow-sm ring-1 ring-rose-100"
+                        ? "text-rose-500 scale-110 bg-white shadow-md ring-2 ring-rose-400"
                         : !currentMonth
                           ? "text-gray-300"
                           : isHoliday

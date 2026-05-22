@@ -17,6 +17,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import BottomNav from './components/layout/BottomNav';
 
 import UpdateNotification from './components/common/UpdateNotification';
+import NotificationPermissionPopup from './components/common/NotificationPermissionPopup';
 import ChangelogModal from './components/common/ChangelogModal';
 import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -83,6 +84,7 @@ function App() {
                         />
 
                         <BottomNav />
+                        <NotificationPermissionPopup />
                       </Router>
                     </div>
                   </div>

@@ -14,22 +14,28 @@ interface NotificationHistoryModalProps {
 }
 
 const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isOpen, onClose }) => {
-  const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, loading, markAllAsRead } = useNotifications();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const navigate = useNavigate();
+
+  const handleClose = () => {
+    const hasUnread = notifications.some((n) => !n.is_read);
+    if (hasUnread) {
+      markAllAsRead();
+    }
+    onClose();
+  };
+
+  const handleCloseRef = React.useRef(handleClose);
+  useEffect(() => {
+    handleCloseRef.current = handleClose;
+  }, [handleClose]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // 알림창을 열면 모든 알림을 읽음 처리합니다.
-  useEffect(() => {
-    if (isOpen) {
-      markAllAsRead();
-    }
-  }, [isOpen, markAllAsRead]);
 
   // 뒤로가기 시 모달 닫기 로직
   useEffect(() => {
@@ -38,7 +44,7 @@ const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isO
       
       const handlePopState = (event: PopStateEvent) => {
         if (event.state?.modal !== "notification") {
-          onClose();
+          handleCloseRef.current();
         }
       };
       
@@ -52,7 +58,7 @@ const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isO
         }
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -79,12 +85,13 @@ const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isO
   };
 
   const handleNotificationClick = async (notif: any) => {
-    // 1. Mark as read if needed
-    if (!notif.is_read) {
-      await markAsRead(notif.id);
+    // Mark all as read since the modal is closing/seen
+    const hasUnread = notifications.some((n) => !n.is_read);
+    if (hasUnread) {
+      markAllAsRead();
     }
 
-    // 2. Navigate to target URL
+    // Navigate to target URL
     const targetUrl = notif.metadata?.url || "/home";
     onClose();
     navigate(targetUrl);
@@ -105,7 +112,7 @@ const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isO
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           />
           <motion.div
@@ -122,7 +129,7 @@ const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isO
                 <h2 className="text-lg font-bold text-gray-800">알림 소식</h2>
               </div>
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <X size={20} className="text-gray-400" />

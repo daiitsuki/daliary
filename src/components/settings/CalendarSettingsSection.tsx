@@ -1,8 +1,10 @@
+import { useState } from "react";
 import {
   Calendar as CalendarIcon,
   RefreshCw,
   Loader2,
   Heart,
+  Plane,
 } from "lucide-react";
 import { useHolidays } from "../../hooks/useHolidays";
 import { useAnniversaries } from "../../hooks/useAnniversaries";
@@ -16,6 +18,16 @@ export default function CalendarSettingsSection() {
     lastUpdated,
   } = useHolidays();
   const { showAnniversaries, toggleAnniversaries } = useAnniversaries();
+
+  const [syncTrips, setSyncTrips] = useState<boolean>(() => {
+    const stored = localStorage.getItem("syncTripsToCalendar");
+    return stored === null ? true : stored === "true";
+  });
+
+  const toggleSyncTrips = (value: boolean) => {
+    setSyncTrips(value);
+    localStorage.setItem("syncTripsToCalendar", String(value));
+  };
 
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
@@ -87,6 +99,35 @@ export default function CalendarSettingsSection() {
               <span
                 className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${
                   showHolidays ? "translate-x-5.5" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Trip Sync Toggle Switch */}
+          <div className="flex items-center justify-between group">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Plane size={18} className="text-rose-400" />
+              </div>
+              <div>
+                <h3 className="text-[14px] font-black text-gray-700">
+                  여행 계획 표시
+                </h3>
+                <p className="text-[9px] font-bold text-gray-400">
+                  우리의 여행 계획을 캘린더에 연동합니다
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => toggleSyncTrips(!syncTrips)}
+              className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all active:scale-90 ${
+                syncTrips ? "bg-rose-400" : "bg-gray-200"
+              }`}
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${
+                  syncTrips ? "translate-x-5.5" : "translate-x-1"
                 }`}
               />
             </button>
