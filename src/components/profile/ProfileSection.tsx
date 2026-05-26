@@ -1,6 +1,6 @@
+import { useState, useEffect, useRef } from "react";
 import { Camera, User, Check } from "lucide-react";
 import { Profile } from "../../types";
-import { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ProfileSectionProps {
@@ -22,15 +22,56 @@ export default function ProfileSection({
 }: ProfileSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 더블 버퍼링 이미지 렌더링 상태
+  const [displayedUrl, setDisplayedUrl] = useState(profile?.avatar_url || "");
+  const [pendingUrl, setPendingUrl] = useState("");
+
+  useEffect(() => {
+    const nextUrl = profile?.avatar_url || "";
+    if (nextUrl !== displayedUrl) {
+      if (!displayedUrl) {
+        setDisplayedUrl(nextUrl);
+      } else {
+        setPendingUrl(nextUrl);
+      }
+    }
+  }, [profile?.avatar_url, displayedUrl]);
+
+  const handleImageLoad = () => {
+    if (pendingUrl) {
+      setDisplayedUrl(pendingUrl);
+      setPendingUrl("");
+    }
+  };
+
   return (
     <section className="bg-white rounded-[28px] sm:rounded-[32px] p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 flex flex-col items-center">
       <div className="relative mb-6">
         <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-50 overflow-hidden border-[3px] border-white shadow-sm flex items-center justify-center relative group">
-          {profile?.avatar_url ? (
+          {displayedUrl ? (
+            <>
+              {/* 현재 표시되는 이미지 */}
+              <img
+                src={displayedUrl}
+                alt="Profile"
+                className="w-full h-full object-cover absolute inset-0 transition-opacity group-hover:opacity-80"
+              />
+              {/* 백그라운드 프리로드용 이미지 */}
+              {pendingUrl && (
+                <img
+                  src={pendingUrl}
+                  alt="New Profile Pending"
+                  onLoad={handleImageLoad}
+                  className="absolute inset-0 w-0 h-0 opacity-0 pointer-events-none"
+                />
+              )}
+            </>
+          ) : pendingUrl ? (
             <img
-              src={profile.avatar_url}
-              alt="Profile"
-              className="w-full h-full object-cover transition-opacity group-hover:opacity-80"
+              src={pendingUrl}
+              alt="Profile Loading"
+              onLoad={handleImageLoad}
+              className="w-full h-full object-cover absolute inset-0"
             />
           ) : (
             <User size={36} className="text-gray-200" />

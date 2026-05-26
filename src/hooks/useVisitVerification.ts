@@ -48,8 +48,12 @@ export const useVisitVerification = () => {
     setIsSubmitting(true);
     setError(null);
 
-    // Yield control to the browser to render the loading UI first
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // requestAnimationFrame을 활용해 브라우저가 로딩 UI를 완전히 페인트하도록 양보
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
+    });
 
     try {
       if (!region) throw new Error('행정구역을 선택해주세요.');

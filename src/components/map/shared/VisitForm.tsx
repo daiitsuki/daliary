@@ -39,6 +39,7 @@ const VisitForm = ({
   const [showRegionSelection, setShowRegionSelection] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevUrlRef = useRef<string | null>(null);
 
   // Cleanup for object URL
   useEffect(() => {
@@ -153,10 +154,8 @@ const VisitForm = ({
       const file = e.target.files[0];
       setSelectedFile(file);
 
-      // Revoke old URL if exists
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
+      // 새 이미지 로드가 성공한 뒤에 해제하기 위해 이전 URL 저장
+      prevUrlRef.current = previewUrl;
 
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
@@ -263,6 +262,13 @@ const VisitForm = ({
                     <img
                       src={previewUrl}
                       alt="Preview"
+                      onLoad={() => {
+                        // 새 이미지가 화면에 로드 완료되면 이전 Object URL을 파괴
+                        if (prevUrlRef.current) {
+                          URL.revokeObjectURL(prevUrlRef.current);
+                          prevUrlRef.current = null;
+                        }
+                      }}
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">

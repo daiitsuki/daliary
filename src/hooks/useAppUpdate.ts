@@ -65,7 +65,7 @@ export const useAppUpdate = () => {
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(registrations => {
             for (let registration of registrations) {
-              registration.unregister(); // 업데이트를 위해 기존 SW 해제
+              registration.update(); // unregister 대신 업데이트 호출 (구독 유지)
             }
           });
         }

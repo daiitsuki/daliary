@@ -58,25 +58,33 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setEditingImage(reader.result as string);
-      // 같은 파일을 다시 선택할 수 있도록 파일 로드가 끝난 후 비동기적으로 input 초기화
-      setTimeout(() => {
-        e.target.value = "";
-      }, 0);
-    };
-    reader.readAsDataURL(file);
+    // FileReader(Base64) 대신 메모리 부하가 없고 가벼운 Object URL 사용
+    const url = URL.createObjectURL(file);
+    setEditingImage(url);
+    
+    // 같은 파일을 다시 선택할 수 있도록 파일 로드가 끝난 후 비동기적으로 input 초기화
+    setTimeout(() => {
+      e.target.value = "";
+    }, 0);
   };
 
   // 편집 완료 후 업로드
   const handleAvatarSave = async (croppedBlob: Blob) => {
     if (!profile) return;
+    
+    // 편집용 임시 Object URL 메모리 해제
+    if (editingImage) {
+      URL.revokeObjectURL(editingImage);
+    }
     setEditingImage(null);
     setLoading(true);
 
-    // Yield control to the browser to render the loading UI first
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // requestAnimationFrame을 사용해 브라우저가 로딩 스피너를 먼저 안정적으로 렌더링하도록 함
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
+    });
 
     try {
       // Blob을 File 객체로 변환
@@ -127,8 +135,9 @@ export default function Profile() {
 
       if (updateError) throw updateError;
 
-      // 상태 업데이트
+      // 상태 업데이트 및 전역 캐시 동기화
       setProfile({ ...profile, avatar_url: publicUrl });
+      await fetchCoupleInfo();
       alert("프로필 사진이 변경되었습니다.");
     } catch (error) {
       console.error(error);
@@ -252,7 +261,10 @@ export default function Profile() {
         {editingImage && (
           <ImageEditorModal
             image={editingImage}
-            onClose={() => setEditingImage(null)}
+            onClose={() => {
+              URL.revokeObjectURL(editingImage);
+              setEditingImage(null);
+            }}
             onSave={handleAvatarSave}
             circularCrop={true}
           />

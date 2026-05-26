@@ -109,7 +109,30 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
     try {
       const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      let subscription = await registration.pushManager.getSubscription();
+
+      // [Auto-Recovery] 알림 권한은 허용되었으나 구독이 유실된 경우 자동 재구독 진행
+      if (!subscription && Notification.permission === 'granted') {
+        console.log('[Push] Subscription not found but permission is granted. Attempting auto-recovery...');
+        try {
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+          });
+          
+          if (subscription) {
+            await supabase.from('push_subscriptions').upsert({
+              user_id: profile.id,
+              endpoint: subscription.endpoint,
+              subscription: subscription.toJSON(),
+              updated_at: new Date().toISOString(),
+            });
+            console.log('[Push] Auto-recovery subscription registered successfully.');
+          }
+        } catch (subErr) {
+          console.error('[Push] Auto-recovery failed:', subErr);
+        }
+      }
 
       if (!subscription) {
         setIsDeviceActive(false);
