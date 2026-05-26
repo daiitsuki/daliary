@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import {
   ComposableMap,
   Geographies,
@@ -12,9 +12,13 @@ import { DetailedKoreaMapProps } from "./types";
 import { useKoreaMap } from "./useKoreaMap";
 import MapGeography from "./MapGeography";
 import FloatingStatsCard from "./FloatingStatsCard";
+import StatsDetailModal from "./StatsDetailModal";
+import RecentVisitsModal from "./RecentVisitsModal";
 
 const DetailedKoreaMap: React.FC<DetailedKoreaMapProps> = (props) => {
-  const { stats, subRegionStats } = props;
+  const { stats, subRegionStats, visits } = props;
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [isRecentModalOpen, setIsRecentModalOpen] = useState(false);
   const {
     mapData,
     loading,
@@ -24,9 +28,11 @@ const DetailedKoreaMap: React.FC<DetailedKoreaMapProps> = (props) => {
     currentStats,
     provinceLabels,
     zoomConfig,
+    recentVisit,
     handleMoveEnd,
     handleRegionClick,
     handleTopRegionClick,
+    zoomToProvince,
     resetSelection,
   } = useKoreaMap(props);
 
@@ -169,7 +175,37 @@ const DetailedKoreaMap: React.FC<DetailedKoreaMapProps> = (props) => {
       <FloatingStatsCard
         selectedProvince={selectedProvince}
         currentStats={currentStats}
+        recentVisit={recentVisit}
         onTopRegionClick={handleTopRegionClick}
+        onStatsClick={() => setIsStatsModalOpen(true)}
+        onRecentVisitClick={() => setIsRecentModalOpen(true)}
+      />
+
+      {/* Stats Detail Modal */}
+      <StatsDetailModal
+        isOpen={isStatsModalOpen}
+        onClose={() => setIsStatsModalOpen(false)}
+        selectedProvince={selectedProvince}
+        stats={stats}
+        subRegionStats={subRegionStats}
+        onSelectRegion={(province, subRegion) => {
+          if (subRegion) {
+            props.onRegionSelect(province, subRegion);
+          } else {
+            zoomToProvince(province);
+          }
+        }}
+      />
+
+      {/* Recent Visits Modal */}
+      <RecentVisitsModal
+        isOpen={isRecentModalOpen}
+        onClose={() => setIsRecentModalOpen(false)}
+        selectedProvince={selectedProvince}
+        visits={visits}
+        onSelectVisit={(province, subRegion, visitId) => {
+          props.onRegionSelect(province, subRegion, visitId);
+        }}
       />
 
       {/* Back Button */}

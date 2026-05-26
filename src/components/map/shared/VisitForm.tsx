@@ -261,7 +261,6 @@ const VisitForm = ({
                 {previewUrl ? (
                   <>
                     <img
-                      key={previewUrl}
                       src={previewUrl}
                       alt="Preview"
                       className="absolute inset-0 w-full h-full object-cover"

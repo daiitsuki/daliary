@@ -61,21 +61,24 @@ export default function Profile() {
     const reader = new FileReader();
     reader.onload = () => {
       setEditingImage(reader.result as string);
+      // 같은 파일을 다시 선택할 수 있도록 파일 로드가 끝난 후 비동기적으로 input 초기화
+      setTimeout(() => {
+        e.target.value = "";
+      }, 0);
     };
     reader.readAsDataURL(file);
-
-    // 같은 파일을 다시 선택할 수 있도록 input 초기화
-    e.target.value = "";
   };
 
   // 편집 완료 후 업로드
   const handleAvatarSave = async (croppedBlob: Blob) => {
     if (!profile) return;
     setEditingImage(null);
+    setLoading(true);
+
+    // Yield control to the browser to render the loading UI first
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     try {
-      setLoading(true);
-
       // Blob을 File 객체로 변환
       const file = new File([croppedBlob], "avatar.jpg", {
         type: "image/jpeg",

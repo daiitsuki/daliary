@@ -48,6 +48,9 @@ export const useVisitVerification = () => {
     setIsSubmitting(true);
     setError(null);
 
+    // Yield control to the browser to render the loading UI first
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
     try {
       if (!region) throw new Error('행정구역을 선택해주세요.');
       if (!date) throw new Error('방문 날짜를 선택해주세요.');

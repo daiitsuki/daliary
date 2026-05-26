@@ -353,6 +353,22 @@ export default function TravelPlans() {
                 const IconComponent =
                   ICON_COMPONENTS[TRIP_ICONS[iconIndex]?.id] || MapPin;
 
+                const cardClasses = status.type === "ongoing"
+                  ? "relative overflow-hidden bg-gradient-to-br from-emerald-50/20 via-white to-white p-5 rounded-[20px] border border-emerald-100/50 flex flex-col gap-4 cursor-pointer shadow-[0_2px_8px_rgba(16,185,129,0.03)] hover:shadow-[0_4px_12px_rgba(16,185,129,0.06)] transition-all duration-200"
+                  : status.type === "past"
+                    ? "relative overflow-hidden bg-gray-50/40 p-5 rounded-[20px] border border-gray-200/50 flex flex-col gap-4 cursor-pointer shadow-none hover:bg-gray-50/80 transition-all duration-200"
+                    : "relative overflow-hidden bg-white p-5 rounded-[20px] border border-gray-100 flex flex-col gap-4 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-all duration-200";
+
+                const iconBgClass = status.type === "ongoing"
+                  ? "bg-emerald-50 text-emerald-500"
+                  : status.type === "past"
+                    ? "bg-gray-100 text-gray-400"
+                    : "bg-rose-50 text-rose-500";
+
+                const titleColorClass = status.type === "past"
+                  ? "font-bold text-gray-500 text-sm truncate"
+                  : "font-black text-gray-800 text-sm truncate";
+
                 return (
                   <motion.div
                     key={trip.id}
@@ -361,12 +377,12 @@ export default function TravelPlans() {
                     animate="visible"
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleSelectTrip(trip)}
-                    className="relative overflow-hidden bg-white p-5 rounded-[20px] border border-gray-100 flex flex-col gap-4 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-shadow duration-200"
+                    className={cardClasses}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-3 min-w-0">
                         {/* Minimalist Icon Badge */}
-                        <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBgClass}`}>
                           <IconComponent size={20} strokeWidth={2} />
                         </div>
 
@@ -383,7 +399,7 @@ export default function TravelPlans() {
                             </span>
                           </div>
 
-                          <h3 className="font-black text-gray-800 text-sm truncate">
+                          <h3 className={titleColorClass}>
                             {rawTitle}
                           </h3>
                         </div>
@@ -418,14 +434,34 @@ export default function TravelPlans() {
                         </span>
                       </div>
 
-                      <div className="flex items-center text-[10px] font-black text-rose-500 bg-rose-50/50 px-2.5 py-1 rounded-lg">
-                        일정 보기{" "}
-                        <ChevronRight
-                          size={10}
-                          strokeWidth={3}
-                          className="ml-0.5"
-                        />
-                      </div>
+                      {status.type === "ongoing" ? (
+                        <div className="flex items-center text-[10px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                          일정 보기{" "}
+                          <ChevronRight
+                            size={10}
+                            strokeWidth={3}
+                            className="ml-0.5"
+                          />
+                        </div>
+                      ) : status.type === "past" ? (
+                        <div className="flex items-center text-[10px] font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-lg">
+                          기록 보기{" "}
+                          <ChevronRight
+                            size={10}
+                            strokeWidth={3}
+                            className="ml-0.5"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center text-[10px] font-black text-rose-500 bg-rose-50/50 px-2.5 py-1 rounded-lg">
+                          일정 보기{" "}
+                          <ChevronRight
+                            size={10}
+                            strokeWidth={3}
+                            className="ml-0.5"
+                          />
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 );

@@ -7,6 +7,7 @@ const OPTIMIZED_MAP_URL = "/data/optimized-korea-map.json";
 export const useKoreaMap = ({
   stats,
   subRegionStats,
+  visits,
   onRegionSelect,
 }: DetailedKoreaMapProps) => {
   const [searchParams] = useSearchParams();
@@ -145,6 +146,14 @@ export const useKoreaMap = ({
     }
   }, [selectedProvince, stats, subRegionStats]);
 
+  // Recent Visit Calculation
+  const recentVisit = useMemo(() => {
+    if (selectedProvince) {
+      return visits.find((v) => v.region === selectedProvince) || null;
+    }
+    return visits[0] || null;
+  }, [selectedProvince, visits]);
+
   // Interactions
   const handleMoveEnd = (position: { x: number; y: number; zoom: number }) => {
     setZoom(position.zoom);
@@ -199,6 +208,28 @@ export const useKoreaMap = ({
     }
   };
 
+  const zoomToProvince = useCallback(
+    (provinceName: string) => {
+      if (!mapData) return;
+      const targetGeo = mapData.detailed.find(
+        (f) => f.properties.province === provinceName && !f.properties.isMetro
+      ) || mapData.detailed.find(
+        (f) => f.properties.province === provinceName
+      );
+
+      if (targetGeo) {
+        if (targetGeo.properties.isMetro) {
+          onRegionSelect(provinceName);
+        } else if (targetGeo.labelCoord) {
+          setCenter(targetGeo.labelCoord);
+          setZoom(zoomConfig.detailed);
+          setSelectedProvince(provinceName);
+        }
+      }
+    },
+    [mapData, onRegionSelect, zoomConfig],
+  );
+
   const resetSelection = () => {
     setCenter([127.5, 36]);
     setZoom(zoomConfig.initial);
@@ -214,9 +245,11 @@ export const useKoreaMap = ({
     currentStats,
     provinceLabels,
     zoomConfig,
+    recentVisit,
     handleMoveEnd,
     handleRegionClick,
     handleTopRegionClick,
+    zoomToProvince,
     resetSelection,
   };
 };

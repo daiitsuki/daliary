@@ -22,6 +22,7 @@ const containerVariants: Variants = {
  */
 const RegionDashboard = () => {
   const {
+    visits,
     stats,
     subRegionStats,
     loading: placesLoading,
@@ -29,7 +30,7 @@ const RegionDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const handleMapRegionSelect = useCallback(
-    (region: string, subRegion?: string) => {
+    (region: string, subRegion?: string, visitId?: string) => {
       const newParams = new URLSearchParams(searchParams);
       newParams.set("tab", "memory");
       newParams.set("region", region);
@@ -37,6 +38,11 @@ const RegionDashboard = () => {
         newParams.set("subRegion", subRegion);
       } else {
         newParams.delete("subRegion");
+      }
+      if (visitId) {
+        newParams.set("visitId", visitId);
+      } else {
+        newParams.delete("visitId");
       }
       setSearchParams(newParams);
     },
@@ -60,6 +66,7 @@ const RegionDashboard = () => {
       ) : (
         <div className="w-full h-full">
           <DetailedKoreaMap
+            visits={visits}
             stats={stats}
             subRegionStats={subRegionStats}
             onRegionSelect={handleMapRegionSelect}

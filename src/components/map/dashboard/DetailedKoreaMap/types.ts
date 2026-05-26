@@ -1,7 +1,10 @@
+import { VisitWithPlace } from "../../../../context/PlacesContext";
+
 export interface DetailedKoreaMapProps {
   stats: Record<string, number>;
   subRegionStats: Record<string, Record<string, number>>;
-  onRegionSelect: (region: string, subRegion?: string) => void;
+  visits: VisitWithPlace[];
+  onRegionSelect: (region: string, subRegion?: string, visitId?: string) => void;
 }
 
 export interface MapData {
