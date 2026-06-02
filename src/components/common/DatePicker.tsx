@@ -20,8 +20,14 @@ const DatePicker = ({
   label,
   variant = "calendar",
 }: DatePickerProps) => {
+  const parseLocalDate = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  };
+
   const [isOpen, setIsOpen] = useState(false);
-  const [viewDate, setViewDate] = useState(new Date(value || new Date()));
+  const [viewDate, setViewDate] = useState(parseLocalDate(value));
 
   // Dropdown state
   const [selectedYear, setSelectedYear] = useState(viewDate.getFullYear());
@@ -35,7 +41,7 @@ const DatePicker = ({
   // Update internal state when value changes or modal opens
   useEffect(() => {
     if (value) {
-      const date = new Date(value);
+      const date = parseLocalDate(value);
       setViewDate(date);
       setSelectedYear(date.getFullYear());
       setSelectedMonth(date.getMonth() + 1);

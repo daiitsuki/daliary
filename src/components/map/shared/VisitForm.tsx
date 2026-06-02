@@ -1,13 +1,31 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { useVisitVerification } from "../../../hooks/useVisitVerification";
 import {
   KOREA_REGIONS,
   SUB_REGIONS,
   METROPOLITAN_CITIES,
 } from "../../../constants/regions";
-import { Camera, X, MapPin, Check, ChevronRight, Calendar } from "lucide-react";
+import {
+  Camera,
+  X,
+  MapPin,
+  Check,
+  ChevronRight,
+  Calendar,
+  InfoIcon,
+} from "lucide-react";
 import DatePicker from "../../common/DatePicker";
 import { usePlaceSearch, KakaoPlace } from "../../../hooks/usePlaceSearch";
+import { useCouple } from "../../../hooks/useCouple";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "../../../lib/supabase";
+import { parseTripTitle } from "../../../utils/tripHelpers";
 
 interface VisitFormProps {
   placeId?: string;
@@ -16,6 +34,7 @@ interface VisitFormProps {
   placeAddress?: string;
   onClose: () => void;
   onSuccess: () => void;
+  initialDate?: string;
 }
 
 const VisitForm = ({
@@ -25,14 +44,88 @@ const VisitForm = ({
   placeAddress,
   onClose,
   onSuccess,
+  initialDate,
 }: VisitFormProps) => {
   const { verifyVisit, isSubmitting, error } = useVisitVerification();
   const { savePlace } = usePlaceSearch();
+  const { couple } = useCouple();
+
+  // Fetch all trips with plans for this couple
+  const { data: tripsWithPlans = [] } = useQuery({
+    queryKey: ["trips_with_plans", couple?.id],
+    queryFn: async () => {
+      if (!couple?.id) return [];
+      const { data, error } = await supabase
+        .from("trips")
+        .select(
+          `id, 
+           title, 
+           start_date, 
+           end_date, 
+           trip_plans (
+             id, 
+             day_number, 
+             place_name, 
+             address,
+             order_index
+           )`,
+        )
+        .eq("couple_id", couple.id)
+        .order("start_date", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!couple?.id,
+  });
+
+  // Extract smart recommendations for the current placeName
+  const matchedSuggestions = useMemo(() => {
+    if (!placeName || tripsWithPlans.length === 0) return [];
+
+    const suggestions: Array<{
+      tripTitle: string;
+      dayNumber: number;
+      dateStr: string;
+      placeNameInPlan: string;
+    }> = [];
+
+    tripsWithPlans.forEach((trip: any) => {
+      const plans = trip.trip_plans || [];
+      plans.forEach((plan: any) => {
+        if (
+          plan.place_name &&
+          (plan.place_name.toLowerCase().includes(placeName.toLowerCase()) ||
+            placeName.toLowerCase().includes(plan.place_name.toLowerCase()))
+        ) {
+          const startDate = new Date(trip.start_date);
+          const targetDate = new Date(startDate);
+          targetDate.setDate(startDate.getDate() + (plan.day_number - 1));
+          const dateStr = targetDate.toISOString().split("T")[0];
+
+          suggestions.push({
+            tripTitle: trip.title,
+            dayNumber: plan.day_number,
+            dateStr,
+            placeNameInPlan: plan.place_name,
+          });
+        }
+      });
+    });
+
+    // Deduplicate suggestions by dateStr
+    const seen = new Set();
+    return suggestions.filter((s) => {
+      if (seen.has(s.dateStr)) return false;
+      seen.add(s.dateStr);
+      return true;
+    });
+  }, [placeName, tripsWithPlans]);
 
   const [region, setRegion] = useState("");
   const [subRegion, setSubRegion] = useState("");
   const [date, setDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
+    initialDate || new Date().toISOString().split("T")[0],
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -235,6 +328,54 @@ const VisitForm = ({
                 <Calendar className="w-4 h-4 text-rose-400" /> 방문 날짜
               </label>
               <DatePicker value={date} onChange={setDate} variant="calendar" />
+
+              {/* Smart Recommendations */}
+              {matchedSuggestions.length > 0 && (
+                <div className="mt-2 bg-rose-50/30 border border-rose-100/40 rounded-2xl p-4 space-y-2 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-1.5 text-rose-500 text-[11px] font-black">
+                    <InfoIcon className="w-3.5 h-3.5" />
+                    <span>여행 계획표에서 해당 장소를 찾았어요.</span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {matchedSuggestions.map((suggestion, idx) => {
+                      const { rawTitle } = parseTripTitle(suggestion.tripTitle);
+                      const isSelected = date === suggestion.dateStr;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setDate(suggestion.dateStr)}
+                          className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
+                            isSelected
+                              ? "bg-rose-500 border-rose-500 text-white shadow-md shadow-rose-200"
+                              : "bg-white border-gray-100 text-gray-700 hover:border-rose-200"
+                          }`}
+                        >
+                          <div className="flex flex-col min-w-0">
+                            <span
+                              className={`text-[10px] font-bold truncate ${
+                                isSelected ? "text-rose-100" : "text-gray-400"
+                              }`}
+                            >
+                              {rawTitle} · {suggestion.dayNumber}일차
+                            </span>
+                            <span className="text-xs font-black mt-0.5 truncate">
+                              {suggestion.placeNameInPlan}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-xs font-black shrink-0 ml-3 ${
+                              isSelected ? "text-white" : "text-rose-500"
+                            }`}
+                          >
+                            {suggestion.dateStr.replace(/-/g, ".")}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 2. Photo Upload */}
@@ -245,7 +386,7 @@ const VisitForm = ({
                 </span>
                 {!selectedFile && (
                   <span className="text-[10px] text-rose-500 font-medium">
-                    * 필수 업로드
+                    * 필수
                   </span>
                 )}
               </label>
@@ -357,8 +498,8 @@ const VisitForm = ({
                     <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
                       <label className="text-xs font-bold text-gray-500 flex items-center gap-1.5 justify-between">
                         <span className="flex items-center gap-1.5">
-                          <ChevronRight className="w-3 h-3 text-rose-400" /> 상세
-                          지역 선택
+                          <ChevronRight className="w-3 h-3 text-rose-400" />{" "}
+                          상세 지역 선택
                         </span>
                         {!subRegion && (
                           <span className="text-[10px] text-rose-500 font-medium">
@@ -403,7 +544,10 @@ const VisitForm = ({
             form="visit-form"
             type="submit"
             disabled={
-              isSubmitting || !selectedFile || !region || (SUB_REGIONS[region] && !subRegion)
+              isSubmitting ||
+              !selectedFile ||
+              !region ||
+              (SUB_REGIONS[region] && !subRegion)
             }
             className="w-full py-4 bg-rose-500 text-white rounded-2xl font-bold text-base hover:bg-rose-600 active:scale-[0.98] transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed shadow-lg shadow-rose-100 disabled:shadow-none flex items-center justify-center gap-2"
           >

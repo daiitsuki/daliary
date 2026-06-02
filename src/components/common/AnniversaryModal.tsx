@@ -6,7 +6,6 @@ import {
   Calendar,
   Calculator,
   Heart,
-  ChevronRight,
   Search,
   Plus,
 } from "lucide-react";

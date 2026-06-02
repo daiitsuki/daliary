@@ -1,9 +1,8 @@
 import { useSearchParams } from "react-router-dom";
-import { motion, Variants, AnimatePresence } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   Gamepad2,
   Sparkles,
-  Play,
   Check,
   Timer,
   Grid3X3,

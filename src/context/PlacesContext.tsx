@@ -22,6 +22,7 @@ export interface Place {
   lng: number;
   status: 'wishlist' | 'visited';
   category?: string;
+  created_at?: string;
 }
 
 interface PlacesContextType {
@@ -32,7 +33,15 @@ interface PlacesContextType {
   loading: boolean;
   refresh: () => Promise<void>;
   deleteWishlistPlace: (id: string) => Promise<boolean>;
-  updateVisit: (visitId: string, data: { visited_at: string; image_url: string | null }) => Promise<boolean>;
+  updateVisit: (
+    visitId: string,
+    data: {
+      visited_at: string;
+      image_url: string | null;
+      region?: string;
+      sub_region?: string | null;
+    }
+  ) => Promise<boolean>;
   deleteVisit: (visitId: string) => Promise<boolean>;
 }
 
@@ -100,6 +109,7 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['places_data', couple?.id] });
+      queryClient.invalidateQueries({ queryKey: ['memory_feed', couple?.id] });
     },
   });
 
@@ -113,6 +123,7 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['places_data', couple?.id] });
+      queryClient.invalidateQueries({ queryKey: ['memory_feed', couple?.id] });
     },
   });
 
@@ -124,7 +135,10 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   return (
     <PlacesContext.Provider value={{ 
       visits, wishlist, stats, subRegionStats, loading, 
-      refresh: async () => { await refetch(); },
+      refresh: async () => {
+        await refetch();
+        queryClient.invalidateQueries({ queryKey: ['memory_feed', couple?.id] });
+      },
       deleteWishlistPlace: async (id) => {
         try {
           await deleteWishlistMutation.mutateAsync(id);

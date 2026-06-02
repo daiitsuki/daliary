@@ -54,6 +54,17 @@ const CATEGORY_INACTIVE_TAB_STYLES: Record<string, string> = {
   기타: "bg-gray-50 text-gray-400/80",
 };
 
+const CATEGORY_ORDER = ["맛집", "카페", "관광지", "숙소", "쇼핑", "기타"];
+
+const CATEGORY_INDICATOR_COLORS: Record<string, string> = {
+  맛집: "bg-orange-500",
+  카페: "bg-amber-500",
+  관광지: "bg-rose-500",
+  숙소: "bg-indigo-500",
+  쇼핑: "bg-blue-500",
+  기타: "bg-gray-500",
+};
+
 interface WishlistProps {
   onShowOnMap: (place: Place) => void;
 }
@@ -63,6 +74,7 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isVisitFormOpen, setIsVisitFormOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("전체");
+  const [sortBy, setSortBy] = useState<"region" | "category" | "date">("region");
 
   // 카테고리별 개수 계산 및 탭 목록 생성
   const categoriesWithCounts = useMemo(() => {
@@ -148,6 +160,32 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
       );
   }, [filteredWishlist]);
 
+  const groupedByCategory = useMemo(() => {
+    const groups: Record<string, Place[]> = {};
+    filteredWishlist.forEach((place) => {
+      const cat = place.category || "기타";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(place);
+    });
+
+    const sortedCategories = Object.keys(groups).sort((a, b) => {
+      const idxA = CATEGORY_ORDER.indexOf(a);
+      const idxB = CATEGORY_ORDER.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+
+    return sortedCategories.reduce(
+      (acc, key) => {
+        acc[key] = groups[key];
+        return acc;
+      },
+      {} as Record<string, Place[]>,
+    );
+  }, [filteredWishlist]);
+
   const handleDelete = useCallback(
     async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
@@ -221,6 +259,54 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
         </motion.div>
       )}
 
+      {wishlist.length > 0 && (
+        <motion.div
+          variants={itemVariants}
+          initial="hidden"
+          animate="visible"
+          className="px-4 py-2 bg-white border-b border-gray-50 flex items-center justify-between shrink-0"
+        >
+          <span className="text-[11px] font-black text-gray-400">
+            총 {filteredWishlist.length}개
+          </span>
+          <div className="flex gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100/50">
+            <button
+              type="button"
+              onClick={() => setSortBy("region")}
+              className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${
+                sortBy === "region"
+                  ? "bg-white text-rose-500 shadow-sm"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              지역순
+            </button>
+            <button
+              type="button"
+              onClick={() => setSortBy("category")}
+              className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${
+                sortBy === "category"
+                  ? "bg-white text-rose-500 shadow-sm"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              카테고리순
+            </button>
+            <button
+              type="button"
+              onClick={() => setSortBy("date")}
+              className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${
+                sortBy === "date"
+                  ? "bg-white text-rose-500 shadow-sm"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              등록순
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* List Section */}
       <div
         {...swipeHandlers}
@@ -256,23 +342,69 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
             </motion.div>
           ) : (
             <motion.div
-              key={selectedCategory}
+              key={`${selectedCategory}-${sortBy}`}
               variants={containerVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
               className="space-y-8"
             >
-              {Object.entries(groupedWishlist).map(([region, places]) => (
-                <div key={region} className="space-y-4">
+              {sortBy === "region" ? (
+                Object.entries(groupedWishlist).map(([region, places]) => (
+                  <div key={region} className="space-y-4">
+                    <motion.div variants={itemVariants} initial="hidden" animate="visible" className="flex items-center gap-2 px-1">
+                      <div className="w-1 h-3 bg-rose-400 rounded-full"></div>
+                      <h2 className="text-xs font-black text-gray-600 uppercase tracking-tight">
+                        {region} ({places.length})
+                      </h2>
+                    </motion.div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                      {places.map((place) => (
+                        <WishlistCard
+                          key={place.id}
+                          place={place}
+                          onShowOnMap={onShowOnMap}
+                          onDelete={handleDelete}
+                          onVerifyVisit={handleVerifyVisit}
+                          variants={itemVariants}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : sortBy === "category" ? (
+                Object.entries(groupedByCategory).map(([category, places]) => (
+                  <div key={category} className="space-y-4">
+                    <motion.div variants={itemVariants} initial="hidden" animate="visible" className="flex items-center gap-2 px-1">
+                      <div className={`w-1.5 h-1.5 rounded-full ${CATEGORY_INDICATOR_COLORS[category] || "bg-gray-500"}`}></div>
+                      <h2 className="text-xs font-black text-gray-600 uppercase tracking-tight">
+                        {category} ({places.length})
+                      </h2>
+                    </motion.div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                      {places.map((place) => (
+                        <WishlistCard
+                          key={place.id}
+                          place={place}
+                          onShowOnMap={onShowOnMap}
+                          onDelete={handleDelete}
+                          onVerifyVisit={handleVerifyVisit}
+                          variants={itemVariants}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="space-y-4">
                   <motion.div variants={itemVariants} initial="hidden" animate="visible" className="flex items-center gap-2 px-1">
                     <div className="w-1 h-3 bg-rose-400 rounded-full"></div>
                     <h2 className="text-xs font-black text-gray-600 uppercase tracking-tight">
-                      {region} ({places.length})
+                      등록순 ({filteredWishlist.length})
                     </h2>
                   </motion.div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                    {places.map((place) => (
+                    {filteredWishlist.map((place) => (
                       <WishlistCard
                         key={place.id}
                         place={place}
@@ -284,7 +416,7 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
                     ))}
                   </div>
                 </div>
-              ))}
+              )}
             </motion.div>
           )}
         </AnimatePresence>

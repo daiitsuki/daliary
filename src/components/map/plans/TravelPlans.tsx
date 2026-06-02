@@ -354,10 +354,10 @@ export default function TravelPlans() {
                   ICON_COMPONENTS[TRIP_ICONS[iconIndex]?.id] || MapPin;
 
                 const cardClasses = status.type === "ongoing"
-                  ? "relative overflow-hidden bg-gradient-to-br from-emerald-50/20 via-white to-white p-5 rounded-[20px] border border-emerald-100/50 flex flex-col gap-4 cursor-pointer shadow-[0_2px_8px_rgba(16,185,129,0.03)] hover:shadow-[0_4px_12px_rgba(16,185,129,0.06)] transition-all duration-200"
+                  ? "relative overflow-hidden bg-gradient-to-br from-emerald-50/20 via-white to-white p-5 rounded-[20px] border border-emerald-100/50 flex flex-col gap-4 cursor-pointer shadow-[0_2px_8px_rgba(16,185,129,0.03)] hover:shadow-[0_4px_12px_rgba(16,185,129,0.06)] transition-[background-color,border-color,box-shadow] duration-200"
                   : status.type === "past"
-                    ? "relative overflow-hidden bg-gray-50/40 p-5 rounded-[20px] border border-gray-200/50 flex flex-col gap-4 cursor-pointer shadow-none hover:bg-gray-50/80 transition-all duration-200"
-                    : "relative overflow-hidden bg-white p-5 rounded-[20px] border border-gray-100 flex flex-col gap-4 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-all duration-200";
+                    ? "relative overflow-hidden bg-gray-50/40 p-5 rounded-[20px] border border-gray-200/50 flex flex-col gap-4 cursor-pointer shadow-none hover:bg-gray-50/80 transition-[background-color,border-color,box-shadow] duration-200"
+                    : "relative overflow-hidden bg-white p-5 rounded-[20px] border border-gray-100 flex flex-col gap-4 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-[background-color,border-color,box-shadow] duration-200";
 
                 const iconBgClass = status.type === "ongoing"
                   ? "bg-emerald-50 text-emerald-500"

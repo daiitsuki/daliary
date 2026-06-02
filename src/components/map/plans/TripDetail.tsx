@@ -16,9 +16,11 @@ import {
   Map as MapIcon,
   Navigation,
   Loader2,
+  CheckCircle,
 } from "lucide-react";
 import PlanItemModal from "./PlanItemModal";
 import TripMapModal from "./TripMapModal";
+import VisitForm from "../shared/VisitForm";
 import { motion, Variants, AnimatePresence } from "framer-motion";
 import { parseTripTitle } from "../../../utils/tripHelpers";
 
@@ -89,6 +91,9 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<TripPlan | null>(null);
+  const [isVisitFormOpen, setIsVisitFormOpen] = useState(false);
+  const [selectedPlanForCert, setSelectedPlanForCert] =
+    useState<TripPlan | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const daysCount = useMemo(() => {
@@ -136,6 +141,12 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
     if (!plan.place_name) return;
     const query = encodeURIComponent(plan.place_name);
     window.open(`https://map.naver.com/v5/search/${query}`, "_blank");
+  };
+
+  const handleOpenVisitForm = (e: React.MouseEvent, plan: TripPlan) => {
+    e.stopPropagation();
+    setSelectedPlanForCert(plan);
+    setIsVisitFormOpen(true);
   };
 
   const handleDragEnd = (_: any, info: any) => {
@@ -248,7 +259,8 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
                   {/* 리스트 아이템들 */}
                   <div className="space-y-4">
                     {(plansByDay[activeDay] || []).map((plan) => {
-                      const Icon = CATEGORY_ICONS[plan.category] || MoreHorizontal;
+                      const Icon =
+                        CATEGORY_ICONS[plan.category] || MoreHorizontal;
                       const isUndecided =
                         !plan.place_name || plan.place_name === "미정";
 
@@ -313,22 +325,36 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
                             </div>
                           </div>
 
-                          <div className="absolute top-2 right-2 flex items-center gap-1">
+                          <div className="absolute top-2 right-2 flex gap-1 bg-gray-50/80 p-1 rounded-xl border border-gray-100/50">
                             {!isUndecided && (
-                              <button
-                                onClick={(e) => handleOpenNavigation(e, plan)}
-                                className="p-2 bg-white/80 backdrop-blur-sm shadow-sm border border-gray-100 text-gray-400 hover:text-rose-500 transition-colors rounded-xl"
-                              >
-                                <Navigation
-                                  size={14}
-                                  fill="currentColor"
-                                  fillOpacity={0.1}
-                                />
-                              </button>
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleOpenVisitForm(e, plan)}
+                                  className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-white rounded-lg transition-all"
+                                  title="방문 인증하기"
+                                >
+                                  <CheckCircle size={14} strokeWidth={2.5} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleOpenNavigation(e, plan)}
+                                  className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-white rounded-lg transition-all"
+                                  title="네이버 지도로 이동"
+                                >
+                                  <Navigation
+                                    size={14}
+                                    fill="currentColor"
+                                    fillOpacity={0.1}
+                                  />
+                                </button>
+                              </>
                             )}
                             <button
+                              type="button"
                               onClick={(e) => handleDeletePlan(e, plan.id)}
-                              className="p-2 bg-white/80 backdrop-blur-sm shadow-sm border border-gray-100 text-gray-400 rounded-xl hover:text-rose-500 transition-colors"
+                              className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-white rounded-lg transition-all"
+                              title="삭제"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -343,8 +369,6 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
           </AnimatePresence>
         )}
       </div>
-
-
 
       <PlanItemModal
         isOpen={isPlanModalOpen}
@@ -364,6 +388,27 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
         activeDay={activeDay}
         setActiveDay={setActiveDay}
       />
+
+      {isVisitFormOpen && selectedPlanForCert && (
+        <VisitForm
+          placeName={selectedPlanForCert.place_name || ""}
+          placeAddress={selectedPlanForCert.address || ""}
+          initialDate={(() => {
+            const start = new Date(trip.start_date);
+            const dateObj = new Date(start);
+            dateObj.setDate(start.getDate() + (activeDay - 1));
+            return dateObj.toISOString().split("T")[0];
+          })()}
+          onClose={() => {
+            setIsVisitFormOpen(false);
+            setSelectedPlanForCert(null);
+          }}
+          onSuccess={() => {
+            setIsVisitFormOpen(false);
+            setSelectedPlanForCert(null);
+          }}
+        />
+      )}
     </div>
   );
 }

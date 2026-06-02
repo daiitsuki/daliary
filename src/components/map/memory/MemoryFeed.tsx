@@ -6,14 +6,16 @@ import {
   MemoryFeedItem,
 } from "../../../hooks/useMemoryFeed";
 import MemoryCard from "./MemoryCard";
-import { Camera, Loader2, ArrowLeft, X } from "lucide-react";
+import { Camera, Loader2, ArrowLeft } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import VisitDetailModal from "../dashboard/VisitDetailModal";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePlaces } from "../../../context/PlacesContext";
 
 export default function MemoryFeed() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { updateVisit, deleteVisit } = usePlaces();
   const [searchParams, setSearchParams] = useSearchParams();
   const observerTarget = useRef<HTMLDivElement>(null);
   const [selectedVisit, setSelectedVisit] = useState<MemoryFeedItem | null>(
@@ -30,6 +32,10 @@ export default function MemoryFeed() {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
     useMemoryFeed(regionFilter, subRegionFilter);
+
+  const allItems: MemoryFeedItem[] = useMemo(() => {
+    return (data as any)?.pages.flatMap((page: any) => page.data) || [];
+  }, [data]);
 
   // Reset handled flag if visitId changes
   useEffect(() => {
@@ -64,11 +70,17 @@ export default function MemoryFeed() {
   // CRITICAL: Stable visit object for the modal
   const modalVisit = useMemo(() => {
     if (!selectedVisit) return null;
+    
+    // Find the latest state from either allItems or sharedVisit
+    const upToDateVisit = allItems.find((item) => item.id === selectedVisit.id) || 
+                          (sharedVisit?.id === selectedVisit.id ? sharedVisit : null) || 
+                          selectedVisit;
+
     return {
-      ...selectedVisit,
-      places: selectedVisit.place,
+      ...upToDateVisit,
+      places: upToDateVisit.place,
     };
-  }, [selectedVisit?.id]);
+  }, [selectedVisit?.id, allItems, sharedVisit]);
 
   const handleCloseModal = useCallback(() => {
     setSelectedVisit(null);
@@ -79,16 +91,39 @@ export default function MemoryFeed() {
     }
   }, [searchParams, setSearchParams]);
 
-  const handleUpdateRefresh = useCallback(async () => {
-    queryClient.invalidateQueries({ queryKey: ["memory_feed"] });
-    queryClient.invalidateQueries({ queryKey: ["places_data"] });
-    if (visitIdFromUrl) {
-      queryClient.invalidateQueries({
-        queryKey: ["visit_detail", visitIdFromUrl],
-      });
-    }
-    return true;
-  }, [queryClient, visitIdFromUrl]);
+  const handleUpdate = useCallback(
+    async (visitId: string, updateData: any) => {
+      const success = await updateVisit(visitId, updateData);
+      if (success) {
+        queryClient.invalidateQueries({ queryKey: ["memory_feed"] });
+        queryClient.invalidateQueries({ queryKey: ["places_data"] });
+        if (visitIdFromUrl) {
+          queryClient.invalidateQueries({
+            queryKey: ["visit_detail", visitIdFromUrl],
+          });
+        }
+      }
+      return success;
+    },
+    [updateVisit, queryClient, visitIdFromUrl],
+  );
+
+  const handleDelete = useCallback(
+    async (visitId: string) => {
+      const success = await deleteVisit(visitId);
+      if (success) {
+        queryClient.invalidateQueries({ queryKey: ["memory_feed"] });
+        queryClient.invalidateQueries({ queryKey: ["places_data"] });
+        if (visitIdFromUrl) {
+          queryClient.invalidateQueries({
+            queryKey: ["visit_detail", visitIdFromUrl],
+          });
+        }
+      }
+      return success;
+    },
+    [deleteVisit, queryClient, visitIdFromUrl],
+  );
 
   const handleBack = useCallback(() => {
     const newParams = new URLSearchParams(searchParams);
@@ -107,9 +142,6 @@ export default function MemoryFeed() {
       </div>
     );
   }
-
-  const allItems: MemoryFeedItem[] =
-    (data as any)?.pages.flatMap((page: any) => page.data) || [];
 
   return (
     <div className="h-full relative overflow-hidden flex flex-col bg-white">
@@ -149,8 +181,8 @@ export default function MemoryFeed() {
             key={`modal-${selectedVisit.id}`}
             visit={modalVisit as any}
             onClose={handleCloseModal}
-            onUpdate={handleUpdateRefresh}
-            onDelete={handleUpdateRefresh}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
           />
         )}
       </AnimatePresence>

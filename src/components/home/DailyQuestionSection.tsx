@@ -7,7 +7,6 @@ import {
   History,
   Send,
   Loader2,
-  HelpCircle,
 } from "lucide-react";
 import { useState } from "react";
 import QuestionHistoryModal from "./QuestionHistoryModal";

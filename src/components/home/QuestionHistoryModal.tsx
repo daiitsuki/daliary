@@ -35,9 +35,9 @@ export default function QuestionHistoryModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => window.innerWidth < 768;
-    window.addEventListener("resize", () => setIsMobile(window.innerWidth < 768));
-    return () => window.removeEventListener("resize", () => setIsMobile(window.innerWidth < 768));
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // 뒤로가기 시 모달 닫기 로직

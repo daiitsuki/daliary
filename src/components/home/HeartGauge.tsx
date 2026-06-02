@@ -2,7 +2,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ChevronRight,
-  Sparkles,
   CalendarCheck2,
   Loader2,
   CheckCircle2,

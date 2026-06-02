@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Map, Heart, Image as Box, Camera, Settings } from "lucide-react";
+import { Map, Heart, Camera, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 import AnniversaryModal from "../common/AnniversaryModal";
 
@@ -44,7 +44,7 @@ export default function QuickLinksSection() {
     <section className="px-6 mb-6">
       <motion.div className="bg-white rounded-[32px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-rose-50/50 relative overflow-hidden group">
         {/* Tools Content */}
-        <div className="relative z-10 flex items-start gap-6 overflow-x-auto pb-2 no-scrollbar snap-x scroll-smooth">
+        <div className="relative z-10 flex items-start gap-2 overflow-x-auto pb-2 no-scrollbar snap-x scroll-smooth">
           {quickLinks.map((link) => {
             const IconComponent = link.icon;
             return (

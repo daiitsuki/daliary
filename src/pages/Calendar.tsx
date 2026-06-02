@@ -84,7 +84,9 @@ const Calendar = () => {
   useEffect(() => {
     const dateParam = searchParams.get("date");
     if (dateParam) {
-      const parsedDate = new Date(dateParam);
+      // YYYY-MM-DD 문자열을 로컬 타임존 기준으로 안전하게 파싱하여 타임존 오프셋에 의한 날짜 밀림 현상 방지
+      const [y, mStr, d] = dateParam.split("-").map(Number);
+      const parsedDate = new Date(y, mStr - 1, d);
       if (!isNaN(parsedDate.getTime())) {
         setCurrentDate(new Date(parsedDate.getFullYear(), parsedDate.getMonth(), 1));
         setSelectedDate(parsedDate);
@@ -263,6 +265,7 @@ const Calendar = () => {
           <motion.div variants={itemVariants} className="w-full lg:w-[380px] shrink-0 lg:h-full">
             <ScheduleList
               schedules={visibleSchedules}
+              currentDate={currentDate}
               selectedDate={selectedDate}
               isDateSelected={isDateSelected}
               isSearchActive={isSearchActive}

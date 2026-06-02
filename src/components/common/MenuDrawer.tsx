@@ -92,8 +92,8 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
   // 간소화된 메뉴 리스트
   const menuItems = [
-    { icon: <User size={20} />, label: "프로필 설정", path: "/profile" },
-    { icon: <Settings size={20} />, label: "앱 설정", path: "/settings" },
+    { icon: <User size={20} />, label: "내 정보", path: "/profile" },
+    { icon: <Settings size={20} />, label: "설정", path: "/settings" },
   ];
 
   const handleNavigate = (path: string) => {
@@ -182,7 +182,9 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="text-[10px] font-bold text-rose-300 tracking-tight mb-0.5">
-                          {partnerProfile?.nickname ? `${partnerProfile.nickname}님과 함께한 시간` : "함께한 시간"}
+                          {partnerProfile?.nickname
+                            ? `${partnerProfile.nickname}님과 함께한 시간`
+                            : "함께한 시간"}
                         </span>
                         <span className="text-[14px] font-black text-rose-500 tabular-nums">
                           {elapsedTime}
