@@ -21,6 +21,7 @@ import NotificationPermissionPopup from './components/common/NotificationPermiss
 import ChangelogModal from './components/common/ChangelogModal';
 import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ToastProvider } from './context/ToastContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,51 +50,53 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CoupleProvider>
+      <ToastProvider>
+        <CoupleProvider>
         <NotificationsProvider>
           <CouplePointsProvider>
             <SchedulesProvider>
               <PlacesProvider>
                 <HomeProvider>
-                  <div className="fixed inset-0 w-full h-full bg-gray-50 flex justify-center items-center md:py-8 overflow-hidden">
-                    <div className="w-full h-full md:max-w-5xl md:h-[90vh] bg-white md:rounded-[32px] md:shadow-2xl md:border-8 md:border-white overflow-hidden relative flex flex-col">
-                      <Router>
-                        <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
-                          <Routes>
-                            <Route path="/login" element={<Auth />} />
-                            
-                            <Route element={<ProtectedRoute />}>
-                              <Route path="/" element={<Navigate to="/home" replace />} />
-                              <Route path="/home" element={<Home />} />
-                              <Route path="/calendar" element={<Calendar />} />
-                              <Route path="/games" element={<Games />} />
-                              <Route path="/places" element={<Places />} />
-                              <Route path="/profile" element={<Profile />} />
-                              <Route path="/settings" element={<Settings />} />
-                              <Route path="/onboarding" element={<Onboarding />} />
-                              <Route path="*" element={<Navigate to="/home" replace />} />
-                            </Route>
-                          </Routes>
-                        </div>
-                        
-                        <UpdateNotification />
-                        
-                        <ChangelogModal 
-                          isOpen={showChangelog} 
-                          onClose={() => setShowChangelog(false)} 
-                        />
+                    <div className="fixed inset-0 w-full h-full bg-gray-50 flex justify-center items-center md:py-8 overflow-hidden">
+                      <div className="w-full h-full md:max-w-5xl md:h-[90vh] bg-white md:rounded-[32px] md:shadow-2xl md:border-8 md:border-white overflow-hidden relative flex flex-col">
+                        <Router>
+                          <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
+                            <Routes>
+                              <Route path="/login" element={<Auth />} />
+                              
+                              <Route element={<ProtectedRoute />}>
+                                <Route path="/" element={<Navigate to="/home" replace />} />
+                                <Route path="/home" element={<Home />} />
+                                <Route path="/calendar" element={<Calendar />} />
+                                <Route path="/games" element={<Games />} />
+                                <Route path="/places" element={<Places />} />
+                                <Route path="/profile" element={<Profile />} />
+                                <Route path="/settings" element={<Settings />} />
+                                <Route path="/onboarding" element={<Onboarding />} />
+                                <Route path="*" element={<Navigate to="/home" replace />} />
+                              </Route>
+                            </Routes>
+                          </div>
+                          
+                          <UpdateNotification />
+                          
+                          <ChangelogModal 
+                            isOpen={showChangelog} 
+                            onClose={() => setShowChangelog(false)} 
+                          />
 
-                        <BottomNav />
-                        <NotificationPermissionPopup />
-                      </Router>
+                          <BottomNav />
+                          <NotificationPermissionPopup />
+                        </Router>
+                      </div>
                     </div>
-                  </div>
                 </HomeProvider>
               </PlacesProvider>
             </SchedulesProvider>
           </CouplePointsProvider>
         </NotificationsProvider>
-      </CoupleProvider>
+        </CoupleProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

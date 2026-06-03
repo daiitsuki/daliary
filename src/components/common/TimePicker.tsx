@@ -6,9 +6,10 @@ interface TimePickerProps {
   value: string; // HH:mm
   onChange: (time: string) => void;
   label?: string;
+  isEndTime?: boolean;
 }
 
-const TimePicker = ({ value, onChange, label }: TimePickerProps) => {
+const TimePicker = ({ value, onChange, label, isEndTime = false }: TimePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
   const [selectedHour, setSelectedHour] = useState(parseInt(value?.split(":")[0] || "12"));
@@ -25,8 +26,20 @@ const TimePicker = ({ value, onChange, label }: TimePickerProps) => {
     }
   }, [value, isOpen]);
 
-  const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
-  const minutes = useMemo(() => Array.from({ length: 12 }, (_, i) => i * 5), []); // 5-minute intervals
+  const hours = useMemo(() => Array.from({ length: isEndTime ? 25 : 24 }, (_, i) => i), [isEndTime]);
+  
+  const minutes = useMemo(() => {
+    if (selectedHour === 24) {
+      return [0];
+    }
+    return Array.from({ length: 12 }, (_, i) => i * 5);
+  }, [selectedHour]); // 5-minute intervals
+
+  useEffect(() => {
+    if (!minutes.includes(selectedMinute)) {
+      setSelectedMinute(minutes[0]);
+    }
+  }, [minutes, selectedMinute]);
 
   useEffect(() => {
     if (isOpen) {

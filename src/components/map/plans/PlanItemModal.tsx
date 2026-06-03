@@ -381,6 +381,7 @@ export default function PlanItemModal({
                   <div className="flex-1">
                     <TimePicker
                       value={endTime || ""}
+                      isEndTime
                       onChange={(time) => {
                         setEndTime(time);
                         if (startTime && time < startTime)
