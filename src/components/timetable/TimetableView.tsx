@@ -15,6 +15,9 @@ const STORAGE_KEY_END = "timetable_end_hour";
 const STORAGE_KEY_COMPRESSION = "timetable_compression_mode";
 const STORAGE_KEY_WEEK_START = "timetable_week_start";
 const STORAGE_KEY_VISIBLE_DAYS = "timetable_visible_days";
+const STORAGE_KEY_SHOW_TIME = "timetable_show_time";
+const STORAGE_KEY_SHOW_PLACE = "timetable_show_place";
+const STORAGE_KEY_SHOW_MEMO = "timetable_show_memo";
 
 const TimetableView = () => {
   const { myBlocks, partnerBlocks, addBlock, updateBlock, deleteBlock, deleteAllBlocks, loading } = useTimetable();
@@ -53,6 +56,18 @@ const TimetableView = () => {
   const [visibleDays, setVisibleDays] = useState<number[]>(() => {
     const stored = localStorage.getItem(STORAGE_KEY_VISIBLE_DAYS);
     return stored ? JSON.parse(stored) : [0, 1, 2, 3, 4, 5, 6];
+  });
+  const [showTime, setShowTime] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY_SHOW_TIME);
+    return stored ? JSON.parse(stored) : true;
+  });
+  const [showPlace, setShowPlace] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY_SHOW_PLACE);
+    return stored ? JSON.parse(stored) : true;
+  });
+  const [showMemo, setShowMemo] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY_SHOW_MEMO);
+    return stored ? JSON.parse(stored) : false;
   });
 
   const handleAddBlock = useCallback((dayOfWeek?: number, defaultHour?: number) => {
@@ -123,18 +138,27 @@ const TimetableView = () => {
     end: number, 
     mode: "none" | "compact" | "more_compact",
     ws: "sunday" | "monday",
-    vd: number[]
+    vd: number[],
+    sTime: boolean,
+    sPlace: boolean,
+    sMemo: boolean
   ) => {
     setStartHour(start);
     setEndHour(end);
     setCompressionMode(mode);
     setWeekStart(ws);
     setVisibleDays(vd);
+    setShowTime(sTime);
+    setShowPlace(sPlace);
+    setShowMemo(sMemo);
     localStorage.setItem(STORAGE_KEY_START, start.toString());
     localStorage.setItem(STORAGE_KEY_END, end.toString());
     localStorage.setItem(STORAGE_KEY_COMPRESSION, mode);
     localStorage.setItem(STORAGE_KEY_WEEK_START, ws);
     localStorage.setItem(STORAGE_KEY_VISIBLE_DAYS, JSON.stringify(vd));
+    localStorage.setItem(STORAGE_KEY_SHOW_TIME, JSON.stringify(sTime));
+    localStorage.setItem(STORAGE_KEY_SHOW_PLACE, JSON.stringify(sPlace));
+    localStorage.setItem(STORAGE_KEY_SHOW_MEMO, JSON.stringify(sMemo));
   };
 
   const handleExport = async () => {
@@ -275,6 +299,9 @@ const TimetableView = () => {
           visibleDays={visibleDays}
           isExporting={isExporting}
           gridRef={gridRef}
+          showTime={showTime}
+          showPlace={showPlace}
+          showMemo={showMemo}
         />
       </div>
 
@@ -303,6 +330,9 @@ const TimetableView = () => {
         compressionMode={compressionMode}
         weekStart={weekStart}
         visibleDays={visibleDays}
+        showTime={showTime}
+        showPlace={showPlace}
+        showMemo={showMemo}
         onSave={handleSettingsSave}
         onResetAll={async () => {
           try {

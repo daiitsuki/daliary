@@ -1,6 +1,6 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, MapPin, Clock } from "lucide-react";
+import { Plus, MapPin, Clock, AlignLeft } from "lucide-react";
 import { TimetableBlock } from "../../hooks/useTimetable";
 
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -20,6 +20,9 @@ interface TimetableGridProps {
   visibleDays: number[];
   isExporting?: boolean;
   gridRef?: React.RefObject<HTMLDivElement | null>;
+  showTime?: boolean;
+  showPlace?: boolean;
+  showMemo?: boolean;
 }
 
 // ──────────────────────────────────────────────
@@ -161,6 +164,9 @@ const TimetableGrid = ({
   visibleDays,
   isExporting = false,
   gridRef,
+  showTime = true,
+  showPlace = true,
+  showMemo = false,
 }: TimetableGridProps) => {
   // 단일 스크롤 컨테이너 ref
   const containerRef = useRef<HTMLDivElement>(null);
@@ -504,14 +510,22 @@ const TimetableGrid = ({
                           </p>
                           {!isShort && (
                             <>
-                              <p className="text-[9px] font-bold text-gray-700 flex items-center gap-0.5 mt-0.5">
-                                <Clock size={8} />
-                                {block.start_time}–{block.end_time}
-                              </p>
-                              {block.place_name && (
-                                <p className="text-[9px] font-bold text-gray-600 flex items-center gap-0.5 mt-0.5 truncate">
-                                  <MapPin size={8} />
-                                  {block.place_name}
+                              {showTime && (
+                                <p className="text-[9px] font-bold text-gray-700 flex items-center gap-0.5 mt-0.5">
+                                  <Clock size={8} />
+                                  {block.start_time}–{block.end_time}
+                                </p>
+                              )}
+                              {showPlace && block.place_name && (
+                                <p className="text-[9px] font-bold text-gray-600 flex items-center gap-0.5 mt-0.5 overflow-hidden">
+                                  <MapPin size={8} className="shrink-0" />
+                                  <span className="truncate">{block.place_name}</span>
+                                </p>
+                              )}
+                              {showMemo && block.memo && (
+                                <p className="text-[9px] font-bold text-gray-600 flex items-center gap-0.5 mt-0.5 overflow-hidden">
+                                  <AlignLeft size={8} className="shrink-0" />
+                                  <span className="truncate">{block.memo}</span>
                                 </p>
                               )}
                             </>

@@ -10,12 +10,18 @@ interface TimetableSettingsModalProps {
   compressionMode: "none" | "compact" | "more_compact";
   weekStart: "sunday" | "monday";
   visibleDays: number[];
+  showTime: boolean;
+  showPlace: boolean;
+  showMemo: boolean;
   onSave: (
     startHour: number,
     endHour: number,
     compressionMode: "none" | "compact" | "more_compact",
     weekStart: "sunday" | "monday",
-    visibleDays: number[]
+    visibleDays: number[],
+    showTime: boolean,
+    showPlace: boolean,
+    showMemo: boolean,
   ) => void;
   onResetAll: () => Promise<void>;
 }
@@ -30,14 +36,21 @@ const TimetableSettingsModal = ({
   compressionMode,
   weekStart,
   visibleDays,
+  showTime,
+  showPlace,
+  showMemo,
   onSave,
   onResetAll,
 }: TimetableSettingsModalProps) => {
   const [localStart, setLocalStart] = useState(startHour);
   const [localEnd, setLocalEnd] = useState(endHour);
-  const [localCompressionMode, setLocalCompressionMode] = useState(compressionMode);
+  const [localCompressionMode, setLocalCompressionMode] =
+    useState(compressionMode);
   const [localWeekStart, setLocalWeekStart] = useState(weekStart);
   const [localVisibleDays, setLocalVisibleDays] = useState(visibleDays);
+  const [localShowTime, setLocalShowTime] = useState(showTime);
+  const [localShowPlace, setLocalShowPlace] = useState(showPlace);
+  const [localShowMemo, setLocalShowMemo] = useState(showMemo);
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -49,20 +62,34 @@ const TimetableSettingsModal = ({
       setLocalCompressionMode(compressionMode);
       setLocalWeekStart(weekStart);
       setLocalVisibleDays(visibleDays);
+      setLocalShowTime(showTime);
+      setLocalShowPlace(showPlace);
+      setLocalShowMemo(showMemo);
     }
-  }, [isOpen, startHour, endHour, compressionMode, weekStart, visibleDays]);
+  }, [
+    isOpen,
+    startHour,
+    endHour,
+    compressionMode,
+    weekStart,
+    visibleDays,
+    showTime,
+    showPlace,
+    showMemo,
+  ]);
 
   const toggleDay = (d: number) => {
-    setLocalVisibleDays(prev => {
+    setLocalVisibleDays((prev) => {
       if (prev.includes(d)) {
         if (prev.length === 1) return prev;
-        return prev.filter(x => x !== d);
+        return prev.filter((x) => x !== d);
       }
       return [...prev, d];
     });
   };
 
-  const DAYS_ORDER = localWeekStart === "monday" ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6];
+  const DAYS_ORDER =
+    localWeekStart === "monday" ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6];
   const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
 
   useEffect(() => {
@@ -97,7 +124,16 @@ const TimetableSettingsModal = ({
       alert("최소 2시간 범위가 필요합니다.");
       return;
     }
-    onSave(localStart, localEnd, localCompressionMode, localWeekStart, localVisibleDays);
+    onSave(
+      localStart,
+      localEnd,
+      localCompressionMode,
+      localWeekStart,
+      localVisibleDays,
+      localShowTime,
+      localShowPlace,
+      localShowMemo,
+    );
     onClose();
   };
 
@@ -120,8 +156,6 @@ const TimetableSettingsModal = ({
     animate: isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 },
     exit: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
   };
-
-
 
   return (
     <AnimatePresence>
@@ -159,43 +193,54 @@ const TimetableSettingsModal = ({
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50 custom-scrollbar">
-              
               {/* 그룹 1: 시간 설정 */}
               <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 space-y-5">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-4 bg-rose-400 rounded-full" />
-                  <h4 className="text-sm font-black text-gray-800">표시 시간</h4>
+                  <h4 className="text-sm font-black text-gray-800">
+                    표시 시간
+                  </h4>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">시작</label>
+                    <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
+                      시작
+                    </label>
                     <select
                       value={localStart}
                       onChange={(e) => setLocalStart(Number(e.target.value))}
                       className="w-full px-4 py-3 bg-gray-50 rounded-[16px] border-none font-bold text-sm text-gray-700 outline-none focus:ring-2 focus:ring-rose-200"
                     >
                       {HOUR_OPTIONS.filter((h) => h < localEnd).map((h) => (
-                        <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                        <option key={h} value={h}>
+                          {String(h).padStart(2, "0")}:00
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">종료</label>
+                    <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
+                      종료
+                    </label>
                     <select
                       value={localEnd}
                       onChange={(e) => setLocalEnd(Number(e.target.value))}
                       className="w-full px-4 py-3 bg-gray-50 rounded-[16px] border-none font-bold text-sm text-gray-700 outline-none focus:ring-2 focus:ring-rose-200"
                     >
                       {HOUR_OPTIONS.filter((h) => h > localStart).map((h) => (
-                        <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                        <option key={h} value={h}>
+                          {String(h).padStart(2, "0")}:00
+                        </option>
                       ))}
                     </select>
                   </div>
                 </div>
 
                 <div className="pt-4 border-t border-gray-50 space-y-2">
-                  <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">빈 시간 압축</label>
+                  <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
+                    빈 시간 압축
+                  </label>
                   <div className="flex bg-gray-50 p-1 rounded-[16px]">
                     {[
                       { value: "none", label: "안 함" },
@@ -204,7 +249,9 @@ const TimetableSettingsModal = ({
                     ].map((mode) => (
                       <button
                         key={mode.value}
-                        onClick={() => setLocalCompressionMode(mode.value as any)}
+                        onClick={() =>
+                          setLocalCompressionMode(mode.value as any)
+                        }
                         className={`flex-1 py-2.5 rounded-[12px] text-xs font-black transition-all ${
                           localCompressionMode === mode.value
                             ? "bg-white text-rose-500 shadow-sm"
@@ -222,11 +269,15 @@ const TimetableSettingsModal = ({
               <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 space-y-5">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-4 bg-indigo-400 rounded-full" />
-                  <h4 className="text-sm font-black text-gray-800">표시 요일</h4>
+                  <h4 className="text-sm font-black text-gray-800">
+                    표시 요일
+                  </h4>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">시작 요일</label>
+                  <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
+                    시작 요일
+                  </label>
                   <div className="flex bg-gray-50 p-1 rounded-[16px]">
                     <button
                       onClick={() => setLocalWeekStart("monday")}
@@ -252,7 +303,9 @@ const TimetableSettingsModal = ({
                 </div>
 
                 <div className="pt-4 border-t border-gray-50 space-y-2">
-                  <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">표시할 요일</label>
+                  <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
+                    표시할 요일
+                  </label>
                   <div className="flex justify-between gap-1.5">
                     {DAYS_ORDER.map((d) => {
                       const isSelected = localVisibleDays.includes(d);
@@ -274,13 +327,61 @@ const TimetableSettingsModal = ({
                 </div>
               </div>
 
-              {/* 그룹 3: 데이터 관리 (위험) */}
+              {/* 그룹 3: 표시 항목 */}
+              <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 space-y-5">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-4 bg-emerald-400 rounded-full" />
+                  <h4 className="text-sm font-black text-gray-800">
+                    표시 항목
+                  </h4>
+                </div>
+
+                <div className="flex gap-2 bg-gray-50 p-1.5 rounded-[16px]">
+                  <button
+                    type="button"
+                    onClick={() => setLocalShowTime((prev) => !prev)}
+                    className={`flex-1 py-3 rounded-[12px] text-xs font-black transition-all flex flex-col items-center justify-center gap-1 ${
+                      localShowTime
+                        ? "bg-white text-emerald-500 shadow-sm border border-emerald-100"
+                        : "text-gray-400 hover:bg-gray-100/50"
+                    }`}
+                  >
+                    <span>시간</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLocalShowPlace((prev) => !prev)}
+                    className={`flex-1 py-3 rounded-[12px] text-xs font-black transition-all flex flex-col items-center justify-center gap-1 ${
+                      localShowPlace
+                        ? "bg-white text-emerald-500 shadow-sm border border-emerald-100"
+                        : "text-gray-400 hover:bg-gray-100/50"
+                    }`}
+                  >
+                    <span>장소</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLocalShowMemo((prev) => !prev)}
+                    className={`flex-1 py-3 rounded-[12px] text-xs font-black transition-all flex flex-col items-center justify-center gap-1 ${
+                      localShowMemo
+                        ? "bg-white text-emerald-500 shadow-sm border border-emerald-100"
+                        : "text-gray-400 hover:bg-gray-100/50"
+                    }`}
+                  >
+                    <span>메모</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 그룹 4: 데이터 관리 (위험) */}
               <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 space-y-5">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-4 bg-red-400 rounded-full" />
-                  <h4 className="text-sm font-black text-gray-800">데이터 관리</h4>
+                  <h4 className="text-sm font-black text-gray-800">
+                    데이터 관리
+                  </h4>
                 </div>
-                
+
                 <AnimatePresence mode="wait">
                   {isConfirmingReset ? (
                     <motion.div
@@ -291,7 +392,8 @@ const TimetableSettingsModal = ({
                       className="flex flex-col gap-3"
                     >
                       <p className="text-[11px] sm:text-xs font-bold text-red-500/90 leading-tight">
-                        모든 시간표 데이터가 영구적으로 삭제되며 복구할 수 없습니다. 정말 초기화하시겠습니까?
+                        모든 시간표 데이터가 영구적으로 삭제되며 복구할 수
+                        없습니다. 정말 초기화하시겠습니까?
                       </p>
                       <div className="flex gap-2">
                         <button
