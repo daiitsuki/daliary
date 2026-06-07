@@ -23,14 +23,14 @@ const TimetableHeader = ({
       <div className="relative flex items-center bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full h-14 sm:h-16 overflow-hidden">
         <div className="flex items-center justify-between w-full px-2 sm:px-3">
           {/* 좌측: 설정 및 범위 안내 */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={onOpenSettings}
               className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-50/50 rounded-full transition-all active:scale-90"
               title="표시 시간 설정"
             >
               <Settings2
-                className="w-[18px] h-[18px] sm:w-5 sm:h-5"
+                className="w-4.5 h-4.5 sm:w-5 sm:h-5"
                 strokeWidth={2.2}
               />
             </button>
@@ -40,7 +40,7 @@ const TimetableHeader = ({
               title="이미지로 저장"
             >
               <Download
-                className="w-[18px] h-[18px] sm:w-5 sm:h-5"
+                className="w-4.5 h-4.5 sm:w-5 sm:h-5"
                 strokeWidth={2.2}
               />
             </button>
@@ -85,10 +85,7 @@ const TimetableHeader = ({
                 : `${partnerProfile?.nickname || "상대방"}님의 시간표는 수정할 수 없습니다`
             }
           >
-            <Plus
-              className="w-[18px] h-[18px] sm:w-5 sm:h-5"
-              strokeWidth={2.5}
-            />
+            <Plus className="w-4.5 h-4.5 sm:w-5 sm:h-5" strokeWidth={2.5} />
           </button>
         </div>
       </div>

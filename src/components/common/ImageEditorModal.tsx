@@ -98,8 +98,8 @@ const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
           (blob) => {
             if (blob) resolve(blob);
           },
-          "image/jpeg",
-          0.9,
+          "image/webp",
+          0.92,
         );
       });
     } catch (e) {

@@ -21,7 +21,8 @@ interface Props {
 
 export default function MemoryCard({ item, onOpenDetail }: Props) {
   const queryClient = useQueryClient();
-  const { couple } = useHomeData();
+  const { couple, myProfile } = useHomeData();
+  const isOwner = item.writer_id == null || item.writer_id === myProfile?.id;
   const [showMenu, setShowMenu] = useState(false);
   const [showHeartAnim, setShowHeartAnim] = useState(false);
 
@@ -118,6 +119,27 @@ export default function MemoryCard({ item, onOpenDetail }: Props) {
         .delete()
         .eq("id", item.id);
       if (error) throw error;
+
+      // Storage 파일 정리
+      if (item.image_url) {
+        try {
+          let bucket: string | null = null;
+          let filePath: string | null = null;
+          if (item.image_url.includes("/visit-photos/")) {
+            bucket = "visit-photos";
+            filePath = decodeURIComponent(item.image_url.split("/visit-photos/")[1].split("?")[0]);
+          } else if (item.image_url.includes("/diary-images/")) {
+            bucket = "diary-images";
+            filePath = decodeURIComponent(item.image_url.split("/diary-images/")[1].split("?")[0]);
+          }
+          if (bucket && filePath) {
+            await supabase.storage.from(bucket).remove([filePath]);
+          }
+        } catch (deleteErr) {
+          console.error("방문 사진 Storage 삭제 실패 (무시됨):", deleteErr);
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ["memory_feed"] });
       queryClient.invalidateQueries({ queryKey: ["places_data"] });
     } catch (err) {
@@ -214,13 +236,17 @@ export default function MemoryCard({ item, onOpenDetail }: Props) {
                   >
                     <ExternalLink size={14} /> 상세 정보
                   </button>
-                  <div className="h-px bg-black/5 my-1" />
-                  <button
-                    onClick={handleDeleteVisit}
-                    className="w-full px-4 py-3 text-left text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 transition-colors"
-                  >
-                    <Trash2 size={14} /> 삭제하기
-                  </button>
+                  {isOwner && (
+                    <>
+                      <div className="h-px bg-black/5 my-1" />
+                      <button
+                        onClick={handleDeleteVisit}
+                        className="w-full px-4 py-3 text-left text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                      >
+                        <Trash2 size={14} /> 삭제하기
+                      </button>
+                    </>
+                  )}
                 </motion.div>
               </>
             )}

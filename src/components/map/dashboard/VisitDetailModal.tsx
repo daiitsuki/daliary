@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
 import imageCompression from "browser-image-compression";
+import { convertToWebP } from "../../../utils/imageUtils";
 import { VisitWithPlace } from "../../../context/PlacesContext";
 import { useVisitComments } from "../../../hooks/useVisitComments";
 import { useCouple } from "../../../hooks/useCouple";
@@ -31,7 +32,7 @@ interface VisitDetailModalProps {
   visit: VisitWithPlace | null;
   onClose: () => void;
   onUpdate: (id: string, data: any) => Promise<boolean>;
-  onDelete: (id: string) => Promise<boolean>;
+  onDelete: (id: string, imageUrl?: string | null) => Promise<boolean>;
 }
 
 const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
@@ -173,19 +174,21 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
     try {
       setLoading(true);
       let finalImageUrl = visit.image_url;
+      const oldImageUrl = visit.image_url; // 교체 전 URL 보존
+
       if (selectedFile) {
         const options = {
           maxSizeMB: 0.3,
           maxWidthOrHeight: 1024,
           useWebWorker: true,
-          initialQuality: 0.7,
         };
         const compressedFile = await imageCompression(selectedFile, options);
-        const fileExt = selectedFile.name.split(".").pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        // WebP 변환 (quality 0.8)
+        const webpBlob = await convertToWebP(compressedFile, 0.8);
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.webp`;
         const { error: uploadError } = await supabase.storage
           .from("visit-photos")
-          .upload(fileName, compressedFile);
+          .upload(fileName, webpBlob, { contentType: 'image/webp' });
         if (uploadError) throw uploadError;
         const {
           data: { publicUrl },
@@ -199,6 +202,25 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
         sub_region: editSubRegion,
       });
       if (success) {
+        // 새 사진으로 교체됐으면 이전 Storage 파일 삭제 (visit-photos, diary-images 모두 대응)
+        if (selectedFile && oldImageUrl) {
+          try {
+            let bucket: string | null = null;
+            let oldFileName: string | null = null;
+            if (oldImageUrl.includes("/visit-photos/")) {
+              bucket = "visit-photos";
+              oldFileName = decodeURIComponent(oldImageUrl.split("/visit-photos/")[1].split("?")[0]);
+            } else if (oldImageUrl.includes("/diary-images/")) {
+              bucket = "diary-images";
+              oldFileName = decodeURIComponent(oldImageUrl.split("/diary-images/")[1].split("?")[0]);
+            }
+            if (bucket && oldFileName) {
+              await supabase.storage.from(bucket).remove([oldFileName]);
+            }
+          } catch (deleteErr) {
+            console.error("이전 방문 사진 삭제 실패 (무시됨):", deleteErr);
+          }
+        }
         setIsFullEditing(false);
         setSelectedFile(null);
       }
@@ -219,7 +241,7 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
     if (!confirm("삭제하시겠습니까?")) return;
     try {
       setLoading(true);
-      const success = await onDelete(visit.id);
+      const success = await onDelete(visit.id, visit.image_url);
       if (success) handleCloseInternal();
     } catch (err) {
       alert("삭제 실패");
@@ -227,6 +249,8 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
       setLoading(false);
     }
   };
+
+  const isOwner = visit.writer_id == null || visit.writer_id === profile?.id;
 
   const modalVariants = {
     initial: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
@@ -272,7 +296,7 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
             </p>
           </div>
           <div className="flex items-center gap-1">
-            {!isFullEditing && (
+            {!isFullEditing && isOwner && (
               <div className="relative z-20">
                 <button
                   onClick={(e) => {

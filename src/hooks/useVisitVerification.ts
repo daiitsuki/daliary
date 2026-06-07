@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import imageCompression from 'browser-image-compression';
+import { convertToWebP } from '../utils/imageUtils';
 
 interface VerifyVisitParams {
   placeId: string;
@@ -16,27 +17,28 @@ export const useVisitVerification = () => {
 
   const uploadImage = async (file: File) => {
     try {
+      // 1단계: 리사이즈 / 용량 압축
       const options = {
         maxSizeMB: 0.3,
         maxWidthOrHeight: 1024,
         useWebWorker: true,
-        initialQuality: 0.7,
       };
       const compressedFile = await imageCompression(file, options);
-      
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `${fileName}`;
+
+      // 2단계: WebP 변환 (quality 0.8)
+      const webpBlob = await convertToWebP(compressedFile, 0.8);
+
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.webp`;
 
       const { error: uploadError } = await supabase.storage
         .from('visit-photos')
-        .upload(filePath, compressedFile);
+        .upload(fileName, webpBlob, { contentType: 'image/webp' });
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from('visit-photos')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
       return publicUrl;
     } catch (err: any) {

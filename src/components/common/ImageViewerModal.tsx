@@ -130,7 +130,7 @@ const handleDownload = async (imageUrl: string, title?: string) => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${title || 'image'}_${Date.now()}.jpg`;
+    link.download = `${title || 'image'}_${Date.now()}.webp`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

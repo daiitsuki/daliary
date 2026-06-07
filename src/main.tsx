@@ -3,6 +3,12 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
+// Zoom level 초기화
+const savedZoom = localStorage.getItem('appZoomLevel');
+if (savedZoom) {
+  (document.body.style as any).zoom = savedZoom;
+}
+
 // 카카오맵 명시적 로드 (autoload=false 대응)
 if (window.kakao && window.kakao.maps) {
   window.kakao.maps.load(() => {

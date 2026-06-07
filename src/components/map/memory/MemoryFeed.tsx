@@ -109,8 +109,8 @@ export default function MemoryFeed() {
   );
 
   const handleDelete = useCallback(
-    async (visitId: string) => {
-      const success = await deleteVisit(visitId);
+    async (visitId: string, imageUrl?: string | null) => {
+      const success = await deleteVisit(visitId, imageUrl);
       if (success) {
         queryClient.invalidateQueries({ queryKey: ["memory_feed"] });
         queryClient.invalidateQueries({ queryKey: ["places_data"] });

@@ -13,6 +13,7 @@ interface TimetableSettingsModalProps {
   showTime: boolean;
   showPlace: boolean;
   showMemo: boolean;
+  fitToScreen: boolean;
   onSave: (
     startHour: number,
     endHour: number,
@@ -22,6 +23,7 @@ interface TimetableSettingsModalProps {
     showTime: boolean,
     showPlace: boolean,
     showMemo: boolean,
+    fitToScreen: boolean
   ) => void;
   onResetAll: () => Promise<void>;
 }
@@ -39,6 +41,7 @@ const TimetableSettingsModal = ({
   showTime,
   showPlace,
   showMemo,
+  fitToScreen,
   onSave,
   onResetAll,
 }: TimetableSettingsModalProps) => {
@@ -51,6 +54,7 @@ const TimetableSettingsModal = ({
   const [localShowTime, setLocalShowTime] = useState(showTime);
   const [localShowPlace, setLocalShowPlace] = useState(showPlace);
   const [localShowMemo, setLocalShowMemo] = useState(showMemo);
+  const [localFitToScreen, setLocalFitToScreen] = useState(fitToScreen);
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -65,6 +69,7 @@ const TimetableSettingsModal = ({
       setLocalShowTime(showTime);
       setLocalShowPlace(showPlace);
       setLocalShowMemo(showMemo);
+      setLocalFitToScreen(fitToScreen);
     }
   }, [
     isOpen,
@@ -76,6 +81,7 @@ const TimetableSettingsModal = ({
     showTime,
     showPlace,
     showMemo,
+    fitToScreen,
   ]);
 
   const toggleDay = (d: number) => {
@@ -121,7 +127,7 @@ const TimetableSettingsModal = ({
       return;
     }
     if (localEnd - localStart < 2) {
-      alert("최소 2시간 범위가 필요합니다.");
+      alert("최소 2시간 이상 표시해야 합니다.");
       return;
     }
     onSave(
@@ -133,6 +139,7 @@ const TimetableSettingsModal = ({
       localShowTime,
       localShowPlace,
       localShowMemo,
+      localFitToScreen,
     );
     onClose();
   };
@@ -160,7 +167,7 @@ const TimetableSettingsModal = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center p-0 md:p-6">
+        <div className="fixed inset-0 z-110 flex items-end md:items-center justify-center p-0 md:p-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -370,6 +377,28 @@ const TimetableSettingsModal = ({
                   >
                     <span>메모</span>
                   </button>
+                </div>
+
+                <div className="pt-4 border-t border-gray-50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">한눈에 보기</h4>
+                      <p className="text-[9px] font-bold text-gray-400 px-1 mt-0.5">화면 너비에 맞춰 시간표를 한 번에 보여줍니다</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLocalFitToScreen((prev) => !prev)}
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all active:scale-90 ${
+                        localFitToScreen ? "bg-emerald-400" : "bg-gray-200"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${
+                          localFitToScreen ? "translate-x-5.5" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
 

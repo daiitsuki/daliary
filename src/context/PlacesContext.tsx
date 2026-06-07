@@ -10,6 +10,7 @@ export interface VisitWithPlace {
   image_url: string | null;
   region: string;
   sub_region: string | null;
+  writer_id: string | null;
   places: { name: string; address: string; } | null;
   visit_comments?: { count: number }[];
 }
@@ -42,7 +43,7 @@ interface PlacesContextType {
       sub_region?: string | null;
     }
   ) => Promise<boolean>;
-  deleteVisit: (visitId: string) => Promise<boolean>;
+  deleteVisit: (visitId: string, imageUrl?: string | null) => Promise<boolean>;
 }
 
 const PlacesContext = createContext<PlacesContextType | undefined>(undefined);
@@ -114,12 +115,34 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   });
 
   const deleteVisitMutation = useMutation({
-    mutationFn: async (visitId: string) => {
+    mutationFn: async ({ visitId, imageUrl }: { visitId: string; imageUrl?: string | null }) => {
       const { error } = await supabase
         .from('visits')
         .delete()
         .eq('id', visitId);
       if (error) throw error;
+
+      // DB 삭제 성공 후 Storage 파일 삭제
+      if (imageUrl) {
+        try {
+          let bucket: string | null = null;
+          let filePath: string | null = null;
+
+          if (imageUrl.includes('/visit-photos/')) {
+            bucket = 'visit-photos';
+            filePath = decodeURIComponent(imageUrl.split('/visit-photos/')[1].split('?')[0]);
+          } else if (imageUrl.includes('/diary-images/')) {
+            bucket = 'diary-images';
+            filePath = decodeURIComponent(imageUrl.split('/diary-images/')[1].split('?')[0]);
+          }
+
+          if (bucket && filePath) {
+            await supabase.storage.from(bucket).remove([filePath]);
+          }
+        } catch (deleteErr) {
+          console.error('방문 사진 Storage 삭제 실패 (무시됨):', deleteErr);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['places_data', couple?.id] });
@@ -151,9 +174,9 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           return true;
         } catch { return false; }
       },
-      deleteVisit: async (visitId) => {
+      deleteVisit: async (visitId, imageUrl) => {
         try {
-          await deleteVisitMutation.mutateAsync(visitId);
+          await deleteVisitMutation.mutateAsync({ visitId, imageUrl });
           return true;
         } catch { return false; }
       }

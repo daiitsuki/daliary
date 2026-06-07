@@ -14,6 +14,7 @@ import DeveloperModeSection from "../components/settings/DeveloperModeSection";
 import AppInfoSection from "../components/settings/AppInfoSection";
 import ChangelogModal from "../components/common/ChangelogModal";
 import CoupleSettingsSection from "../components/settings/CoupleSettingsSection";
+import DisplaySettingsSection from "../components/settings/DisplaySettingsSection";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -169,6 +170,10 @@ export default function Settings() {
 
         <motion.div variants={itemVariants}>
           <NotificationSettingsSection userId={profile?.id || null} />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <DisplaySettingsSection />
         </motion.div>
 
         <motion.div variants={itemVariants}>

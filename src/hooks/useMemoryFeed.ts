@@ -9,6 +9,7 @@ export interface MemoryFeedItem {
   comment: string;
   region: string;
   sub_region: string | null;
+  writer_id: string | null;
   place: {
     id: string;
     name: string;
@@ -71,6 +72,7 @@ export const useMemoryFeed = (region?: string | null, subRegion?: string | null)
           comment,
           region,
           sub_region,
+          writer_id,
           place:places!inner(id, name, address, couple_id),
           writer:profiles(id, nickname, avatar_url)
         `)
@@ -150,6 +152,7 @@ export const useVisitById = (visitId: string | null) => {
           comment,
           region,
           sub_region,
+          writer_id,
           place:places!inner(id, name, address, couple_id),
           writer:profiles(id, nickname, avatar_url)
         `)

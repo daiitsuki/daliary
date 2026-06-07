@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useCouple } from "../hooks/useCouple";
 import imageCompression from "browser-image-compression";
+import { convertToWebP } from "../utils/imageUtils";
 import { Loader2 } from "lucide-react";
 import { Profile as ProfileType } from "../types";
 import { motion, Variants, AnimatePresence } from "framer-motion";
@@ -88,17 +89,20 @@ export default function Profile() {
 
     try {
       // Blob을 File 객체로 변환
-      const file = new File([croppedBlob], "avatar.jpg", {
-        type: "image/jpeg",
+      const file = new File([croppedBlob], "avatar.webp", {
+        type: "image/webp",
       });
 
-      // 압축
+      // 압축 (리사이즈, WebP 유지)
       const options = {
         maxSizeMB: 0.5,
         maxWidthOrHeight: 500,
         useWebWorker: true,
+        fileType: 'image/webp' as const,
       };
       const compressedFile = await imageCompression(file, options);
+      // WebP 변환 (quality 0.8)
+      const webpBlob = await convertToWebP(compressedFile, 0.8);
 
       // 기존 아바타 삭제 로직 추가
       if (profile.avatar_url) {
@@ -114,12 +118,11 @@ export default function Profile() {
       }
 
       // 업로드
-      const fileExt = "jpg";
-      const fileName = `avatars/${profile.id}_${Date.now()}.${fileExt}`;
+      const fileName = `avatars/${profile.id}_${Date.now()}.webp`;
 
       const { error: uploadError } = await supabase.storage
         .from("diary-images")
-        .upload(fileName, compressedFile, { upsert: true });
+        .upload(fileName, webpBlob, { contentType: 'image/webp', upsert: true });
 
       if (uploadError) throw uploadError;
 

@@ -23,6 +23,7 @@ interface TimetableGridProps {
   showTime?: boolean;
   showPlace?: boolean;
   showMemo?: boolean;
+  fitToScreen?: boolean;
 }
 
 // ──────────────────────────────────────────────
@@ -167,6 +168,7 @@ const TimetableGrid = ({
   showTime = true,
   showPlace = true,
   showMemo = false,
+  fitToScreen = false,
 }: TimetableGridProps) => {
   // 단일 스크롤 컨테이너 ref
   const containerRef = useRef<HTMLDivElement>(null);
@@ -340,8 +342,8 @@ const TimetableGrid = ({
           - 코너 셀: sticky top-0 left-0, z-index 최상위
         ─────────────────────────────────────────────────
       */}
-      <div ref={containerRef} className="flex-1 overflow-auto custom-scrollbar">
-        <div style={{ minWidth: 48 + activeDays.length * 80 }}>
+      <div ref={containerRef} className={`flex-1 ${fitToScreen ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto'} custom-scrollbar`}>
+        <div style={fitToScreen ? { width: "100%", minWidth: "100%" } : { minWidth: 48 + activeDays.length * 80 }}>
           {/* ── 요일 헤더 (sticky top) ── */}
           <div className="sticky top-0 z-40 flex bg-white border-b border-gray-50">
             {/* 좌상단 코너 — sticky left AND sticky top */}
@@ -351,7 +353,7 @@ const TimetableGrid = ({
               <div
                 key={dayIdx}
                 className="flex-1 py-2 text-center border-r border-gray-50 last:border-r-0"
-                style={{ minWidth: 80 }}
+                style={fitToScreen ? {} : { minWidth: 80 }}
               >
                 <span
                   className={`text-xs font-black ${
@@ -417,7 +419,7 @@ const TimetableGrid = ({
                         ? "bg-gray-50/50"
                         : ""
                   }`}
-                  style={{ minWidth: 80 }}
+                  style={fitToScreen ? {} : { minWidth: 80 }}
                   onMouseEnter={() => setHoveredDay(dayIdx)}
                   onMouseLeave={() => setHoveredDay(null)}
                   onClick={(e) => {

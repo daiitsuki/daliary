@@ -18,6 +18,7 @@ const STORAGE_KEY_VISIBLE_DAYS = "timetable_visible_days";
 const STORAGE_KEY_SHOW_TIME = "timetable_show_time";
 const STORAGE_KEY_SHOW_PLACE = "timetable_show_place";
 const STORAGE_KEY_SHOW_MEMO = "timetable_show_memo";
+const STORAGE_KEY_FIT_TO_SCREEN = "timetable_fit_to_screen";
 
 const TimetableView = () => {
   const { myBlocks, partnerBlocks, addBlock, updateBlock, deleteBlock, deleteAllBlocks, loading } = useTimetable();
@@ -67,6 +68,10 @@ const TimetableView = () => {
   });
   const [showMemo, setShowMemo] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEY_SHOW_MEMO);
+    return stored ? JSON.parse(stored) : false;
+  });
+  const [fitToScreen, setFitToScreen] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY_FIT_TO_SCREEN);
     return stored ? JSON.parse(stored) : false;
   });
 
@@ -141,7 +146,8 @@ const TimetableView = () => {
     vd: number[],
     sTime: boolean,
     sPlace: boolean,
-    sMemo: boolean
+    sMemo: boolean,
+    sFitToScreen: boolean
   ) => {
     setStartHour(start);
     setEndHour(end);
@@ -151,6 +157,7 @@ const TimetableView = () => {
     setShowTime(sTime);
     setShowPlace(sPlace);
     setShowMemo(sMemo);
+    setFitToScreen(sFitToScreen);
     localStorage.setItem(STORAGE_KEY_START, start.toString());
     localStorage.setItem(STORAGE_KEY_END, end.toString());
     localStorage.setItem(STORAGE_KEY_COMPRESSION, mode);
@@ -159,6 +166,7 @@ const TimetableView = () => {
     localStorage.setItem(STORAGE_KEY_SHOW_TIME, JSON.stringify(sTime));
     localStorage.setItem(STORAGE_KEY_SHOW_PLACE, JSON.stringify(sPlace));
     localStorage.setItem(STORAGE_KEY_SHOW_MEMO, JSON.stringify(sMemo));
+    localStorage.setItem(STORAGE_KEY_FIT_TO_SCREEN, JSON.stringify(sFitToScreen));
   };
 
   const handleExport = async () => {
@@ -302,6 +310,7 @@ const TimetableView = () => {
           showTime={showTime}
           showPlace={showPlace}
           showMemo={showMemo}
+          fitToScreen={fitToScreen}
         />
       </div>
 
@@ -333,6 +342,7 @@ const TimetableView = () => {
         showTime={showTime}
         showPlace={showPlace}
         showMemo={showMemo}
+        fitToScreen={fitToScreen}
         onSave={handleSettingsSave}
         onResetAll={async () => {
           try {
