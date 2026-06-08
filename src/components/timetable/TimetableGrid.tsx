@@ -1,6 +1,6 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, MapPin, Clock, AlignLeft } from "lucide-react";
+import { Plus, MapPin, Clock, AlignLeft, EyeOff } from "lucide-react";
 import { TimetableBlock } from "../../hooks/useTimetable";
 
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -252,9 +252,11 @@ const TimetableGrid = ({
 
   const hiddenBlocksCount = useMemo(() => {
     return blocks.filter(
-      (b) => !getBlockStyle(b, startHour, endHour, getMinuteY).visible,
+      (b) =>
+        !visibleDays.includes(b.day_of_week) ||
+        !getBlockStyle(b, startHour, endHour, getMinuteY).visible,
     ).length;
-  }, [blocks, startHour, endHour, getMinuteY]);
+  }, [blocks, startHour, endHour, getMinuteY, visibleDays]);
 
   const hourCount = endHour - startHour;
   const hours = useMemo(
@@ -323,11 +325,11 @@ const TimetableGrid = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-16 left-1/2 -translate-x-1/2 z-40 export-hide"
+            className="absolute top-12 left-1/2 -translate-x-1/2 z-40 export-hide"
           >
-            <div className="bg-gray-800/85 text-white text-[10px] sm:text-xs font-bold px-3.5 py-2 rounded-full backdrop-blur-sm pointer-events-none shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center gap-1.5 whitespace-nowrap">
-              <span>👀</span>
-              설정된 시간 외에 {hiddenBlocksCount}개의 일정이 숨겨져 있어요
+            <div className="bg-gray-800/85 text-white text-[10px] sm:text-xs font-semibold px-3.5 py-2 rounded-full backdrop-blur-sm pointer-events-none shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center gap-1.5 whitespace-nowrap">
+              <EyeOff size={12} strokeWidth={3} />
+              {hiddenBlocksCount}개의 일정이 숨겨져 있어요
             </div>
           </motion.div>
         )}
@@ -342,17 +344,26 @@ const TimetableGrid = ({
           - 코너 셀: sticky top-0 left-0, z-index 최상위
         ─────────────────────────────────────────────────
       */}
-      <div ref={containerRef} className={`flex-1 ${fitToScreen ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto'} custom-scrollbar`}>
-        <div style={fitToScreen ? { width: "100%", minWidth: "100%" } : { minWidth: 48 + activeDays.length * 80 }}>
+      <div
+        ref={containerRef}
+        className={`flex-1 ${fitToScreen ? "overflow-y-auto overflow-x-hidden" : "overflow-auto"} custom-scrollbar`}
+      >
+        <div
+          style={
+            fitToScreen
+              ? { width: "100%", minWidth: "100%" }
+              : { minWidth: 48 + activeDays.length * 80 }
+          }
+        >
           {/* ── 요일 헤더 (sticky top) ── */}
-          <div className="sticky top-0 z-40 flex bg-white border-b border-gray-50">
+          <div className="sticky top-0 z-50 flex bg-white border-b border-gray-50">
             {/* 좌상단 코너 — sticky left AND sticky top */}
             <div className="w-12 shrink-0 sticky left-0 z-50 bg-white border-r border-gray-50" />
 
             {activeDays.map((dayIdx) => (
               <div
                 key={dayIdx}
-                className="flex-1 py-2 text-center border-r border-gray-50 last:border-r-0"
+                className="flex-1 py-1 text-center border-r border-gray-50 last:border-r-0"
                 style={fitToScreen ? {} : { minWidth: 80 }}
               >
                 <span
@@ -362,14 +373,14 @@ const TimetableGrid = ({
                       : dayIdx === 0
                         ? "text-red-400"
                         : dayIdx === 6
-                          ? "text-blue-400"
-                          : "text-gray-400"
+                          ? "text-blue-500"
+                          : "text-gray-500"
                   }`}
                 >
                   {DAYS[dayIdx]}
                 </span>
                 {dayIdx === todayDow && (
-                  <div className="w-1 h-1 rounded-full bg-rose-400 mx-auto mt-1" />
+                  <div className="w-1 h-1 rounded-full bg-rose-400 mx-auto " />
                 )}
               </div>
             ))}
@@ -378,7 +389,7 @@ const TimetableGrid = ({
           {/* ── 그리드 본체 ── */}
           <div className="flex" style={{ height: totalHeight }}>
             {/* 시간 레이블 열 (sticky left) */}
-            <div className="w-12 shrink-0 sticky left-0 z-40 bg-white border-r border-gray-50">
+            <div className="w-8 shrink-0 sticky left-0 z-40 bg-white border-r border-gray-50">
               <div className="relative h-full">
                 {hours.map((h) => (
                   <div
@@ -394,7 +405,7 @@ const TimetableGrid = ({
                             : "translateY(-50%)",
                     }}
                   >
-                    <span className="text-[9px] font-bold text-gray-400 tabular-nums">
+                    <span className="text-[9px] font-bold text-gray-500 tabular-nums">
                       {String(h).padStart(2, "0")}
                     </span>
                   </div>
@@ -521,7 +532,9 @@ const TimetableGrid = ({
                               {showPlace && block.place_name && (
                                 <p className="text-[9px] font-bold text-gray-600 flex items-center gap-0.5 mt-0.5 overflow-hidden">
                                   <MapPin size={8} className="shrink-0" />
-                                  <span className="truncate">{block.place_name}</span>
+                                  <span className="truncate">
+                                    {block.place_name}
+                                  </span>
                                 </p>
                               )}
                               {showMemo && block.memo && (
