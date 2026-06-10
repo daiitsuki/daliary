@@ -358,7 +358,7 @@ const TimetableGrid = ({
           {/* ── 요일 헤더 (sticky top) ── */}
           <div className="sticky top-0 z-50 flex bg-white border-b border-gray-50">
             {/* 좌상단 코너 — sticky left AND sticky top */}
-            <div className="w-12 shrink-0 sticky left-0 z-50 bg-white border-r border-gray-50" />
+            <div className="w-8 shrink-0 sticky left-0 z-50 bg-white border-r border-gray-50" />
 
             {activeDays.map((dayIdx) => (
               <div

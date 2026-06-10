@@ -279,7 +279,7 @@ const Calendar = () => {
   return (
     <div className="flex-1 overflow-hidden custom-scrollbar bg-gray-50/30 pb-24 lg:pb-0 flex flex-col lg:h-full">
       {/* 탭 전환 UI */}
-      <div className="flex justify-center shrink-0 px-4 pt-5 pb-3 bg-white sticky top-0 z-30 backdrop-blur-md">
+      <div className="flex justify-center shrink-0 px-4 pt-5 pb-0 bg-white sticky top-0 z-30 backdrop-blur-md">
         <div className="flex items-center gap-1 bg-white border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)] rounded-full p-1.5 w-full max-w-[280px]">
           <button
             onClick={() => handleTabChange("calendar")}
