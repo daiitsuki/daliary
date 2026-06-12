@@ -227,7 +227,7 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
           variants={itemVariants}
           initial="hidden"
           animate="visible"
-          className="px-4 py-4 flex gap-2 overflow-x-auto no-scrollbar scroll-smooth"
+          className="px-4 py-4 pt-2 flex gap-2 overflow-x-auto no-scrollbar scroll-smooth"
         >
           {categoriesWithCounts.map((cat) => {
             const isActive = selectedCategory === cat.name;

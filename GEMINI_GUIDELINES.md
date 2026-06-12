@@ -1,7 +1,5 @@
 # Daliary Core Principles
 
-> **Critical**: Refer to `supabase/consolidated_schema.sql` for the authoritative database schema.
-
 ## 1. Architecture
 - **Pages**: `src/pages/` (Containers).
 - **Components**: `src/components/` (Presenters, domain-specific).

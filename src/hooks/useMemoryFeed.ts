@@ -51,18 +51,17 @@ const formatVisitItem = (v: any, likesData: any[], commentsData: any[], myProfil
   };
 };
 
-export const useMemoryFeed = (region?: string | null, subRegion?: string | null) => {
+export const useMemoryFeed = (region?: string | null, subRegion?: string | null, likedOnly?: boolean) => {
   const { couple, myProfile } = useHomeData();
   const queryClient = useQueryClient();
 
   return useInfiniteQuery({
-    queryKey: ['memory_feed', couple?.id, region, subRegion],
+    queryKey: ['memory_feed', couple?.id, region, subRegion, likedOnly],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       const currentOffset = pageParam as number;
       if (!couple?.id || !myProfile?.id) return { data: [], nextCursor: null };
 
-      // 1. Fetch visits with optional region/subRegion filters
       let query = supabase
         .from('visits')
         .select(`
@@ -84,6 +83,21 @@ export const useMemoryFeed = (region?: string | null, subRegion?: string | null)
       }
       if (subRegion) {
         query = query.eq('sub_region', subRegion);
+      }
+      
+      if (likedOnly && myProfile?.id) {
+        const { data: likedVisits } = await supabase
+          .from('visit_likes')
+          .select('visit_id')
+          .eq('user_id', myProfile.id);
+          
+        const likedVisitIds = likedVisits?.map(l => l.visit_id) || [];
+        
+        if (likedVisitIds.length === 0) {
+          return { data: [], nextCursor: null };
+        }
+        
+        query = query.in('id', likedVisitIds);
       }
 
       const { data, error } = await query

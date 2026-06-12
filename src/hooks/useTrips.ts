@@ -94,6 +94,42 @@ export const useTrips = () => {
 
 export const useTripPlans = (tripId?: string) => {
   const queryClient = useQueryClient();
+  const { profile, couple } = useCouple();
+
+  const notifyScheduleChange = async () => {
+    if (!couple?.id || !profile?.id || !tripId) return;
+    
+    const lastNotify = localStorage.getItem(`daliary_last_trip_notify_${tripId}`);
+    const now = Date.now();
+    const COOLDOWN = 30 * 60 * 1000; // 30 minutes
+    
+    if (lastNotify && now - parseInt(lastNotify, 10) < COOLDOWN) {
+      return; // Still in cooldown
+    }
+    
+    try {
+      const { data: partner } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('couple_id', couple.id)
+        .neq('id', profile.id)
+        .maybeSingle();
+        
+      if (partner?.id) {
+        await supabase.from('notifications').insert({
+          user_id: partner.id,
+          couple_id: couple.id,
+          type: 'trip_schedule_change',
+          title: '여행 세부일정 업데이트',
+          content: '상대방이 여행 세부일정을 수정했어요!',
+          metadata: { trip_id: tripId, url: `/places?tab=plans&tripId=${tripId}` }
+        });
+        localStorage.setItem(`daliary_last_trip_notify_${tripId}`, now.toString());
+      }
+    } catch (err) {
+      console.error('Failed to notify trip schedule change:', err);
+    }
+  };
 
   const { data: plans, isLoading: isPlansLoading } = useQuery({
     queryKey: ['trip_plans_data', tripId],
@@ -126,6 +162,7 @@ export const useTripPlans = (tripId?: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trip_plans_data', tripId] });
+      notifyScheduleChange();
     },
   });
 
@@ -143,6 +180,7 @@ export const useTripPlans = (tripId?: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trip_plans_data', tripId] });
+      notifyScheduleChange();
     },
   });
 
@@ -157,6 +195,7 @@ export const useTripPlans = (tripId?: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trip_plans_data', tripId] });
+      notifyScheduleChange();
     },
   });
 

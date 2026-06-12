@@ -39,14 +39,13 @@ const DeveloperModeSection: React.FC = () => {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center gap-2 px-1">
-        <div className="w-1.5 h-5 bg-gray-400 rounded-full" />
-        <h2 className="text-lg sm:text-xl font-black text-gray-800 tracking-tight">
+      <div className="px-2 mb-3">
+        <h2 className="text-lg font-bold text-gray-800 tracking-tight">
           개발자 모드
         </h2>
       </div>
 
-      <div className="bg-white p-5 sm:p-6 rounded-[32px] border border-gray-100/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+      <div className="bg-white p-5 sm:p-6 rounded-[28px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-rose-100/30">
         {/* Test Notification */}
         <div className="flex items-center justify-between group">
           <div className="flex items-center gap-4">
@@ -54,8 +53,8 @@ const DeveloperModeSection: React.FC = () => {
               <Terminal size={22} className="text-gray-400" />
             </div>
             <div>
-              <h3 className="text-[15px] font-black text-gray-700">나에게 알림 보내기</h3>
-              <p className="text-[10px] font-bold text-gray-400">
+              <h3 className="text-[15px] font-semibold text-gray-800 tracking-tight">나에게 알림 보내기</h3>
+              <p className="text-[12px] font-medium text-gray-400 leading-snug">
                 테스트 푸시 알림을 즉시 발송합니다
               </p>
             </div>

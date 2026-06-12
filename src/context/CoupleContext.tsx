@@ -179,6 +179,9 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   };
 
   const disconnect = async () => {
+    // async 작업 전에 profile.id를 미리 캡처 (RPC 완료 후 Realtime으로 profile이 변경될 수 있음)
+    const currentProfileId = profile?.id;
+
     try {
       const { error } = await supabase.rpc('delete_couple_and_all_data');
       if (error) throw error;
@@ -197,9 +200,12 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       
       coupleRelatedKeys.forEach(key => localStorage.removeItem(key));
       
-      // Clear dynamic keys (like level cache)
-      if (profile?.id) {
-        localStorage.removeItem(`couple_points_level_cache_${profile.id}`);
+      // Clear dynamic keys (like level cache and push intent)
+      // 커플 해제 시 push intent도 초기화 → 재연결 후 사용자가 직접 알림을 다시 설정하도록
+      if (currentProfileId) {
+        localStorage.removeItem(`couple_points_level_cache_${currentProfileId}`);
+        localStorage.removeItem(`daliary_push_intent_${currentProfileId}`);
+        localStorage.removeItem(`daliary_push_retry_until_${currentProfileId}`);
       }
 
       // 2. Reset query state immediately to reflect disconnected state in UI

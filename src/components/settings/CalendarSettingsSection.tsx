@@ -36,16 +36,15 @@ export default function CalendarSettingsSection() {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center gap-2 px-1">
-        <div className="w-1 h-4 bg-rose-400/80 rounded-full" />
-        <h2 className="text-base sm:text-lg font-black text-gray-800 tracking-tight">
+      <div className="px-2 mb-3">
+        <h2 className="text-lg font-bold text-gray-800 tracking-tight">
           캘린더 설정
         </h2>
       </div>
 
-      <div className="bg-white rounded-[28px] sm:rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 overflow-hidden divide-y divide-gray-50/50">
+      <div className="bg-white rounded-[28px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-rose-100/30 overflow-hidden divide-y divide-gray-50/50">
         {/* Toggle Controls */}
-        <div className="p-4 sm:p-5 space-y-5">
+        <div className="p-5 sm:p-6 space-y-5">
           {/* Anniversary Toggle */}
           <div className="flex items-center justify-between group">
             <div className="flex items-center space-x-3.5">
@@ -53,23 +52,21 @@ export default function CalendarSettingsSection() {
                 <Heart size={18} className="text-rose-400" />
               </div>
               <div>
-                <h3 className="text-[14px] font-black text-gray-700">
+                <h3 className="text-[15px] font-semibold text-gray-800 tracking-tight">
                   기념일 표시
                 </h3>
-                <p className="text-[9px] font-bold text-gray-400">
-                  우리의 소중한 날들을 보여줍니다
-                </p>
+               
               </div>
             </div>
             <button
               onClick={() => toggleAnniversaries(!showAnniversaries)}
-              className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all active:scale-90 ${
+              className={`relative inline-block h-[20px] w-[40px] shrink-0 rounded-full transition-all active:scale-90 ${
                 showAnniversaries ? "bg-rose-400" : "bg-gray-200"
               }`}
             >
               <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${
-                  showAnniversaries ? "translate-x-5.5" : "translate-x-1"
+                className={`absolute left-[3px] top-[3px] h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-transform duration-200 ease-out ${
+                  showAnniversaries ? "translate-x-[20px]" : "translate-x-0"
                 }`}
               />
             </button>
@@ -82,23 +79,21 @@ export default function CalendarSettingsSection() {
                 <CalendarIcon size={18} className="text-rose-400" />
               </div>
               <div>
-                <h3 className="text-[14px] font-black text-gray-700">
+                <h3 className="text-[15px] font-semibold text-gray-800 tracking-tight">
                   공휴일 표시
                 </h3>
-                <p className="text-[9px] font-bold text-gray-400">
-                  대한민국의 공휴일을 보여줍니다
-                </p>
+               
               </div>
             </div>
             <button
               onClick={() => toggleHolidays(!showHolidays)}
-              className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all active:scale-90 ${
+              className={`relative inline-block h-[20px] w-[40px] shrink-0 rounded-full transition-all active:scale-90 ${
                 showHolidays ? "bg-rose-400" : "bg-gray-200"
               }`}
             >
               <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${
-                  showHolidays ? "translate-x-5.5" : "translate-x-1"
+                className={`absolute left-[3px] top-[3px] h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-transform duration-200 ease-out ${
+                  showHolidays ? "translate-x-[20px]" : "translate-x-0"
                 }`}
               />
             </button>
@@ -111,23 +106,21 @@ export default function CalendarSettingsSection() {
                 <Plane size={18} className="text-rose-400" />
               </div>
               <div>
-                <h3 className="text-[14px] font-black text-gray-700">
+                <h3 className="text-[15px] font-semibold text-gray-800 tracking-tight">
                   여행 계획 표시
                 </h3>
-                <p className="text-[9px] font-bold text-gray-400">
-                  우리의 여행 계획을 캘린더에 연동합니다
-                </p>
+               
               </div>
             </div>
             <button
               onClick={() => toggleSyncTrips(!syncTrips)}
-              className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all active:scale-90 ${
+              className={`relative inline-block h-[20px] w-[40px] shrink-0 rounded-full transition-all active:scale-90 ${
                 syncTrips ? "bg-rose-400" : "bg-gray-200"
               }`}
             >
               <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${
-                  syncTrips ? "translate-x-5.5" : "translate-x-1"
+                className={`absolute left-[3px] top-[3px] h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-transform duration-200 ease-out ${
+                  syncTrips ? "translate-x-[20px]" : "translate-x-0"
                 }`}
               />
             </button>
@@ -135,7 +128,7 @@ export default function CalendarSettingsSection() {
         </div>
 
         {/* Update Button Section */}
-        <div className="p-4 sm:p-5">
+        <div className="p-5 sm:p-6">
           <button
             onClick={refreshHolidays}
             disabled={updating}
@@ -150,10 +143,10 @@ export default function CalendarSettingsSection() {
                 )}
               </div>
               <div>
-                <h3 className="text-[14px] font-black text-gray-700">
+                <h3 className="text-[15px] font-semibold text-gray-800 tracking-tight">
                   공휴일 정보 업데이트
                 </h3>
-                <p className="text-[9px] font-bold text-gray-400">
+                <p className="text-[12px] font-medium text-gray-400 leading-snug">
                   {lastUpdated
                     ? `최근: ${formatDate(lastUpdated)}`
                     : "최신 정보를 받아옵니다."}

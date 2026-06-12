@@ -42,8 +42,22 @@ self.addEventListener('push', function(event) {
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-  const urlToOpen = new URL(event.notification.data?.url || '/', self.location.origin).href;
-  
+
+  // [S2] Open Redirect 방지: 알림 데이터의 url이 외부 도메인이면 /home으로 대체
+  // new URL(절대URL, base)는 base를 무시하므로 origin을 반드시 검증해야 함
+  let urlToOpen = self.location.origin + '/home';
+  try {
+    const rawUrl = event.notification.data?.url || '/home';
+    const parsed = new URL(rawUrl, self.location.origin);
+    if (parsed.origin === self.location.origin) {
+      urlToOpen = parsed.href; // 같은 origin일 때만 허용
+    } else {
+      console.warn('[ServiceWorker] 외부 URL 차단됨:', rawUrl, '→ /home으로 대체');
+    }
+  } catch {
+    // URL 파싱 실패 시 기본값 유지
+  }
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
       // 이미 열려있는 창이 있다면 포커스하고 해당 URL로 이동 시도

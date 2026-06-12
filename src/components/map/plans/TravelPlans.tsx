@@ -216,7 +216,7 @@ export default function TravelPlans() {
           variants={itemVariants}
           initial="hidden"
           animate="visible"
-          className="px-4 py-4 flex items-center justify-between gap-3 shrink-0"
+          className="px-4 py-4 pt-2 flex items-center justify-between gap-3 shrink-0"
         >
           <div className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth">
             {[

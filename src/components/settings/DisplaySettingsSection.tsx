@@ -20,31 +20,30 @@ export default function DisplaySettingsSection() {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center gap-2 px-1">
-        <div className="w-1 h-4 bg-rose-400/80 rounded-full" />
-        <h2 className="text-base sm:text-lg font-black text-gray-800 tracking-tight">
+      <div className="px-2 mb-3">
+        <h2 className="text-lg font-bold text-gray-800 tracking-tight">
           화면 설정
         </h2>
       </div>
 
-      <div className="bg-white rounded-[28px] sm:rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 overflow-hidden divide-y divide-gray-50/50">
-        <div className="p-4 sm:p-5 space-y-4">
+      <div className="bg-white rounded-[28px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-rose-100/30 overflow-hidden divide-y divide-gray-50/50">
+        <div className="p-5 sm:p-6 space-y-4">
           <div className="flex items-center justify-between group">
             <div className="flex items-center space-x-3.5">
               <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Monitor size={18} className="text-rose-400" />
               </div>
               <div>
-                <h3 className="text-[14px] font-black text-gray-700">
+                <h3 className="text-[15px] font-semibold text-gray-800 tracking-tight">
                   화면 확대/축소
                 </h3>
-                <p className="text-[9px] font-bold text-gray-400">
+                <p className="text-[12px] font-medium text-gray-400 leading-snug">
                   앱 전체의 화면 크기를 조절합니다
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-[14px] font-black text-rose-400 w-12 text-right">
+              <span className="text-[14px] font-bold text-rose-400 w-12 text-right">
                 {zoomLevel}%
               </span>
               <button

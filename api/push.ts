@@ -23,6 +23,21 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // [S1] Supabase webhook 호출자 인증
+  // Supabase Dashboard → Database → Webhooks → HTTP Headers에
+  // Authorization: Bearer <WEBHOOK_SECRET> 을 반드시 설정해야 합니다.
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error('[Push] WEBHOOK_SECRET 환경 변수가 설정되지 않았습니다. 요청을 거부합니다.');
+    return res.status(500).json({ error: 'Server misconfiguration: missing WEBHOOK_SECRET' });
+  }
+
+  const authHeader = req.headers['authorization'] as string | undefined;
+  if (!authHeader || authHeader !== `Bearer ${webhookSecret}`) {
+    console.warn('[Push] 인증 실패: 유효하지 않은 Authorization 헤더');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   try {
     const { record } = req.body;
 
@@ -33,7 +48,7 @@ export default async function handler(req: any, res: any) {
     // 1. 해당 유저의 알림 설정 확인
     const { data: settings } = await supabase
       .from('notification_settings')
-      .select('is_enabled, notify_question_answered, notify_question_request, notify_schedule_change, notify_place_added, notify_visit_verified, notify_level_up, notify_trip_change, notify_item_purchased, notify_game_reward')
+      .select('is_enabled, notify_communication, notify_schedule_trip, notify_visit_verified, notify_game_activity')
       .eq('user_id', record.user_id)
       .single();
 
@@ -41,9 +56,34 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ message: 'User disabled notifications' });
     }
 
-    const settingKey = `notify_${record.type}`;
-    if (settings.hasOwnProperty(settingKey) && !settings[settingKey]) {
-      return res.status(200).json({ message: `User disabled notifications for ${record.type}` });
+    // record.type을 새로운 4개의 통합 카테고리로 매핑
+    let mappedSettingKey = '';
+
+    switch (record.type) {
+      case 'question_answered':
+      case 'question_request':
+      case 'comment_added':
+      case 'profile_updated':
+        mappedSettingKey = 'notify_communication';
+        break;
+      case 'schedule_change':
+      case 'trip_change':
+      case 'place_added':
+      case 'trip_schedule_change':
+        mappedSettingKey = 'notify_schedule_trip';
+        break;
+      case 'visit_verified':
+        mappedSettingKey = 'notify_visit_verified';
+        break;
+      case 'level_up':
+      case 'item_purchased':
+      case 'game_reward':
+        mappedSettingKey = 'notify_game_activity';
+        break;
+    }
+
+    if (mappedSettingKey && settings.hasOwnProperty(mappedSettingKey) && !(settings as any)[mappedSettingKey]) {
+      return res.status(200).json({ message: `User disabled notifications for ${mappedSettingKey}` });
     }
 
     // 2. 유저의 모든 Push 구독 정보 조회

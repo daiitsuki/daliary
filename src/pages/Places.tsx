@@ -83,55 +83,39 @@ export default function Places() {
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* 상단 탭 스위처: 고정 높이 */}
-      <div className="bg-white border-b border-gray-100 shrink-0 z-30">
-        <div className="flex w-full overflow-x-auto no-scrollbar scroll-smooth">
-          <div className="flex min-w-full sm:max-w-xl sm:mx-auto">
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`flex-1 min-w-[70px] py-4 text-[10px] sm:text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
-                activeTab === 'dashboard' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
-              }`}
-            >
-              <MapIcon size={16} className="sm:w-[18px] sm:h-[18px]" />
-              여행 지도
-            </button>
-            <button
-              onClick={() => setActiveTab('memory')}
-              className={`flex-1 min-w-[70px] py-4 text-[10px] sm:text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
-                activeTab === 'memory' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
-              }`}
-            >
-              <Camera size={16} className="sm:w-[18px] sm:h-[18px]" />
-              추억 피드
-            </button>
-            <button
-              onClick={() => setActiveTab('search')}
-              className={`flex-1 min-w-[70px] py-4 text-[10px] sm:text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
-                activeTab === 'search' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
-              }`}
-            >
-              <Search size={16} className="sm:w-[18px] sm:h-[18px]" />
-              장소 찾기
-            </button>
-            <button
-              onClick={() => setActiveTab('wishlist')}
-              className={`flex-1 min-w-[70px] py-4 text-[10px] sm:text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
-                activeTab === 'wishlist' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
-              }`}
-            >
-              <Star size={16} className="sm:w-[18px] sm:h-[18px]" />
-              가고 싶은 곳
-            </button>
-            <button
-              onClick={() => setActiveTab('plans')}
-              className={`flex-1 min-w-[70px] py-4 text-[10px] sm:text-xs font-bold flex flex-col items-center gap-1 transition-colors ${
-                activeTab === 'plans' ? 'text-rose-500 border-b-2 border-rose-500' : 'text-gray-400'
-              }`}
-            >
-              <CalendarDays size={16} className="sm:w-[18px] sm:h-[18px]" />
-              여행 계획
-            </button>
-          </div>
+      <div className="bg-white shrink-0 z-30 pt-2 pb-2 px-2">
+        <div className="flex w-full sm:max-w-xl sm:mx-auto bg-gray-100/80 rounded-2xl p-1 relative">
+          {[
+            { id: 'dashboard', label: '여행 지도', icon: MapIcon },
+            { id: 'memory', label: '추억 피드', icon: Camera },
+            { id: 'search', label: '장소 찾기', icon: Search },
+            { id: 'wishlist', label: '가고 싶은 곳', icon: Star },
+            { id: 'plans', label: '여행 계획', icon: CalendarDays },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <motion.button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                whileTap={{ scale: 0.95 }}
+                className={`flex-1 relative flex flex-col items-center justify-center py-2 rounded-xl z-10 transition-colors outline-none
+                  ${isActive ? 'text-rose-500' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="placesTabPill"
+                    className="absolute inset-0 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-gray-100"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10 flex flex-col items-center gap-1">
+                  <Icon size={18} className="sm:w-[20px] sm:h-[20px]" />
+                  <span className="text-[10px] sm:text-xs font-bold leading-none">{tab.label}</span>
+                </span>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 

@@ -6,7 +6,7 @@ import {
   MemoryFeedItem,
 } from "../../../hooks/useMemoryFeed";
 import MemoryCard from "./MemoryCard";
-import { Camera, Loader2, ArrowLeft } from "lucide-react";
+import { Camera, Loader2, ArrowLeft, Heart } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import VisitDetailModal from "../dashboard/VisitDetailModal";
 import { useQueryClient } from "@tanstack/react-query";
@@ -22,6 +22,7 @@ export default function MemoryFeed() {
     null,
   );
   const hasHandledUrlVisit = useRef(false);
+  const [likedOnly, setLikedOnly] = useState(false);
 
   const visitIdFromUrl = searchParams.get("visitId");
   const regionFilter = searchParams.get("region");
@@ -31,7 +32,7 @@ export default function MemoryFeed() {
     useVisitById(visitIdFromUrl);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
-    useMemoryFeed(regionFilter, subRegionFilter);
+    useMemoryFeed(regionFilter, subRegionFilter, likedOnly);
 
   const allItems: MemoryFeedItem[] = useMemo(() => {
     return (data as any)?.pages.flatMap((page: any) => page.data) || [];
@@ -41,6 +42,13 @@ export default function MemoryFeed() {
   useEffect(() => {
     hasHandledUrlVisit.current = false;
   }, [visitIdFromUrl]);
+
+  // Reset likedOnly when entering a region filter
+  useEffect(() => {
+    if (regionFilter) {
+      setLikedOnly(false);
+    }
+  }, [regionFilter]);
 
   // Handle shared visit from URL
   useEffect(() => {
@@ -188,9 +196,26 @@ export default function MemoryFeed() {
       </AnimatePresence>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar pb-32 pt-4 px-4">
-        <div className="max-w-md mx-auto space-y-6">
-          {allItems.length === 0 && !sharedVisit ? (
-            <div className="flex flex-col items-center justify-center py-20 px-10 text-center gap-6">
+        <div className="max-w-md mx-auto">
+          {!regionFilter && (
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => setLikedOnly(!likedOnly)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  likedOnly 
+                    ? "bg-rose-50 text-rose-500 border border-rose-200 shadow-sm" 
+                    : "bg-white text-gray-400 border border-gray-200"
+                }`}
+              >
+                <Heart size={14} className={likedOnly ? "fill-rose-500" : ""} />
+                좋아요한 피드
+              </button>
+            </div>
+          )}
+          
+          <div className="space-y-6">
+            {allItems.length === 0 && !sharedVisit ? (
+              <div className="flex flex-col items-center justify-center py-20 px-10 text-center gap-6">
               <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center">
                 <Camera size={40} className="text-gray-200" />
               </div>
@@ -230,6 +255,7 @@ export default function MemoryFeed() {
               </div>
             </>
           )}
+          </div>
         </div>
       </div>
     </div>

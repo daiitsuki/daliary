@@ -145,14 +145,14 @@ export default function Settings() {
   };
 
   return (
-    <div className="h-full bg-white flex flex-col">
+    <div className="flex-1 bg-[#FDFDFE] flex flex-col h-full overflow-y-auto custom-scrollbar relative">
       <SettingsHeader onBack={() => navigate(-1)} />
 
       <motion.main
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 overflow-y-auto p-4 space-y-6 pb-24 custom-scrollbar"
+        className="w-full max-w-xl mx-auto px-6 py-6 space-y-8 pb-32 shrink-0"
       >
         <motion.div variants={itemVariants}>
           <CoupleSettingsSection
