@@ -279,30 +279,42 @@ const Calendar = () => {
   return (
     <div className="flex-1 overflow-hidden custom-scrollbar bg-gray-50/30 pb-24 lg:pb-0 flex flex-col lg:h-full">
       {/* 탭 전환 UI */}
-      <div className="flex justify-center shrink-0 px-4 pt-5 pb-0 bg-white sticky top-0 z-30 backdrop-blur-md">
-        <div className="flex items-center gap-1 bg-white border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)] rounded-full p-1.5 w-full max-w-[280px]">
-          <button
-            onClick={() => handleTabChange("calendar")}
-            className={`flex-1 flex justify-center items-center gap-1.5 py-2.5 rounded-full text-xs font-black transition-all duration-300 ${
-              activeTab === "calendar"
-                ? "bg-rose-400 text-white shadow-md shadow-rose-200"
-                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            <CalendarIcon size={14} strokeWidth={2.5} />
-            캘린더
-          </button>
-          <button
-            onClick={() => handleTabChange("timetable")}
-            className={`flex-1 flex justify-center items-center gap-1.5 py-2.5 rounded-full text-xs font-black transition-all duration-300 ${
-              activeTab === "timetable"
-                ? "bg-rose-400 text-white shadow-md shadow-rose-200"
-                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            <Clock size={14} strokeWidth={2.5} />
-            시간표
-          </button>
+      <div className="flex justify-center shrink-0 px-4 pt-4 pb-0 bg-white sticky top-0 z-30 backdrop-blur-md">
+        <div className="flex items-center w-full max-w-[280px] bg-gray-100/80 rounded-2xl p-1 relative">
+          {[
+            {
+              id: "calendar" as CalendarTab,
+              label: "캘린더",
+              icon: CalendarIcon,
+            },
+            { id: "timetable" as CalendarTab, label: "시간표", icon: Clock },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <motion.button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                whileTap={{ scale: 0.95 }}
+                className={`flex-1 relative flex items-center justify-center gap-1.5 py-2.5 rounded-xl z-10 transition-colors outline-none
+                  ${isActive ? "text-rose-500" : "text-gray-400 hover:text-gray-600"}`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="calendarTabPill"
+                    className="absolute inset-0 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-gray-100"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-1.5">
+                  <Icon size={14} strokeWidth={2.5} />
+                  <span className="text-xs font-black leading-none pt-0.5">
+                    {tab.label}
+                  </span>
+                </span>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
