@@ -19,6 +19,7 @@ const STORAGE_KEY_SHOW_TIME = "timetable_show_time";
 const STORAGE_KEY_SHOW_PLACE = "timetable_show_place";
 const STORAGE_KEY_SHOW_MEMO = "timetable_show_memo";
 const STORAGE_KEY_FIT_TO_SCREEN = "timetable_fit_to_screen";
+const STORAGE_KEY_BLOCK_HEIGHT = "timetable_block_height_mode";
 
 const TimetableView = () => {
   const { myBlocks, partnerBlocks, addBlock, updateBlock, deleteBlock, deleteAllBlocks, loading } = useTimetable();
@@ -73,6 +74,9 @@ const TimetableView = () => {
   const [fitToScreen, setFitToScreen] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEY_FIT_TO_SCREEN);
     return stored ? JSON.parse(stored) : false;
+  });
+  const [blockHeightMode, setBlockHeightMode] = useState<"narrow" | "normal" | "wide">(() => {
+    return (localStorage.getItem(STORAGE_KEY_BLOCK_HEIGHT) as any) || "normal";
   });
 
   const handleAddBlock = useCallback((dayOfWeek?: number, defaultHour?: number) => {
@@ -147,7 +151,8 @@ const TimetableView = () => {
     sTime: boolean,
     sPlace: boolean,
     sMemo: boolean,
-    sFitToScreen: boolean
+    sFitToScreen: boolean,
+    bHeightMode: "narrow" | "normal" | "wide"
   ) => {
     setStartHour(start);
     setEndHour(end);
@@ -158,6 +163,7 @@ const TimetableView = () => {
     setShowPlace(sPlace);
     setShowMemo(sMemo);
     setFitToScreen(sFitToScreen);
+    setBlockHeightMode(bHeightMode);
     localStorage.setItem(STORAGE_KEY_START, start.toString());
     localStorage.setItem(STORAGE_KEY_END, end.toString());
     localStorage.setItem(STORAGE_KEY_COMPRESSION, mode);
@@ -167,6 +173,7 @@ const TimetableView = () => {
     localStorage.setItem(STORAGE_KEY_SHOW_PLACE, JSON.stringify(sPlace));
     localStorage.setItem(STORAGE_KEY_SHOW_MEMO, JSON.stringify(sMemo));
     localStorage.setItem(STORAGE_KEY_FIT_TO_SCREEN, JSON.stringify(sFitToScreen));
+    localStorage.setItem(STORAGE_KEY_BLOCK_HEIGHT, bHeightMode);
   };
 
   const handleExport = async () => {
@@ -311,6 +318,7 @@ const TimetableView = () => {
           showPlace={showPlace}
           showMemo={showMemo}
           fitToScreen={fitToScreen}
+          blockHeightMode={blockHeightMode}
         />
       </div>
 
@@ -343,6 +351,7 @@ const TimetableView = () => {
         showPlace={showPlace}
         showMemo={showMemo}
         fitToScreen={fitToScreen}
+        blockHeightMode={blockHeightMode}
         onSave={handleSettingsSave}
         onResetAll={async () => {
           try {

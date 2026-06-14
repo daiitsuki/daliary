@@ -14,6 +14,7 @@ interface TimetableSettingsModalProps {
   showPlace: boolean;
   showMemo: boolean;
   fitToScreen: boolean;
+  blockHeightMode: "narrow" | "normal" | "wide";
   onSave: (
     startHour: number,
     endHour: number,
@@ -23,7 +24,8 @@ interface TimetableSettingsModalProps {
     showTime: boolean,
     showPlace: boolean,
     showMemo: boolean,
-    fitToScreen: boolean
+    fitToScreen: boolean,
+    blockHeightMode: "narrow" | "normal" | "wide"
   ) => void;
   onResetAll: () => Promise<void>;
 }
@@ -42,6 +44,7 @@ const TimetableSettingsModal = ({
   showPlace,
   showMemo,
   fitToScreen,
+  blockHeightMode,
   onSave,
   onResetAll,
 }: TimetableSettingsModalProps) => {
@@ -55,6 +58,7 @@ const TimetableSettingsModal = ({
   const [localShowPlace, setLocalShowPlace] = useState(showPlace);
   const [localShowMemo, setLocalShowMemo] = useState(showMemo);
   const [localFitToScreen, setLocalFitToScreen] = useState(fitToScreen);
+  const [localBlockHeightMode, setLocalBlockHeightMode] = useState(blockHeightMode);
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -70,6 +74,7 @@ const TimetableSettingsModal = ({
       setLocalShowPlace(showPlace);
       setLocalShowMemo(showMemo);
       setLocalFitToScreen(fitToScreen);
+      setLocalBlockHeightMode(blockHeightMode);
     }
   }, [
     isOpen,
@@ -82,6 +87,7 @@ const TimetableSettingsModal = ({
     showPlace,
     showMemo,
     fitToScreen,
+    blockHeightMode,
   ]);
 
   const toggleDay = (d: number) => {
@@ -140,6 +146,7 @@ const TimetableSettingsModal = ({
       localShowPlace,
       localShowMemo,
       localFitToScreen,
+      localBlockHeightMode
     );
     onClose();
   };
@@ -261,6 +268,33 @@ const TimetableSettingsModal = ({
                         }
                         className={`flex-1 py-2.5 rounded-[12px] text-xs font-black transition-all ${
                           localCompressionMode === mode.value
+                            ? "bg-white text-rose-500 shadow-sm"
+                            : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+                        }`}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-50 space-y-2">
+                  <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
+                    일정 높이
+                  </label>
+                  <div className="flex bg-gray-50 p-1 rounded-[16px]">
+                    {[
+                      { value: "narrow", label: "좁게" },
+                      { value: "normal", label: "보통" },
+                      { value: "wide", label: "넓게" },
+                    ].map((mode) => (
+                      <button
+                        key={mode.value}
+                        onClick={() =>
+                          setLocalBlockHeightMode(mode.value as any)
+                        }
+                        className={`flex-1 py-2.5 rounded-[12px] text-xs font-black transition-all ${
+                          localBlockHeightMode === mode.value
                             ? "bg-white text-rose-500 shadow-sm"
                             : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
                         }`}

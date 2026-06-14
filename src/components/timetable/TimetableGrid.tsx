@@ -24,6 +24,7 @@ interface TimetableGridProps {
   showPlace?: boolean;
   showMemo?: boolean;
   fitToScreen?: boolean;
+  blockHeightMode?: "narrow" | "normal" | "wide";
 }
 
 // ──────────────────────────────────────────────
@@ -169,10 +170,18 @@ const TimetableGrid = ({
   showPlace = true,
   showMemo = false,
   fitToScreen = false,
+  blockHeightMode = "normal",
 }: TimetableGridProps) => {
   // 단일 스크롤 컨테이너 ref
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const [currentTime, setCurrentTime] = useState(() => {
     const now = new Date();
@@ -204,9 +213,16 @@ const TimetableGrid = ({
   }, [orderedDays, visibleDays]);
 
   const blocks = viewMode === "my" ? myBlocks : partnerBlocks;
-  const ACTIVE_HOUR_PX = 64;
-  const EMPTY_HOUR_PX =
-    compressionMode === "none" ? 64 : compressionMode === "compact" ? 40 : 24;
+  
+  const ACTIVE_HOUR_PX = useMemo(() => {
+    if (blockHeightMode === "narrow") return isMobile ? 40 : 48;
+    if (blockHeightMode === "wide") return isMobile ? 72 : 80;
+    return isMobile ? 56 : 64; // normal
+  }, [blockHeightMode, isMobile]);
+
+  const EMPTY_HOUR_PX = useMemo(() => {
+    return compressionMode === "none" ? ACTIVE_HOUR_PX : compressionMode === "compact" ? 40 : 24;
+  }, [compressionMode, ACTIVE_HOUR_PX]);
 
   const hourHeights = useMemo(() => {
     const heights = [];
@@ -223,7 +239,7 @@ const TimetableGrid = ({
       heights.push(isActive ? ACTIVE_HOUR_PX : EMPTY_HOUR_PX);
     }
     return heights;
-  }, [blocks, startHour, endHour, EMPTY_HOUR_PX]);
+  }, [blocks, startHour, endHour, EMPTY_HOUR_PX, ACTIVE_HOUR_PX]);
 
   const totalHeight = useMemo(
     () => hourHeights.reduce((a, b) => a + b, 0),
