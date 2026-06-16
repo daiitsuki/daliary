@@ -59,9 +59,13 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   const { profile, notificationSettings: initialSettings, loading: coupleLoading } = useCouple();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>(
-    typeof Notification !== 'undefined' ? Notification.permission : 'default'
-  );
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>(() => {
+    try {
+      return typeof Notification !== 'undefined' && 'permission' in Notification ? Notification.permission : 'default';
+    } catch {
+      return 'default';
+    }
+  });
   const [isDeviceActive, setIsDeviceActive] = useState(false);
   const lastDeviceCheckRef = useRef<number>(0);
   // 수동 토글 조작 중 자동 재구독이 동시에 실행되는 경쟁 조건 방지용 뮤텍스
