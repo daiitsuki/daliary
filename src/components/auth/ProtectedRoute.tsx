@@ -19,7 +19,8 @@ export default function ProtectedRoute() {
   // 2. Not Logged In -> Redirect to Login
   // loading이 끝났는데 profile이 없으면 로그인되지 않은 상태
   if (!loading && !profile) {
-    return <Navigate to="/login" replace />;
+    const currentPath = location.pathname + location.search + location.hash;
+    return <Navigate to={`/login?return_to=${encodeURIComponent(currentPath)}`} replace />;
   }
 
   // 3. Logged In, But No Couple -> Redirect to Onboarding (if not already there)

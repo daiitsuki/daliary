@@ -2,10 +2,19 @@ import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Heart, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useCouple } from "../hooks/useCouple";
+import { Navigate, useLocation } from "react-router-dom";
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { profile, loading: coupleLoading } = useCouple();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const returnTo = searchParams.get('return_to') || '/home';
+
+  if (coupleLoading) return <div className="min-h-screen bg-[#FDFBF7] flex justify-center items-center"><Loader2 className="animate-spin text-rose-400" /></div>;
+  if (profile) return <Navigate to={returnTo} replace />;
 
   const handleSocialLogin = async (provider: "google" | "kakao") => {
     setLoading(true);
@@ -14,7 +23,7 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}${returnTo}`,
         },
       });
       if (error) throw error;
