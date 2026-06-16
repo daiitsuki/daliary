@@ -17,6 +17,8 @@ import {
   useCouplePointsContext,
 } from "../../context/CouplePointsContext";
 import { supabase } from "../../lib/supabase";
+import { useConfirm } from "../../context/ConfirmContext";
+import { useToast } from "../../context/ToastContext";
 
 interface PointHistoryModalProps {
   isOpen: boolean;
@@ -38,6 +40,8 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
     initialTab,
   );
   const { purchaseItem } = useCouplePointsContext();
+  const { confirm } = useConfirm();
+  const { showToast } = useToast();
   const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [direction, setDirection] = useState(0);
@@ -183,11 +187,18 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
     name: string,
   ) => {
     if (currentPoints < price) {
-      alert("포인트가 부족합니다.");
+      showToast("포인트가 부족해요.", "error");
       return;
     }
 
-    if (!confirm(`'${name}'을(를) ${price}PT에 구매하시겠습니까?`)) {
+    const isConfirmed = await confirm({
+      title: "상품 구매",
+      message: `'${name}'을(를) ${price}PT에 구매할까요?`,
+      confirmText: "구매",
+      isDanger: true,
+    });
+
+    if (!isConfirmed) {
       return;
     }
 
@@ -195,17 +206,17 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
     try {
       const result = await purchaseItem(itemId, price, `'${name}' 구매`);
       if (result.success) {
-        alert("구매가 완료되었습니다! 설정 > 보관함에서 확인하실 수 있습니다.");
+        showToast("구매 성공! 내 정보 탭에서 확인해보세요.", "success");
       } else {
         if (result.error === "DAILY_LIMIT_REACHED") {
-          alert("이 아이템은 하루에 한 번만 구매하실 수 있습니다.");
+          showToast("이 아이템은 하루에 한 번만 구매할 수 있어요.", "error");
         } else {
-          alert(result.error || "구매 중 오류가 발생했습니다.");
+          showToast(result.error || "구매 중 오류가 발생했어요.", "error");
         }
       }
     } catch (error) {
       console.error("Purchase error:", error);
-      alert("구매 중 오류가 발생했습니다.");
+      showToast("구매 중 오류가 발생했어요.", "error");
     } finally {
       setIsPurchasing(null);
     }

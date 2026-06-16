@@ -14,6 +14,7 @@ import ScheduleList from "../components/calendar/ScheduleList";
 import ScheduleModal from "../components/calendar/ScheduleModal";
 import TimetableView from "../components/timetable/TimetableView";
 import { TimetableProvider } from "../context/TimetableContext";
+import { useToast } from "../context/ToastContext";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -46,6 +47,7 @@ const Calendar = () => {
   const { anniversarySchedules } = useAnniversaries();
   const { myProfile, partnerProfile } = useHomeData();
   const { trips } = useTrips();
+  const { showToast } = useToast();
 
   const [syncTrips] = useState<boolean>(() => {
     const stored = localStorage.getItem("syncTripsToCalendar");
@@ -262,7 +264,7 @@ const Calendar = () => {
         await addSchedule(data);
       }
     } catch (error) {
-      alert("저장 실패");
+      showToast("저장에 실패했어요.", "error");
       console.error(error);
     }
   };
@@ -271,7 +273,7 @@ const Calendar = () => {
     try {
       await deleteSchedule(id);
     } catch (error) {
-      alert("삭제 실패");
+      showToast("삭제를 실패했어요.", "error");
       console.error(error);
     }
   };

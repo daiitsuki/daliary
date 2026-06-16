@@ -4,6 +4,7 @@ import { RotateCcw, Trophy, Star, ChevronLeft, User, Info, Lightbulb } from "luc
 import Matter from "matter-js";
 import { useGameScore } from "../../hooks/useGameScore";
 import { useHomeData } from "../../hooks/useHomeData";
+import { useToast } from "../../context/ToastContext";
 
 // Asset Imports
 import cherryImg from "../../assets/cherry.png";
@@ -174,6 +175,7 @@ interface WatermelonGameProps {
 }
 
 export default function WatermelonGame({ onBack }: WatermelonGameProps) {
+  const { showToast } = useToast();
   const sceneRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Matter.Engine | null>(null);
   const renderRef = useRef<Matter.Render | null>(null);
@@ -631,7 +633,7 @@ export default function WatermelonGame({ onBack }: WatermelonGameProps) {
         Matter.World.remove(engineRef.current.world, bodiesToRemove);
         setHintUsed(true);
       } else {
-        alert("삭제할 수 있는 작은 과일이 없습니다!");
+        showToast("삭제할 수 있는 작은 과일이 없어요.", "error");
       }
     }
   };

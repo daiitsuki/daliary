@@ -21,6 +21,8 @@ import { convertToWebP } from "../../../utils/imageUtils";
 import { VisitWithPlace } from "../../../context/PlacesContext";
 import { useVisitComments } from "../../../hooks/useVisitComments";
 import { useCouple } from "../../../hooks/useCouple";
+import { useConfirm } from "../../../context/ConfirmContext";
+import { useToast } from "../../../context/ToastContext";
 import {
   KOREA_REGIONS,
   SUB_REGIONS,
@@ -55,6 +57,8 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { profile } = useCouple();
+  const { confirm } = useConfirm();
+  const { showToast } = useToast();
   const {
     comments,
     addComment,
@@ -157,17 +161,17 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
     }
 
     if (!editImage) {
-      alert("인증 사진을 업로드해주세요.");
+      showToast("인증 사진을 업로드해주세요.", "error");
       return;
     }
 
     if (!editRegion) {
-      alert("행정구역을 선택해주세요.");
+      showToast("행정 구역을 선택해주세요.", "error");
       return;
     }
 
     if (SUB_REGIONS[editRegion] && !editSubRegion) {
-      alert("상세 지역을 선택해주세요.");
+      showToast("상세 지역을 선택해주세요.", "error");
       return;
     }
 
@@ -225,7 +229,7 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
         setSelectedFile(null);
       }
     } catch (err) {
-      alert("저장 실패");
+      showToast("저장에 실패했어요.", "error");
     } finally {
       setLoading(false);
     }
@@ -238,13 +242,19 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!confirm("삭제하시겠습니까?")) return;
+    const isConfirmed = await confirm({
+      title: "방문 인증 삭제",
+      message: "해당 방문 인증을 삭제할까요?",
+      confirmText: "삭제",
+      isDanger: true,
+    });
+    if (!isConfirmed) return;
     try {
       setLoading(true);
       const success = await onDelete(visit.id, visit.image_url);
       if (success) handleCloseInternal();
     } catch (err) {
-      alert("삭제 실패");
+      showToast("삭제를 실패했어요.", "error");
     } finally {
       setLoading(false);
     }

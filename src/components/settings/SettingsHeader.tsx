@@ -15,7 +15,7 @@ export default function SettingsHeader({
       >
         <ArrowLeft size={20} />
       </button>
-      <h1 className="text-lg font-black text-gray-800 tracking-tight">설정</h1>
+      <h1 className="text-lg font-bold text-gray-800 tracking-tight">설정</h1>
       <div className="w-10" /> {/* Spacer to center the title */}
     </header>
   );

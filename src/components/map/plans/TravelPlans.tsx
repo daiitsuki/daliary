@@ -22,6 +22,7 @@ import TripModal from "./TripModal";
 import TripDetail from "./TripDetail";
 import { motion, Variants, AnimatePresence } from "framer-motion";
 import { parseTripTitle, TRIP_ICONS } from "../../../utils/tripHelpers";
+import { useConfirm } from "../../../context/ConfirmContext";
 
 const ICON_COMPONENTS: Record<string, any> = {
   plane: Plane,
@@ -63,6 +64,7 @@ const itemVariants: Variants = {
 
 export default function TravelPlans() {
   const { trips, isTripsLoading, deleteTrip } = useTrips();
+  const { confirm } = useConfirm();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isTripModalOpen, setIsTripModalOpen] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
@@ -111,7 +113,13 @@ export default function TravelPlans() {
 
   const handleDeleteTrip = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirm("이 여행 계획을 삭제하시겠습니까?")) {
+    const isConfirmed = await confirm({
+      title: "여행 계획 삭제",
+      message: "이 여행 계획을 삭제할까요?\n여행 계획 내의 스케줄도 함께 삭제됩니다.",
+      confirmText: "삭제",
+      isDanger: true,
+    });
+    if (isConfirmed) {
       await deleteTrip.mutateAsync(id);
     }
   };

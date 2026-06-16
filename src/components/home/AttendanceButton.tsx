@@ -2,17 +2,19 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, CalendarCheck2, Loader2 } from "lucide-react";
 import { useAttendance } from "../../hooks/useAttendance";
+import { useToast } from "../../context/ToastContext";
 
 const AttendanceButton = () => {
   const { hasCheckedIn, loading, checkIn } = useAttendance();
   const [actionLoading, setActionLoading] = useState(false);
+  const { showToast } = useToast();
 
   const handleCheckIn = async () => {
     if (hasCheckedIn || actionLoading) return;
     setActionLoading(true);
     const success = await checkIn();
     if (!success) {
-      alert("출석체크 실패");
+      showToast("출석체크에 실패했어요.", "error");
     }
     setActionLoading(false);
   };

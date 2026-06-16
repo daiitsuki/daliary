@@ -4,6 +4,7 @@ import { Timer, Trophy, RotateCcw, ChevronLeft, AlertCircle, Play, Ticket } from
 import { supabase } from "../../lib/supabase";
 import { useCouplePoints } from "../../hooks/useCouplePoints";
 import { useCouplePointsContext } from "../../context/CouplePointsContext";
+import { useToast } from "../../context/ToastContext";
 
 interface BlindTimerGameProps {
   onBack: () => void;
@@ -28,6 +29,7 @@ const SAVE_KEY = "daliary_blind_timer_state_v1";
 const ENCRYPTION_SALT = "dal_game_blind_timer";
 
 export default function BlindTimerGame({ onBack }: BlindTimerGameProps) {
+  const { showToast } = useToast();
   const { items } = useCouplePointsContext();
   const { refreshItems } = useCouplePoints();
   const [gameState, setGameState] = useState<GameState>("idle");
@@ -120,9 +122,9 @@ export default function BlindTimerGame({ onBack }: BlindTimerGameProps) {
       if (error) throw error;
       if (!data.success) {
         if (data.error === 'NO_TICKET') {
-          alert("입장권이 부족합니다! 포인트 상점에서 구매해주세요.");
+          showToast("이 게임은 입장권이 필요해요. 포인트 상점에서 입장권을 구매해주세요.", "error");
         } else {
-          alert("게임을 시작할 수 없습니다.");
+          showToast("게임을 시작할 수 없어요.", "error");
         }
         return;
       }
@@ -136,7 +138,7 @@ export default function BlindTimerGame({ onBack }: BlindTimerGameProps) {
       startRound(data.target_time);
     } catch (err) {
       console.error(err);
-      alert("오류가 발생했습니다.");
+      showToast("오류가 발생했어요.", "error");
     } finally {
       setLoading(false);
     }
@@ -267,17 +269,17 @@ export default function BlindTimerGame({ onBack }: BlindTimerGameProps) {
 
       if (error) throw error;
       if (!data.success) {
-        alert("보상을 수령할 수 없습니다: " + data.error);
+        showToast("보상을 수령할 수 없어요: " + data.error, "error");
         clearSession();
         return;
       }
 
-      alert(`${data.rank}! ${data.reward}포인트를 획득했습니다.`);
+      showToast(`${data.rank}! ${data.reward}포인트를 획득했어요.`, "success");
       clearSession();
       onBack();
     } catch (err) {
       console.error(err);
-      alert("오류가 발생했습니다.");
+      showToast("오류가 발생했어요.", "error");
     } finally {
       setLoading(false);
     }

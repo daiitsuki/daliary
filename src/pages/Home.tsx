@@ -10,6 +10,7 @@ import HomeHeader from "../components/home/HomeHeader";
 import HeartGauge from "../components/home/HeartGauge";
 import DailyQuestionSection from "../components/home/DailyQuestionSection";
 import QuickLinksSection from "../components/home/QuickLinksSection";
+import { useToast } from "../context/ToastContext";
 
 export default function Home() {
   const {
@@ -26,6 +27,7 @@ export default function Home() {
   } = useHomeData();
 
   const { refresh: refreshPoints } = useCouplePoints();
+  const { showToast } = useToast();
 
   const [inputAnswer, setInputAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,7 +51,8 @@ export default function Home() {
       await refresh();
       refreshPoints();
     } catch (err) {
-      alert("답변 저장 실패");
+      console.error(err);
+      showToast("답변 저장에 실패했어요.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -58,7 +61,7 @@ export default function Home() {
   const copyInviteCode = () => {
     if (couple?.invite_code) {
       navigator.clipboard.writeText(couple.invite_code);
-      alert("초대 코드가 복사되었습니다!");
+      showToast("초대 코드가 복사되었어요.", "success");
     }
   };
 

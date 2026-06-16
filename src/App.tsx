@@ -22,6 +22,7 @@ import ChangelogModal from './components/common/ChangelogModal';
 import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from './context/ToastContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,7 +52,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <CoupleProvider>
+        <ConfirmProvider>
+          <CoupleProvider>
         <NotificationsProvider>
           <CouplePointsProvider>
             <SchedulesProvider>
@@ -96,6 +98,7 @@ function App() {
           </CouplePointsProvider>
         </NotificationsProvider>
         </CoupleProvider>
+        </ConfirmProvider>
       </ToastProvider>
     </QueryClientProvider>
   );

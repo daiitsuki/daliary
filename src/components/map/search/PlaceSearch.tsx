@@ -12,6 +12,7 @@ import {
 import VisitForm from "../shared/VisitForm";
 import { Place, usePlaces } from "../../../context/PlacesContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "../../../context/ToastContext";
 
 interface PlaceSearchProps {
   targetPlace?: Place | null;
@@ -19,6 +20,7 @@ interface PlaceSearchProps {
 
 const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const { searchPlaces, results, savePlace, isSearching, isSaving } =
     usePlaceSearch();
   const { refresh } = usePlaces();
@@ -308,10 +310,10 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
                 onClick={async () => {
                   try {
                     await savePlace(selectedPlace);
-                    alert("위시리스트에 저장되었습니다!");
+                    showToast("이 장소를 위시리스트에 저장했어요.", "success");
                     refresh();
                   } catch (e: any) {
-                    alert(e.message || "저장 실패");
+                    showToast(e.message || "저장에 실패했어요.", "error");
                   }
                 }}
                 disabled={isSaving}

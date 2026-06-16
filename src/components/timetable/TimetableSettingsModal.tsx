@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Trash2 } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
 
 interface TimetableSettingsModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ const TimetableSettingsModal = ({
   onSave,
   onResetAll,
 }: TimetableSettingsModalProps) => {
+  const { showToast } = useToast();
   const [localStart, setLocalStart] = useState(startHour);
   const [localEnd, setLocalEnd] = useState(endHour);
   const [localCompressionMode, setLocalCompressionMode] =
@@ -129,11 +131,11 @@ const TimetableSettingsModal = ({
 
   const handleSave = () => {
     if (localStart >= localEnd) {
-      alert("시작 시간은 종료 시간보다 빨라야 합니다.");
+      showToast("종료 시간은 시작 시간보다 빠를 수 없어요.", "error");
       return;
     }
     if (localEnd - localStart < 2) {
-      alert("최소 2시간 이상 표시해야 합니다.");
+      showToast("최소 2시간 이상은 표시해야해요.", "error");
       return;
     }
     onSave(

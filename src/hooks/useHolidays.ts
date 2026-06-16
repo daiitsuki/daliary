@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Schedule } from "./useSchedules";
 import staticHolidaysData from "../data/holidays.json";
+import { useToast } from "../context/ToastContext";
 
 interface HolidayData {
   date: string;
@@ -11,6 +12,7 @@ interface HolidayData {
 let cachedHolidaySchedules: Schedule[] | null = null;
 
 export const useHolidays = () => {
+  const { showToast } = useToast();
   const [showHolidays, setShowHolidays] = useState<boolean>(() => {
     const stored = localStorage.getItem("showHolidays");
     return stored === null ? true : stored === "true";
@@ -80,7 +82,7 @@ export const useHolidays = () => {
       const diffMinutes = (now - last) / (1000 * 60);
       
       if (diffMinutes < 5) {
-        alert(`최근에 이미 업데이트했습니다. ${Math.ceil(5 - diffMinutes)}분 후에 다시 시도해주세요.`);
+        showToast(`${Math.ceil(5 - diffMinutes)}분 후에 다시 시도해주세요.`, "error");
         return;
       }
     }
@@ -137,14 +139,14 @@ export const useHolidays = () => {
         if (showHolidays) {
             setHolidaySchedules(schedules);
         }
-        alert('공휴일 정보를 성공적으로 업데이트했습니다.');
+        showToast('서버에서 최신 공휴일 정보를 가져왔어요.', "success");
       } else {
-        alert('가져올 수 있는 공휴일 정보가 없습니다.');
+        showToast('현재 가져올 수 있는 공휴일 정보가 없어요.', "error");
       }
 
     } catch (error) {
-      console.error('Failed to update holidays:', error);
-      alert('공휴일 정보 업데이트에 실패했습니다.');
+      console.error('Failed to sync holidays:', error);
+      showToast('공휴일 정보 업데이트에 실패했어요.', "error");
     } finally {
       setUpdating(false);
     }

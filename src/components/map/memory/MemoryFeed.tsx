@@ -6,7 +6,7 @@ import {
   MemoryFeedItem,
 } from "../../../hooks/useMemoryFeed";
 import MemoryCard from "./MemoryCard";
-import { Camera, Loader2, ArrowLeft, Heart } from "lucide-react";
+import { Camera, Loader2, ArrowLeft, Heart, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import VisitDetailModal from "../dashboard/VisitDetailModal";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,6 +23,7 @@ export default function MemoryFeed() {
   );
   const hasHandledUrlVisit = useRef(false);
   const [likedOnly, setLikedOnly] = useState(false);
+  const [myFeedOnly, setMyFeedOnly] = useState(false);
 
   const visitIdFromUrl = searchParams.get("visitId");
   const regionFilter = searchParams.get("region");
@@ -32,7 +33,7 @@ export default function MemoryFeed() {
     useVisitById(visitIdFromUrl);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
-    useMemoryFeed(regionFilter, subRegionFilter, likedOnly);
+    useMemoryFeed(regionFilter, subRegionFilter, likedOnly, myFeedOnly);
 
   const allItems: MemoryFeedItem[] = useMemo(() => {
     return (data as any)?.pages.flatMap((page: any) => page.data) || [];
@@ -47,6 +48,7 @@ export default function MemoryFeed() {
   useEffect(() => {
     if (regionFilter) {
       setLikedOnly(false);
+      setMyFeedOnly(false);
     }
   }, [regionFilter]);
 
@@ -198,9 +200,26 @@ export default function MemoryFeed() {
       <div className="flex-1 overflow-y-auto custom-scrollbar pb-32 pt-4 px-4">
         <div className="max-w-md mx-auto">
           {!regionFilter && (
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-end mb-4 gap-2">
               <button
-                onClick={() => setLikedOnly(!likedOnly)}
+                onClick={() => {
+                  setMyFeedOnly(!myFeedOnly);
+                  if (!myFeedOnly) setLikedOnly(false);
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  myFeedOnly 
+                    ? "bg-rose-50 text-rose-500 border border-rose-200 shadow-sm" 
+                    : "bg-white text-gray-400 border border-gray-200"
+                }`}
+              >
+                <User size={14} className={myFeedOnly ? "text-rose-500" : ""} />
+                내가 올린 피드
+              </button>
+              <button
+                onClick={() => {
+                  setLikedOnly(!likedOnly);
+                  if (!likedOnly) setMyFeedOnly(false);
+                }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
                   likedOnly 
                     ? "bg-rose-50 text-rose-500 border border-rose-200 shadow-sm" 

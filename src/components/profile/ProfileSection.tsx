@@ -45,8 +45,9 @@ export default function ProfileSection({
   };
 
   return (
-    <section className="bg-white rounded-[28px] sm:rounded-[32px] p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 flex flex-col items-center">
-      <div className="relative mb-6">
+    <section className="space-y-3">
+      <div className="bg-white rounded-[28px] p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-rose-100/30 flex flex-col items-center">
+        <div className="relative mb-6">
         <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-50 overflow-hidden border-[3px] border-white shadow-sm flex items-center justify-center relative group">
           {displayedUrl ? (
             <>
@@ -104,7 +105,7 @@ export default function ProfileSection({
             type="text"
             value={nickname}
             onChange={(e) => onNicknameChange(e.target.value)}
-            className="w-full text-center bg-gray-50/50 p-3 sm:p-3.5 pr-12 rounded-xl border border-transparent focus:bg-white focus:border-rose-100 focus:ring-4 focus:ring-rose-50/50 outline-none font-black text-gray-700 text-sm transition-all placeholder:text-gray-300"
+            className="w-full text-center bg-gray-50/50 p-3 sm:p-3.5 pr-12 rounded-xl border border-transparent focus:bg-white focus:border-rose-100 focus:ring-4 focus:ring-rose-50/50 outline-none font-semibold text-gray-800 text-base transition-all placeholder:text-gray-300"
             placeholder="어떻게 불러드릴까요?"
           />
 
@@ -122,6 +123,7 @@ export default function ProfileSection({
             )}
           </AnimatePresence>
         </div>
+      </div>
       </div>
     </section>
   );

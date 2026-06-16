@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Users, Trash2 } from "lucide-react";
+import { X, User, Users, Trash2, Share2 } from "lucide-react";
 import DatePicker from "../common/DatePicker";
 import { CATEGORY_CONFIG, CategoryType } from "./constants";
 import { Schedule, ScheduleInput } from "../../hooks/useSchedules";
 import { Profile } from "../../types";
+import { shareContent, ShareTemplates } from "../../utils/shareUtils";
+import { useToast } from "../../context/ToastContext";
+import { useConfirm } from "../../context/ConfirmContext";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -33,6 +36,8 @@ const ScheduleModal = ({
   const [endDate, setEndDate] = useState(initialDate);
   const [category, setCategory] = useState<CategoryType>("couple");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const { confirm } = useConfirm();
+  const { showToast } = useToast();
 
   // Update state when opening for edit or new
   useEffect(() => {
@@ -93,7 +98,7 @@ const ScheduleModal = ({
   const handleEndDateChange = (date: string) => {
     // 종료일이 시작일보다 빠르면 무시하거나 시작일로 맞춤
     if (new Date(date) < new Date(startDate)) {
-      alert("종료일은 시작일보다 빠를 수 없습니다.");
+      showToast("종료일은 시작일보다 빠를 수 없습니다.", "error");
       setEndDate(startDate);
     } else {
       setEndDate(date);
@@ -106,7 +111,7 @@ const ScheduleModal = ({
 
     // 최종 검증
     if (new Date(startDate) > new Date(endDate)) {
-      alert("날짜 설정이 올바르지 않습니다.");
+      showToast("날짜 설정이 올바르지 않습니다.", "error");
       return;
     }
     
@@ -124,9 +129,27 @@ const ScheduleModal = ({
   };
 
   const handleDelete = async () => {
-    if (scheduleToEdit && confirm("일정을 삭제할까요?")) {
-      await onDelete(scheduleToEdit.id);
-      onClose();
+    if (scheduleToEdit) {
+      const isConfirmed = await confirm({
+        title: "일정 삭제",
+        message: "일정을 삭제할까요?",
+        confirmText: "삭제",
+        isDanger: true,
+      });
+      if (isConfirmed) {
+        await onDelete(scheduleToEdit.id);
+        onClose();
+      }
+    }
+  };
+
+  const handleShare = async () => {
+    const template = ShareTemplates.schedule(startDate, title);
+    const result = await shareContent(template.title, template.text, template.url);
+    if (result === 'copied') {
+      showToast("클립보드에 복사되었어요. 메신저에 붙여넣기 해주세요!", "success");
+    } else if (result === 'failed') {
+      showToast("링크 복사에 실패했어요.", "error");
     }
   };
 
@@ -161,13 +184,22 @@ const ScheduleModal = ({
                 <h3 className="text-base sm:text-lg font-black text-gray-800 uppercase tracking-widest">
                   {scheduleToEdit ? "일정 수정" : "새 일정 추가"}
                 </h3>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="p-2 text-gray-400 hover:bg-gray-50 rounded-full transition-colors"
-                >
-                  <X size={24} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors"
+                  >
+                    <Share2 size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="p-2 text-gray-400 hover:bg-gray-50 rounded-full transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">

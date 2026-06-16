@@ -13,6 +13,9 @@ import { MemoryFeedItem } from "../../../hooks/useMemoryFeed";
 import { supabase } from "../../../lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { useHomeData } from "../../../hooks/useHomeData";
+import { useConfirm } from "../../../context/ConfirmContext";
+import { shareContent, ShareTemplates } from "../../../utils/shareUtils";
+import { useToast } from "../../../context/ToastContext";
 
 interface Props {
   item: MemoryFeedItem;
@@ -21,6 +24,8 @@ interface Props {
 
 export default function MemoryCard({ item, onOpenDetail }: Props) {
   const queryClient = useQueryClient();
+  const { confirm } = useConfirm();
+  const { showToast } = useToast();
   const { couple, myProfile } = useHomeData();
   const isOwner = item.writer_id == null || item.writer_id === myProfile?.id;
   const [showMenu, setShowMenu] = useState(false);
@@ -91,28 +96,26 @@ export default function MemoryCard({ item, onOpenDetail }: Props) {
     }
   };
 
-  const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const baseUrl = window.location.origin + window.location.pathname;
-    const shareUrl = `${baseUrl}?visitId=${item.id}`;
-
-    if (navigator.share) {
-      navigator.share({
-        title: "Daliary 추억",
-        text: `${item.place.name}에서의 추억을 확인해보세요!`,
-        url: shareUrl,
-      });
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      alert("링크가 복사되었습니다!");
+  const handleShare = async () => {
+    const template = ShareTemplates.memory(item.place.name, item.id);
+    const result = await shareContent(template.title, template.text, template.url);
+    if (result === 'copied') {
+      showToast("클립보드에 복사되었어요. 메신저에 붙여넣기 해주세요!", "success");
+    } else if (result === 'failed') {
+      showToast("링크 복사에 실패했어요.", "error");
     }
     setShowMenu(false);
   };
 
   const handleDeleteVisit = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("이 추억을 삭제할까요? 해당 작업은 복구할 수 없습니다!"))
-      return;
+    const isConfirmed = await confirm({
+      title: "방문 인증 삭제",
+      message: "해당 방문 인증을 삭제할까요?",
+      confirmText: "삭제",
+      isDanger: true,
+    });
+    if (!isConfirmed) return;
     try {
       const { error } = await supabase
         .from("visits")
@@ -144,7 +147,7 @@ export default function MemoryCard({ item, onOpenDetail }: Props) {
       queryClient.invalidateQueries({ queryKey: ["places_data"] });
     } catch (err) {
       console.error("Delete failed:", err);
-      alert("삭제 중 오류가 발생했습니다.");
+      showToast("삭제 중 오류가 발생했습니다.", "error");
     }
     setShowMenu(false);
   };

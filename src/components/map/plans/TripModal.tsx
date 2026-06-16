@@ -5,6 +5,7 @@ import DatePicker from "../../common/DatePicker";
 import { useTrips } from "../../../hooks/useTrips";
 import { Trip } from "../../../types";
 import { createPortal } from "react-dom";
+import { useToast } from "../../../context/ToastContext";
 import {
   parseTripTitle,
   serializeTripTitle,
@@ -27,6 +28,7 @@ const ICON_COMPONENTS: Record<string, any> = {
 };
 
 export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
+  const { showToast } = useToast();
   const { createTrip, updateTrip } = useTrips();
   const [title, setTitle] = useState("");
   const [iconIndex, setIconIndex] = useState(0);
@@ -62,7 +64,7 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      alert("여행 제목을 입력해주세요.");
+      showToast("여행 제목을 입력해주세요.", "error");
       return;
     }
 
@@ -84,7 +86,7 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
       }
       onClose();
     } catch (err: any) {
-      alert(err.message || "오류가 발생했습니다.");
+      showToast(err.message || "오류가 발생했어요.", "error");
     }
   };
 

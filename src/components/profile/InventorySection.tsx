@@ -11,7 +11,12 @@ export default function InventorySection() {
 
   const itemConfigs: Record<
     string,
-    { name: string; icon: React.ReactNode; description: string; bgColor: string }
+    {
+      name: string;
+      icon: React.ReactNode;
+      description: string;
+      bgColor: string;
+    }
   > = {
     past_question_ticket: {
       name: "지난 질문 답변 티켓",
@@ -31,12 +36,11 @@ export default function InventorySection() {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between px-2 mb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-1 h-4 bg-rose-400/80 rounded-full" />
-          <h3 className="text-base sm:text-lg font-black text-gray-800 tracking-tight">
+          <h2 className="text-lg font-bold text-gray-800 tracking-tight">
             보관함
-          </h3>
+          </h2>
           <div className="relative flex items-center">
             <button
               onClick={() => setShowTooltip(!showTooltip)}
@@ -53,7 +57,7 @@ export default function InventorySection() {
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   className="absolute left-0 bottom-full mb-3 bg-white/90 backdrop-blur-xl border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.08)] px-4 py-2.5 rounded-[20px] z-20 whitespace-nowrap"
                 >
-                  <p className="text-[10px] font-black text-gray-600">
+                  <p className="text-xs font-medium text-gray-600">
                     모든 아이템은{" "}
                     <span className="text-rose-500">
                       {partnerProfile?.nickname || "상대방"}
@@ -68,7 +72,7 @@ export default function InventorySection() {
         </div>
       </div>
 
-      <div className="bg-white rounded-[28px] sm:rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 overflow-hidden">
+      <div className="bg-white rounded-[28px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-rose-100/30 overflow-hidden">
         {loading ? (
           <div className="p-10 flex justify-center">
             <div className="w-5 h-5 border-2 border-rose-100 border-t-rose-400 rounded-full animate-spin" />
@@ -78,10 +82,10 @@ export default function InventorySection() {
             <div className="bg-gray-50/50 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3.5 border border-gray-100/50 group-hover:scale-110 transition-transform">
               <Package size={20} className="text-gray-200" />
             </div>
-            <p className="text-gray-400 text-[12px] font-black italic tracking-tight">
+            <p className="text-gray-400 text-[13px] font-medium tracking-tight">
               아직은 텅 비어있네요
             </p>
-            <p className="text-[9px] font-bold text-gray-300 mt-1">
+            <p className="text-[11px] font-medium text-gray-300 mt-1">
               포인트 상점에서 보물을 찾아보세요!
             </p>
           </div>
@@ -101,20 +105,22 @@ export default function InventorySection() {
                   className="p-4 sm:p-5 flex items-center justify-between group hover:bg-gray-50/30 transition-colors"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className={`w-9 h-9 ${config.bgColor} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner`}>
+                    <div
+                      className={`w-9 h-9 ${config.bgColor} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner`}
+                    >
                       {config.icon}
                     </div>
                     <div>
-                      <h4 className="text-[13px] font-black text-gray-700">
+                      <h4 className="text-sm font-semibold text-gray-700">
                         {config.name}
                       </h4>
-                      <p className="text-[9px] font-bold text-gray-400">
+                      <p className="text-[11px] font-medium text-gray-400 mt-0.5">
                         {config.description}
                       </p>
                     </div>
                   </div>
                   <div className="bg-white border border-gray-100 px-3 py-1 rounded-full shadow-sm">
-                    <span className="text-[11px] font-black text-rose-500 tabular-nums">
+                    <span className="text-[13px] font-semibold text-rose-500 tabular-nums">
                       {item.quantity}개
                     </span>
                   </div>

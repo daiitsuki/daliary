@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, Rea
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCouple } from '../hooks/useCouple';
+import { useToast } from './ToastContext';
 
 export interface AppNotification {
   id: string;
@@ -57,6 +58,7 @@ function urlBase64ToUint8Array(base64String: string) {
 export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { profile, notificationSettings: initialSettings, loading: coupleLoading } = useCouple();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>(
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   );
@@ -378,7 +380,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
         const subscribed = await registerPushSubscription();
         if (!subscribed) {
-          alert('푸시 알림 등록에 실패했습니다. 브라우저 설정을 확인해주세요.');
+          showToast("푸시 알림 등록에 실패했어요. 브라우저 설정을 확인해주세요.", "error");
           return false;
         }
 

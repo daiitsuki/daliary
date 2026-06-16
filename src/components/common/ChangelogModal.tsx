@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, ChevronDown, ChevronUp } from "lucide-react";
 import { changelog } from "../../data/changelog";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "../../context/ToastContext";
 
 interface ChangelogModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export default function ChangelogModal({
   onActivateDevMode,
 }: ChangelogModalProps) {
   const [showAll, setShowAll] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -182,7 +184,7 @@ export default function ChangelogModal({
                       onClick={() => {
                         sessionStorage.setItem("dev_mode_active", "true");
                         if (onActivateDevMode) onActivateDevMode();
-                        alert("개발자 모드가 활성화되었습니다.");
+                        showToast("개발자 모드가 활성화되었어요.", "success");
                       }}
                       className="text-[11px] font-bold text-gray-300 hover:text-gray-400 transition-colors underline underline-offset-4 decoration-gray-200"
                     >

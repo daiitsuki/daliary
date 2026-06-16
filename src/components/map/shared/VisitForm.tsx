@@ -26,6 +26,7 @@ import { useCouple } from "../../../hooks/useCouple";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
 import { parseTripTitle } from "../../../utils/tripHelpers";
+import { useToast } from "../../../context/ToastContext";
 
 interface VisitFormProps {
   placeId?: string;
@@ -46,6 +47,7 @@ const VisitForm = ({
   onSuccess,
   initialDate,
 }: VisitFormProps) => {
+  const { showToast } = useToast();
   const { verifyVisit, isSubmitting, error } = useVisitVerification();
   const { savePlace } = usePlaceSearch();
   const { couple } = useCouple();
@@ -284,11 +286,11 @@ const VisitForm = ({
       });
 
       if (success) {
-        alert("방문 인증이 완료되었습니다!");
+        showToast("방문 인증이 완료되었어요.", "success");
         onSuccess();
       }
     } catch (err: any) {
-      alert(err.message || "인증 처리 중 오류가 발생했습니다.");
+      showToast(err.message || "인증 처리 중 오류가 발생했어요.", "error");
     }
   };
 

@@ -5,6 +5,7 @@ import { useNotifications } from "../../hooks/useNotifications";
 import { useCouple } from "../../hooks/useCouple";
 import { useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
+import { useToast } from "../../context/ToastContext";
 
 const DISMISS_KEY = "daliary_notif_popup_dismissed_until";
 
@@ -13,6 +14,7 @@ export default function NotificationPermissionPopup() {
     useNotifications();
   const { profile, couple, loading: coupleLoading } = useCouple();
   const location = useLocation();
+  const { showToast } = useToast();
   const [isVisible, setIsVisible] = useState(false);
   const [isEnabling, setIsEnabling] = useState(false);
 
@@ -78,13 +80,13 @@ export default function NotificationPermissionPopup() {
       } else {
         // 브라우저에서 차단한 경우
         if (Notification.permission === "denied") {
-          alert(
-            "브라우저에서 알림이 차단되어 있습니다.\n브라우저 설정에서 알림을 허용해주세요.",
-          );
+          showToast("브라우저 설정에서 알림 권한을 허용해주세요.", "error");
+        } else {
+          showToast("알림 활성화에 실패했어요.", "error");
         }
       }
     } catch {
-      alert("알림 활성화에 실패했습니다.");
+      showToast("알림 활성화에 실패했어요.", "error");
     } finally {
       setIsEnabling(false);
     }

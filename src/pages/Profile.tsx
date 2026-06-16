@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useCouple } from "../hooks/useCouple";
+import { useToast } from "../context/ToastContext";
 import imageCompression from "browser-image-compression";
 import { convertToWebP } from "../utils/imageUtils";
 import { Loader2 } from "lucide-react";
@@ -14,6 +15,7 @@ import ProfileHeader from "../components/profile/ProfileHeader";
 import ProfileSection from "../components/profile/ProfileSection";
 import InventorySection from "../components/profile/InventorySection";
 import DangerZoneSection from "../components/settings/DangerZoneSection";
+import ActivityStatsSection from "../components/profile/ActivityStatsSection";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -37,14 +39,13 @@ const itemVariants: Variants = {
 export default function Profile() {
   const navigate = useNavigate();
   const { profile: contextProfile, fetchCoupleInfo, signOut } = useCouple();
+  const { showToast } = useToast();
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
 
   // 이미지 편집 관련 상태
   const [editingImage, setEditingImage] = useState<string | null>(null);
-
-  const lastSaveTimeRef = useRef<number>(0);
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -141,10 +142,10 @@ export default function Profile() {
       // 상태 업데이트 및 전역 캐시 동기화
       setProfile({ ...profile, avatar_url: publicUrl });
       await fetchCoupleInfo();
-      alert("프로필 사진이 변경되었습니다.");
+      showToast("프로필 사진이 변경되었습니다.", "success");
     } catch (error) {
       console.error(error);
-      alert("사진 변경 실패");
+      showToast("사진 변경 실패", "error");
     } finally {
       setLoading(false);
     }
@@ -164,36 +165,13 @@ export default function Profile() {
     if (!profile) return;
 
     if (!nickname.trim()) {
-      alert("프로필명을 입력해주세요.");
+      showToast("프로필명을 입력해주세요.", "error");
       return;
     }
 
     const isNicknameChanged = nickname !== profile.nickname;
 
     if (!isNicknameChanged) return;
-
-    const now = Date.now();
-    const COOLDOWN_MS = 5 * 60 * 1000;
-    const savedTimestamp = localStorage.getItem("last_settings_save_time");
-    const lastSaveTime = savedTimestamp ? parseInt(savedTimestamp, 10) : 0;
-
-    const timeRemaining = lastSaveTime + COOLDOWN_MS - now;
-
-    if (timeRemaining > 0) {
-      const minutesRemaining = Math.ceil(timeRemaining / 60000);
-      alert(
-        `저장은 5분에 한 번씩만 가능합니다. ${minutesRemaining}분 후에 다시 시도해주세요.`,
-      );
-      return;
-    }
-
-    if (
-      !window.confirm(
-        "설정 변경은 5분에 한 번씩만 가능합니다. 정말로 변경하시겠습니까?",
-      )
-    ) {
-      return;
-    }
 
     try {
       setLoading(true);
@@ -207,16 +185,10 @@ export default function Profile() {
       if (profileError) throw profileError;
 
       await fetchCoupleInfo();
-      const currentTimestamp = Date.now();
-      lastSaveTimeRef.current = currentTimestamp;
-      localStorage.setItem(
-        "last_settings_save_time",
-        currentTimestamp.toString(),
-      );
-      alert("저장되었습니다.");
+      showToast("저장되었습니다.", "success");
     } catch (error) {
       console.error(error);
-      alert("저장 실패");
+      showToast("저장 실패", "error");
     } finally {
       setLoading(false);
     }
@@ -225,14 +197,14 @@ export default function Profile() {
   const hasNicknameChanged = profile && nickname !== profile.nickname;
 
   return (
-    <div className="h-full bg-white flex flex-col">
+    <div className="flex-1 bg-[#FDFDFE] flex flex-col h-full overflow-y-auto custom-scrollbar relative">
       <ProfileHeader onSettingsClick={() => navigate("/settings")} />
 
       <motion.main
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 overflow-y-auto p-4 space-y-6 pb-24 custom-scrollbar"
+        className="w-full max-w-xl mx-auto px-6 py-6 space-y-8 pb-32 shrink-0"
       >
         <motion.div variants={itemVariants}>
           <ProfileSection
@@ -243,6 +215,10 @@ export default function Profile() {
             onSave={() => handleSave()}
             showSave={!!hasNicknameChanged}
           />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <ActivityStatsSection profileId={profile?.id} />
         </motion.div>
 
         <motion.div variants={itemVariants}>

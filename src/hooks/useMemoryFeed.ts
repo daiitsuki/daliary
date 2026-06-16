@@ -51,12 +51,12 @@ const formatVisitItem = (v: any, likesData: any[], commentsData: any[], myProfil
   };
 };
 
-export const useMemoryFeed = (region?: string | null, subRegion?: string | null, likedOnly?: boolean) => {
+export const useMemoryFeed = (region?: string | null, subRegion?: string | null, likedOnly?: boolean, myFeedOnly?: boolean) => {
   const { couple, myProfile } = useHomeData();
   const queryClient = useQueryClient();
 
   return useInfiniteQuery({
-    queryKey: ['memory_feed', couple?.id, region, subRegion, likedOnly],
+    queryKey: ['memory_feed', couple?.id, region, subRegion, likedOnly, myFeedOnly],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       const currentOffset = pageParam as number;
@@ -98,6 +98,10 @@ export const useMemoryFeed = (region?: string | null, subRegion?: string | null,
         }
         
         query = query.in('id', likedVisitIds);
+      }
+
+      if (myFeedOnly && myProfile?.id) {
+        query = query.eq('writer_id', myProfile.id);
       }
 
       const { data, error } = await query

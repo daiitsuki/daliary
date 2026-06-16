@@ -17,12 +17,16 @@ import {
   Navigation,
   Loader2,
   CheckCircle,
+  Share2,
 } from "lucide-react";
 import PlanItemModal from "./PlanItemModal";
 import TripMapModal from "./TripMapModal";
 import VisitForm from "../shared/VisitForm";
 import { motion, Variants, AnimatePresence } from "framer-motion";
 import { parseTripTitle } from "../../../utils/tripHelpers";
+import { shareContent, ShareTemplates } from "../../../utils/shareUtils";
+import { useConfirm } from "../../../context/ConfirmContext";
+import { useToast } from "../../../context/ToastContext";
 
 interface TripDetailProps {
   trip: Trip;
@@ -86,6 +90,8 @@ const itemVariants: Variants = {
 
 export default function TripDetail({ trip, onBack }: TripDetailProps) {
   const { plans, isPlansLoading, deletePlan } = useTripPlans(trip.id);
+  const { confirm } = useConfirm();
+  const { showToast } = useToast();
   const { rawTitle } = useMemo(() => parseTripTitle(trip.title), [trip.title]);
   const [activeDay, setActiveDay] = useState(1);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
@@ -131,7 +137,13 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
 
   const handleDeletePlan = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirm("계획을 삭제하시겠습니까?")) {
+    const isConfirmed = await confirm({
+      title: "스케줄 삭제",
+      message: "이 스케줄을 삭제할까요?",
+      confirmText: "삭제",
+      isDanger: true,
+    });
+    if (isConfirmed) {
       await deletePlan.mutateAsync(id);
     }
   };
@@ -159,6 +171,16 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
     setTimeout(() => setIsDragging(false), 50);
   };
 
+  const handleShareTrip = async () => {
+    const template = ShareTemplates.trip(rawTitle, trip.id);
+    const result = await shareContent(template.title, template.text, template.url);
+    if (result === 'copied') {
+      showToast("클립보드에 복사되었어요. 메신저에 붙여넣기 해주세요!", "success");
+    } else if (result === 'failed') {
+      showToast("링크 복사에 실패했어요.", "error");
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden relative">
       {/* Header Section */}
@@ -184,6 +206,13 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
             </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={handleShareTrip}
+              className="w-9 h-9 bg-gray-50 hover:bg-rose-50 text-gray-500 hover:text-rose-500 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-gray-100"
+              title="여행 계획 공유"
+            >
+              <Share2 size={16} />
+            </button>
             <button
               onClick={() => setIsMapModalOpen(true)}
               className="w-9 h-9 bg-gray-50 hover:bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-gray-100"

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useGameScore } from "../../hooks/useGameScore";
 import { useHomeData } from "../../hooks/useHomeData";
+import { useToast } from "../../context/ToastContext";
 
 type Tile = {
   id: string;
@@ -29,6 +30,7 @@ const SAVE_KEY = "daliary_2048_state_v1";
 const ENCRYPTION_SALT = "dal_game_2048";
 
 export default function Game2048({ onBack }: Game2048Props) {
+  const { showToast } = useToast();
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
@@ -312,7 +314,7 @@ export default function Game2048({ onBack }: Game2048Props) {
           }
         }
         if (empty.length === 0) {
-          alert("빈 공간이 없어 힌트를 사용할 수 없습니다!");
+          showToast("빈 공간이 없어 힌트를 사용할 수 없어요.", "error");
           return prev;
         }
         const pos = empty[Math.floor(Math.random() * empty.length)];

@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import QuestionHistoryModal from "./QuestionHistoryModal";
 import { supabase } from "../../lib/supabase";
+import { useToast } from "../../context/ToastContext";
 
 interface DailyQuestionSectionProps {
   todayQuestion: any;
@@ -41,6 +42,7 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
   myProfile,
   partnerProfile,
 }) => {
+  const { showToast } = useToast();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const bothAnswered = !!(myAnswer && partnerAnswer);
@@ -68,11 +70,11 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
         });
 
         if (error) throw error;
-        alert("상대방에게 답변 요청 알림을 보냈습니다!");
+        showToast("오늘의 질문에 답변하라는 알림을 보냈어요!", "success");
       }
     } catch (err) {
       console.error(err);
-      alert("알림 보내기 실패");
+      showToast("알림 보내기에 실패했어요.", "error");
     } finally {
       setIsRequesting(false);
     }

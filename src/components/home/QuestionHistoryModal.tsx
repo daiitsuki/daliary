@@ -5,6 +5,8 @@ import { supabase } from "../../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useConfirm } from "../../context/ConfirmContext";
+import { useToast } from "../../context/ToastContext";
 
 interface QuestionHistoryModalProps {
   isOpen: boolean;
@@ -26,6 +28,8 @@ export default function QuestionHistoryModal({
   const { history, loading, initialLoading, hasMore, loadMore, refresh } =
     useQuestionHistory(coupleId, currentUserId, createdAt);
   const { items, useItem } = useCouplePointsContext();
+  const { confirm } = useConfirm();
+  const { showToast } = useToast();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   const [answeringQuestionId, setAnsweringQuestionId] = useState<string | null>(
@@ -68,17 +72,18 @@ export default function QuestionHistoryModal({
     const ticketCount =
       items.find((i) => i.item_type === "past_question_ticket")?.quantity || 0;
     if (ticketCount <= 0) {
-      alert(
-        "보유하신 '지난 질문 답변 티켓'이 없습니다. 포인트 상점에서 구매해주세요!",
-      );
+      showToast("보유하신 '지난 질문 답변 티켓'이 없어요. 포인트 상점에서 구매해주세요!", "error");
       return;
     }
 
-    if (
-      !confirm(
-        "티켓 1개를 사용하여 답변하시겠습니까? (답변 시 30PT가 지급됩니다)",
-      )
-    ) {
+    const isConfirmed = await confirm({
+      title: "티켓 사용",
+      message: "티켓 1개를 소모하여 답변할까요?",
+      confirmText: "답변하기",
+      isDanger: true,
+    });
+
+    if (!isConfirmed) {
       return;
     }
 
@@ -87,7 +92,7 @@ export default function QuestionHistoryModal({
       // 1. Use ticket
       const useResult = await useItem("past_question_ticket");
       if (!useResult.success) {
-        alert(useResult.error || "티켓 사용에 실패했습니다.");
+        showToast(useResult.error || "티켓 사용에 실패했어요.", "error");
         return;
       }
 
@@ -101,13 +106,13 @@ export default function QuestionHistoryModal({
 
       if (insertError) throw insertError;
 
-      alert("답변이 성공적으로 등록되었습니다!");
+      showToast("답변이 등록되었어요.", "success");
       setAnsweringQuestionId(null);
       setAnswerText("");
       refresh(); // Refresh history
     } catch (error) {
       console.error("Submit answer error:", error);
-      alert("답변 등록 중 오류가 발생했습니다.");
+      showToast("답변 등록 중 오류가 발생했어요.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -208,9 +213,7 @@ export default function QuestionHistoryModal({
                               <button
                                 onClick={() => {
                                   if (ticketCount <= 0) {
-                                    alert(
-                                      "보유하신 '지난 질문 답변 티켓'이 없습니다. 포인트 상점에서 구매해주세요!",
-                                    );
+                                    showToast("보유하신 '지난 질문 답변 티켓'이 없어요. 포인트 상점에서 구매해주세요!", "error");
                                     return;
                                   }
                                   setAnsweringQuestionId(item.id);

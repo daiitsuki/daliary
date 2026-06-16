@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { usePlaces, Place } from "../../../context/PlacesContext";
+import { useConfirm } from "../../../context/ConfirmContext";
 import { Search } from "lucide-react";
 import VisitForm from "../shared/VisitForm";
 import { motion, Variants, AnimatePresence } from "framer-motion";
 import { getRegionFromAddress } from "../../../lib/address";
 import WishlistCard from "./WishlistCard";
+import Select from "../../common/Select";
 import { useSwipe } from "../../../hooks/useSwipe";
 
 const containerVariants: Variants = {
@@ -71,6 +73,7 @@ interface WishlistProps {
 
 const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
   const { wishlist, loading, deleteWishlistPlace, refresh } = usePlaces();
+  const { confirm } = useConfirm();
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isVisitFormOpen, setIsVisitFormOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("전체");
@@ -189,11 +192,18 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
   const handleDelete = useCallback(
     async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
-      if (confirm("이 장소를 위시리스트에서 삭제할까요?")) {
+      const isConfirmed = await confirm({
+        title: "장소 삭제",
+        message: "이 장소를 위시리스트에서 삭제할까요?",
+        confirmText: "삭제",
+        isDanger: true,
+      });
+
+      if (isConfirmed) {
         await deleteWishlistPlace(id);
       }
     },
-    [deleteWishlistPlace],
+    [deleteWishlistPlace, confirm],
   );
 
   const handleVerifyVisit = useCallback((place: Place, e: React.MouseEvent) => {
@@ -269,41 +279,15 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
           <span className="text-[11px] font-black text-gray-400">
             총 {filteredWishlist.length}개
           </span>
-          <div className="flex gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100/50">
-            <button
-              type="button"
-              onClick={() => setSortBy("region")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${
-                sortBy === "region"
-                  ? "bg-white text-rose-500 shadow-sm"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              지역순
-            </button>
-            <button
-              type="button"
-              onClick={() => setSortBy("category")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${
-                sortBy === "category"
-                  ? "bg-white text-rose-500 shadow-sm"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              카테고리순
-            </button>
-            <button
-              type="button"
-              onClick={() => setSortBy("date")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${
-                sortBy === "date"
-                  ? "bg-white text-rose-500 shadow-sm"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              등록순
-            </button>
-          </div>
+          <Select
+            value={sortBy}
+            onChange={(val) => setSortBy(val as "region" | "category" | "date")}
+            options={[
+              { value: "region", label: "지역순" },
+              { value: "category", label: "카테고리순" },
+              { value: "date", label: "등록순" },
+            ]}
+          />
         </motion.div>
       )}
 

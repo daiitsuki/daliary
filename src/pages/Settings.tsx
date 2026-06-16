@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCouple } from "../hooks/useCouple";
+import { useToast } from "../context/ToastContext";
 import { motion, Variants } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { Loader2 } from "lucide-react";
@@ -37,6 +38,7 @@ const itemVariants: Variants = {
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const {
     couple,
     profile,
@@ -63,35 +65,6 @@ export default function Settings() {
     const targetAnniversary = newAnniversary || anniversary;
     if (targetAnniversary === couple.anniversary_date) return;
 
-    const now = Date.now();
-    const COOLDOWN_MS = 5 * 60 * 1000;
-    const savedTimestamp = localStorage.getItem("last_settings_save_time");
-    const lastSaveTime = savedTimestamp ? parseInt(savedTimestamp, 10) : 0;
-
-    const timeRemaining = lastSaveTime + COOLDOWN_MS - now;
-
-    if (timeRemaining > 0) {
-      const minutesRemaining = Math.ceil(timeRemaining / 60000);
-      alert(
-        `저장은 5분에 한 번씩만 가능합니다. ${minutesRemaining}분 후에 다시 시도해주세요.`,
-      );
-      if (couple.anniversary_date) {
-        setAnniversary(couple.anniversary_date);
-      }
-      return;
-    }
-
-    if (
-      !window.confirm(
-        "설정 변경은 5분에 한 번씩만 가능합니다. 정말로 변경하시겠습니까?",
-      )
-    ) {
-      if (couple.anniversary_date) {
-        setAnniversary(couple.anniversary_date);
-      }
-      return;
-    }
-
     try {
       setLoading(true);
 
@@ -103,11 +76,10 @@ export default function Settings() {
       if (coupleError) throw coupleError;
 
       await fetchCoupleInfo();
-      localStorage.setItem("last_settings_save_time", Date.now().toString());
-      alert("저장되었습니다.");
+      showToast("저장되었습니다.", "success");
     } catch (error) {
       console.error(error);
-      alert("저장 실패");
+      showToast("저장 실패", "error");
       if (couple.anniversary_date) {
         setAnniversary(couple.anniversary_date);
       }
@@ -130,7 +102,7 @@ export default function Settings() {
 
     if (userInput !== "커플 연결 해제하기") {
       if (userInput !== null) {
-        alert("입력 내용이 일치하지 않아 취소되었습니다.");
+        showToast("입력 내용이 일치하지 않아 취소되었습니다.", "info");
       }
       return;
     }
@@ -140,7 +112,7 @@ export default function Settings() {
       navigate("/onboarding");
     } catch (error) {
       console.error(error);
-      alert("연결 해제 실패");
+      showToast("연결 해제 실패", "error");
     }
   };
 
@@ -180,9 +152,11 @@ export default function Settings() {
           <AppInfoSection onShowChangelog={() => setShowChangelog(true)} />
         </motion.div>
 
-        <motion.div variants={itemVariants} className="pt-2">
-          <DangerZoneSection onDisconnect={handleDisconnect} />
-        </motion.div>
+        {isDevMode && (
+          <motion.div variants={itemVariants} className="pt-2">
+            <DangerZoneSection onDisconnect={handleDisconnect} />
+          </motion.div>
+        )}
 
         {isDevMode && (
           <motion.div variants={itemVariants}>

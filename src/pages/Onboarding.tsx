@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useCouple } from "../hooks/useCouple";
 import { motion } from "framer-motion";
 import { Heart, Copy, ArrowRight, Loader2 } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 
 export default function Onboarding() {
   const navigate = useNavigate();
   const { generateInviteCode, joinCouple, loading } = useCouple();
+  const { showToast } = useToast();
   const [mode, setMode] = useState<"select" | "create" | "join">("select");
   const [inputCode, setInputCode] = useState("");
   const [createdCode, setCreatedCode] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export default function Onboarding() {
   const handleCopy = () => {
     if (createdCode) {
       navigator.clipboard.writeText(createdCode);
-      alert("초대 코드가 복사되었습니다!");
+      showToast("초대 코드가 복사되었어요.", "success");
     }
   };
 

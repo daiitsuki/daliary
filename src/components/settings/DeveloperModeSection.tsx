@@ -2,18 +2,20 @@ import React, { useState } from "react";
 import { Terminal, Send } from "lucide-react";
 import { useNotifications } from "../../hooks/useNotifications";
 import { useCouple } from "../../hooks/useCouple";
+import { useToast } from "../../context/ToastContext";
 import { supabase } from "../../lib/supabase";
 
 const DeveloperModeSection: React.FC = () => {
   const { settings, isDeviceActive } = useNotifications();
   const { profile, couple } = useCouple();
+  const { showToast } = useToast();
   const [isSending, setIsSending] = useState(false);
 
   const handleSendTestNotification = async () => {
     if (!profile?.id || !couple?.id) return;
 
     if (!settings?.is_enabled || !isDeviceActive) {
-      alert("알림 설정이 켜져있고 현재 기기가 활성화되어 있어야 합니다.");
+      showToast("알림 설정이 켜져있고 현재 기기가 활성화되어 있어야해요.", "error");
       return;
     }
 
@@ -28,10 +30,10 @@ const DeveloperModeSection: React.FC = () => {
       });
 
       if (error) throw error;
-      alert("알림을 보냈습니다.");
+      showToast("알림을 보냈어요.", "success");
     } catch (error) {
       console.error(error);
-      alert("알림 보내기 실패");
+      showToast("알림 보내기에 실패했어요.", "error");
     } finally {
       setIsSending(false);
     }
