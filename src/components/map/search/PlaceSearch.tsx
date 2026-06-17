@@ -312,8 +312,17 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
                     await savePlace(selectedPlace);
                     showToast("이 장소를 위시리스트에 저장했어요.", "success");
                     refresh();
+                    setSelectedPlace(null);
                   } catch (e: any) {
-                    showToast(e.message || "저장에 실패했어요.", "error");
+                    const msg = e.message || "저장에 실패했어요.";
+                    if (msg === "이미 추가된 장소입니다.") {
+                      showToast(msg, "info");
+                      setSelectedPlace(null);
+                    } else if (msg === "현재 저장 중입니다. 잠시만 기다려주세요.") {
+                      // Do not close or show error toast for this internal check
+                    } else {
+                      showToast(msg, "error");
+                    }
                   }
                 }}
                 disabled={isSaving}

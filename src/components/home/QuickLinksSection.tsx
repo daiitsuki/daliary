@@ -106,7 +106,7 @@ export default function QuickLinksSection() {
     timetable: {
       title: "시간표",
       icon: Calendar,
-      onClick: () => showToast("시간표 기능은 곧 업데이트됩니다!", "success"),
+      onClick: () => navigate("/calendar?tab=timetable"),
       color: "text-rose-500",
     },
     anniversary: {

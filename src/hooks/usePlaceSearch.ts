@@ -130,6 +130,7 @@ export const usePlaceSearch = () => {
     place: KakaoPlace,
     status: "wishlist" | "visited" = "wishlist",
   ) => {
+    if (isSaving) throw new Error("현재 저장 중입니다. 잠시만 기다려주세요.");
     if (!couple?.id) {
       const msg = "커플 연결이 필요합니다.";
       setError(msg);
@@ -156,6 +157,9 @@ export const usePlaceSearch = () => {
 
       if (dbError) {
         if (dbError.code === "23505") {
+          if (status === "wishlist") {
+            throw new Error("이미 추가된 장소입니다.");
+          }
           // Unique violation
           // Fetch the existing place to return its ID
           const { data: existingPlace, error: fetchError } = await supabase

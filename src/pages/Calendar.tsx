@@ -94,8 +94,11 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState(getKSTToday());
   const [isDateSelected, setIsDateSelected] = useState(false);
 
-  // Handle URL Date Parameter (Deep Linking)
+  // Handle URL Parameters (Deep Linking)
   useEffect(() => {
+    let hasChanges = false;
+    const newParams = new URLSearchParams(searchParams);
+
     const dateParam = searchParams.get("date");
     if (dateParam) {
       // YYYY-MM-DD 문자열을 로컬 타임존 기준으로 안전하게 파싱하여 타임존 오프셋에 의한 날짜 밀림 현상 방지
@@ -108,11 +111,21 @@ const Calendar = () => {
         setSelectedDate(parsedDate);
         setIsDateSelected(true);
 
-        // URL에서 파라미터 제거하여 새로고침 시 중복 동작 방지
-        const newParams = new URLSearchParams(searchParams);
         newParams.delete("date");
-        setSearchParams(newParams, { replace: true });
+        hasChanges = true;
       }
+    }
+
+    const tabParam = searchParams.get("tab") as CalendarTab;
+    if (tabParam === "calendar" || tabParam === "timetable") {
+      setActiveTab(tabParam);
+      newParams.delete("tab");
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      // URL에서 파라미터 제거하여 새로고침 시 중복 동작 방지
+      setSearchParams(newParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 
