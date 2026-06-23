@@ -19,6 +19,9 @@ export const useHomeData = () => {
     myProfile: context.myProfile,
     myAnswer: context.myAnswer,
     partnerAnswer: context.partnerAnswer,
+    drawingQuestion: context.drawingQuestion,
+    myDrawing: context.myDrawing,
+    partnerDrawing: context.partnerDrawing,
     refresh: context.refresh
   };
 };

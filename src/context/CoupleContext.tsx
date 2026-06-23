@@ -38,9 +38,27 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       // 세션 정보를 바탕으로 현재 사용자 ID 기록
       lastUserIdRef.current = session.user.id;
 
-      const { data, error } = await supabase.rpc('get_app_init_data');
-      if (error) throw error;
-      return data;
+      // Run both RPCs in parallel!
+      const [initRes, homeRes] = await Promise.all([
+        supabase.rpc('get_app_init_data'),
+        supabase.rpc('get_home_data', { timezone_offset_hours: 9 })
+      ]);
+      
+      if (initRes.error) throw initRes.error;
+      
+      const coupleId = initRes.data?.couple?.id;
+      
+      // Cache Seeding: Populate HomeContext caches directly
+      if (coupleId && homeRes.data) {
+        queryClient.setQueryData(['home_profiles', coupleId], homeRes.data.profiles);
+        queryClient.setQueryData(['daily_data', coupleId], { 
+          question: homeRes.data.question, 
+          answers: homeRes.data.answers 
+        });
+        queryClient.setQueryData(['drawing_data', coupleId], homeRes.data.drawing_answers);
+      }
+
+      return initRes.data;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false, // 창 포커스 시 자동 재요청 방지

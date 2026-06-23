@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, Variants } from "framer-motion";
-import { Copy, Sparkles } from "lucide-react";
+import { Copy, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useHomeData } from "../hooks/useHomeData";
 import { useCouplePoints } from "../hooks/useCouplePoints";
@@ -9,6 +9,7 @@ import { useCouplePoints } from "../hooks/useCouplePoints";
 import HomeHeader from "../components/home/HomeHeader";
 import HeartGauge from "../components/home/HeartGauge";
 import DailyQuestionSection from "../components/home/DailyQuestionSection";
+import { DrawingAnswerSection } from "../components/home/DrawingAnswerSection";
 import QuickLinksSection from "../components/home/QuickLinksSection";
 import { useToast } from "../context/ToastContext";
 
@@ -23,6 +24,9 @@ export default function Home() {
     myProfile,
     myAnswer,
     partnerAnswer,
+    drawingQuestion,
+    myDrawing,
+    partnerDrawing,
     refresh,
   } = useHomeData();
 
@@ -65,7 +69,13 @@ export default function Home() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#F9F9FB]" />;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]">
+        <Loader2 className="animate-spin text-rose-400" size={32} />
+      </div>
+    );
+  }
 
   // Stagger Animation Variants
   const containerVariants: Variants = {
@@ -150,6 +160,18 @@ export default function Home() {
               couple={couple}
               myProfile={myProfile}
               partnerProfile={partnerProfile}
+            />
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <DrawingAnswerSection
+              drawingQuestion={drawingQuestion}
+              myDrawing={myDrawing}
+              partnerDrawing={partnerDrawing}
+              coupleId={couple?.id}
+              currentUserId={currentUserId}
+              partnerProfile={partnerProfile}
+              onComplete={refresh}
             />
           </motion.div>
 

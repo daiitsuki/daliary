@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCouple } from '../hooks/useCouple';
-import { Profile } from '../types';
+import { Profile, DrawingAnswer } from '../types';
+import { getTodayDrawingQuestion } from '../data/drawingQuestions';
 
 interface Answer {
   id: string;
@@ -23,6 +24,9 @@ interface HomeContextType {
   myProfile: Profile | null;
   myAnswer: Answer | null;
   partnerAnswer: Answer | null;
+  drawingQuestion: string;
+  myDrawing: DrawingAnswer | null;
+  partnerDrawing: DrawingAnswer | null;
   loading: boolean;
   refresh: () => Promise<void>;
   currentUserId: string | null;
@@ -50,6 +54,7 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return data as Profile[];
     },
     enabled: !!couple?.id && !coupleLoading,
+    staleTime: 1000 * 60 * 5,
   });
 
   // React Query for Daily Data (Question + Answers)
@@ -58,9 +63,8 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     queryFn: async () => {
       if (!couple?.id) return null;
       
-      // Standardize date to YYYY-MM-DD (Asia/Seoul)
       const now = new Date();
-      const kstOffset = 9 * 60 * 60 * 1000; // KST is UTC+9
+      const kstOffset = 9 * 60 * 60 * 1000;
       const kstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + kstOffset);
       const year = kstNow.getFullYear();
       const month = String(kstNow.getMonth() + 1).padStart(2, '0');
@@ -74,10 +78,7 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
 
       if (!question) {
-        return { 
-          question: null,
-          answers: []
-        };
+        return { question: null, answers: [] };
       }
 
       const { data: answers, error } = await supabase
@@ -87,10 +88,10 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('question_id', question.id);
 
       if (error) throw error;
-
       return { question, answers };
     },
     enabled: !!couple?.id && !coupleLoading,
+    staleTime: 1000 * 60 * 5,
   });
 
   const myProfile = (profiles as Profile[] | undefined)?.find(p => p.id === currentUserId) || null;
@@ -98,6 +99,37 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const todayQuestion = dailyData?.question || null;
   const myAnswer = (dailyData?.answers as Answer[] | undefined)?.find(a => a.writer_id === currentUserId) || null;
   const partnerAnswer = (dailyData?.answers as Answer[] | undefined)?.find(a => a.writer_id !== currentUserId) || null;
+
+  // React Query for Drawing Data
+  const { data: drawingData, isLoading: drawingLoading } = useQuery({
+    queryKey: ['drawing_data', couple?.id],
+    queryFn: async () => {
+      if (!couple?.id) return null;
+      
+      const now = new Date();
+      const kstOffset = 9 * 60 * 60 * 1000;
+      const kstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + kstOffset);
+      const year = kstNow.getFullYear();
+      const month = String(kstNow.getMonth() + 1).padStart(2, '0');
+      const day = String(kstNow.getDate()).padStart(2, '0');
+      const today = `${year}-${month}-${day}`;
+
+      const { data, error } = await supabase
+        .from('drawing_answers')
+        .select('*')
+        .eq('couple_id', couple.id)
+        .eq('question_date', today);
+
+      if (error) throw error;
+      return data as DrawingAnswer[];
+    },
+    enabled: !!couple?.id && !coupleLoading,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const drawingQuestion = getTodayDrawingQuestion();
+  const myDrawing = drawingData?.find(d => d.writer_id === currentUserId) || null;
+  const partnerDrawing = drawingData?.find(d => d.writer_id !== currentUserId) || null;
 
   const calculateDDay = useCallback(() => {
     if (couple?.anniversary_date) {
@@ -121,7 +153,8 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refresh = useCallback(async () => {
     await Promise.all([
       queryClient.refetchQueries({ queryKey: ['home_profiles', couple?.id] }),
-      queryClient.refetchQueries({ queryKey: ['daily_data', couple?.id] })
+      queryClient.refetchQueries({ queryKey: ['daily_data', couple?.id] }),
+      queryClient.refetchQueries({ queryKey: ['drawing_data', couple?.id] })
     ]);
   }, [queryClient, couple?.id]);
 
@@ -139,6 +172,10 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `couple_id=eq.${couple.id}` }, 
         () => queryClient.invalidateQueries({ queryKey: ['home_profiles', couple.id] })
       )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'drawing_answers', filter: `couple_id=eq.${couple.id}` }, 
+        () => queryClient.invalidateQueries({ queryKey: ['drawing_data', couple.id] })
+      )
       .subscribe();
 
     return () => { 
@@ -154,7 +191,10 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
       myProfile,
       myAnswer,
       partnerAnswer,
-      loading: profilesLoading || dailyLoading,
+      drawingQuestion,
+      myDrawing,
+      partnerDrawing,
+      loading: profilesLoading || dailyLoading || drawingLoading,
       refresh,
       currentUserId
     }}>

@@ -56,10 +56,8 @@ function App() {
           <CoupleProvider>
         <NotificationsProvider>
           <CouplePointsProvider>
-            <SchedulesProvider>
-              <PlacesProvider>
-                <HomeProvider>
-                    <div className="fixed inset-0 w-full h-full bg-gray-50 flex justify-center items-center md:py-8 overflow-hidden">
+            <HomeProvider>
+              <div className="fixed inset-0 w-full h-full bg-gray-50 flex justify-center items-center md:py-8 overflow-hidden">
                       <div className="w-full h-full md:max-w-5xl md:h-[90vh] bg-white md:rounded-[32px] md:shadow-2xl md:border-8 md:border-white overflow-hidden relative flex flex-col">
                         <Router>
                           <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
@@ -69,9 +67,9 @@ function App() {
                               <Route element={<ProtectedRoute />}>
                                 <Route path="/" element={<Navigate to="/home" replace />} />
                                 <Route path="/home" element={<Home />} />
-                                <Route path="/calendar" element={<Calendar />} />
+                                <Route path="/calendar" element={<SchedulesProvider><Calendar /></SchedulesProvider>} />
                                 <Route path="/games" element={<Games />} />
-                                <Route path="/places" element={<Places />} />
+                                <Route path="/places" element={<PlacesProvider><Places /></PlacesProvider>} />
                                 <Route path="/profile" element={<Profile />} />
                                 <Route path="/settings" element={<Settings />} />
                                 <Route path="/onboarding" element={<Onboarding />} />
@@ -93,8 +91,6 @@ function App() {
                       </div>
                     </div>
                 </HomeProvider>
-              </PlacesProvider>
-            </SchedulesProvider>
           </CouplePointsProvider>
         </NotificationsProvider>
         </CoupleProvider>

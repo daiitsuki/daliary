@@ -57,3 +57,13 @@ export interface CoupleItem {
   quantity: number;
   updated_at: string;
 }
+
+export interface DrawingAnswer {
+  id: string;
+  couple_id: string;
+  writer_id: string;
+  question_date: string;
+  question_text: string;
+  image_url: string;
+  created_at: string;
+}
