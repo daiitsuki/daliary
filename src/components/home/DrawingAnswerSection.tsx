@@ -86,7 +86,7 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
     const month = String(kstNow.getMonth() + 1).padStart(2, "0");
     const day = String(kstNow.getDate()).padStart(2, "0");
     const todayDate = `${year}-${month}-${day}`;
-    const uniqueId = crypto.randomUUID().split('-')[0]; // ex: 123e4567
+    const uniqueId = crypto.randomUUID().split("-")[0]; // ex: 123e4567
 
     const fileName = `${coupleId}/${todayDate}_${currentUserId}_${uniqueId}.webp`;
     const { error: uploadError } = await supabase.storage
@@ -180,7 +180,7 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                           <Smile size={12} className="text-rose-300" /> 나의
                           그림
                         </p>
-                        {myDrawing && (
+                        {/*  {myDrawing && (
                           <button
                             onClick={handleDelete}
                             disabled={isDeleting}
@@ -193,7 +193,7 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                             )}
                             다시 그리기
                           </button>
-                        )}
+                        )} */}
                       </div>
 
                       <div className="flex justify-center w-full">
