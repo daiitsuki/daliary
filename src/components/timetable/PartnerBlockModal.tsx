@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Clock, MapPin, AlignLeft } from "lucide-react";
 import { TimetableBlock } from "../../hooks/useTimetable";
 import { useEffect, useState } from "react";
+import Button from "../common/Button";
 
 interface PartnerBlockModalProps {
   isOpen: boolean;
@@ -49,22 +50,22 @@ const PartnerBlockModal = ({ isOpen, onClose, block }: PartnerBlockModalProps) =
             className="relative w-full max-w-sm bg-white rounded-t-[32px] md:rounded-[32px] shadow-xl flex flex-col overflow-hidden"
           >
             {/* Header with color bar */}
-            <div className="h-3 w-full" style={{ backgroundColor: block.color }} />
-            <div className="px-6 py-5 border-b border-gray-50 flex items-start justify-between">
+            <div className="h-3 w-full shrink-0" style={{ backgroundColor: block.color }} />
+            <div className="px-6 py-5 flex items-start justify-between bg-white/80 backdrop-blur-xl shrink-0">
               <div className="flex-1 pr-4">
                 <div className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-black mb-2" style={{ backgroundColor: block.color + "20", color: block.color }}>
                   {DAYS[block.day_of_week]}요일
                 </div>
-                <h3 className="text-lg sm:text-xl font-black text-gray-800 leading-tight">
+                <h3 className="text-lg sm:text-xl font-black text-gray-700 leading-tight tracking-tight">
                   {block.title}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 -mr-2 text-gray-400 hover:bg-gray-50 rounded-full transition-colors"
+                className="p-2 -mr-2 bg-gray-100/50 text-gray-400 hover:bg-gray-200/60 hover:text-gray-600 rounded-full transition-all active:scale-95"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
 
@@ -110,13 +111,9 @@ const PartnerBlockModal = ({ isOpen, onClose, block }: PartnerBlockModalProps) =
 
             {/* Footer */}
             <div className="p-4 bg-gray-50/50 flex justify-center shrink-0">
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full py-3 bg-white text-gray-600 rounded-2xl font-black text-sm shadow-sm border border-gray-100 hover:bg-gray-50 transition-all active:scale-[0.98]"
-              >
+              <Button variant="secondary" onClick={onClose}>
                 닫기
-              </button>
+              </Button>
             </div>
           </motion.div>
         </div>

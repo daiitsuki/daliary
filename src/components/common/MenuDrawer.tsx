@@ -163,9 +163,6 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
                   <span className="font-bold text-gray-900 truncate">
                     {myProfile?.nickname || "사용자"}
                   </span>
-                  <span className="text-[11px] text-gray-400 truncate">
-                    반가워요! 오늘도 기록해볼까요?
-                  </span>
                 </div>
               </div>
 

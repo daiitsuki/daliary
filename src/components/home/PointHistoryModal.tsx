@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X,
   PlusCircle,
   MinusCircle,
   CheckCircle2,
@@ -11,14 +10,17 @@ import {
   ShoppingBag,
   Ticket,
   Clock,
+  Loader2,
 } from "lucide-react";
 import {
   PointLog,
   useCouplePointsContext,
 } from "../../context/CouplePointsContext";
-import { supabase } from "../../lib/supabase";
 import { useConfirm } from "../../context/ConfirmContext";
 import { useToast } from "../../context/ToastContext";
+import { supabase } from "../../lib/supabase";
+import BaseModal from "../common/BaseModal";
+import Button from "../common/Button";
 
 interface PointHistoryModalProps {
   isOpen: boolean;
@@ -87,27 +89,7 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
     }
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      setActiveTab(initialTab);
-      window.history.pushState({ modal: "point-history" }, "");
-
-      const handlePopState = (event: PopStateEvent) => {
-        if (event.state?.modal !== "point-history") {
-          onClose();
-        }
-      };
-
-      window.addEventListener("popstate", handlePopState);
-
-      return () => {
-        window.removeEventListener("popstate", handlePopState);
-        if (window.history.state?.modal === "point-history") {
-          window.history.back();
-        }
-      };
-    }
-  }, [isOpen, initialTab, onClose]);
+  // Removed old popstate logic because BaseModal handles it automatically
 
   // Check if ticket was purchased today by current user
   const isTicketPurchasedToday = useMemo(() => {
@@ -239,90 +221,52 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
     }),
   };
 
+  const tabsContent = (
+    <div className="flex gap-2 p-1 bg-gray-50 rounded-2xl mt-3">
+      <button
+        onClick={() => handleTabChange("history")}
+        className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${
+          activeTab === "history"
+            ? "bg-white text-rose-500 shadow-sm"
+            : "text-gray-400 hover:text-gray-500 hover:bg-gray-100/50"
+        }`}
+      >
+        적립 내역
+      </button>
+      <button
+        onClick={() => handleTabChange("guide")}
+        className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${
+          activeTab === "guide"
+            ? "bg-white text-rose-500 shadow-sm"
+            : "text-gray-400 hover:text-gray-500 hover:bg-gray-100/50"
+        }`}
+      >
+        획득 방법
+      </button>
+      <button
+        onClick={() => handleTabChange("shop")}
+        className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${
+          activeTab === "shop"
+            ? "bg-white text-rose-500 shadow-sm"
+            : "text-gray-400 hover:text-gray-500 hover:bg-gray-100/50"
+        }`}
+      >
+        포인트 상점
+      </button>
+    </div>
+  );
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 overflow-hidden">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          />
-          <motion.div
-            initial={
-              window.innerWidth < 768
-                ? { y: "100%" }
-                : { opacity: 0, scale: 0.95, y: 20 }
-            }
-            animate={
-              window.innerWidth < 768
-                ? { y: 0 }
-                : { opacity: 1, scale: 1, y: 0 }
-            }
-            exit={
-              window.innerWidth < 768
-                ? { y: "100%" }
-                : { opacity: 0, scale: 0.95, y: 20 }
-            }
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg bg-white rounded-t-[32px] md:rounded-[32px] shadow-2xl flex flex-col h-[85vh] md:h-[70vh] overflow-hidden"
-          >
-            <div className="px-6 py-5 border-b border-gray-50 bg-white sticky top-0 z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-sm font-black text-gray-800 uppercase tracking-widest">
-                    Memory Points
-                  </h3>
-                  <p className="text-[11px] text-gray-500 font-bold mt-0.5">
-                    함께 만든 소중한 기록들
-                  </p>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="p-2 text-gray-400 hover:bg-gray-50 rounded-full transition-colors"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex gap-2 p-1 bg-gray-50 rounded-2xl">
-                <button
-                  onClick={() => handleTabChange("history")}
-                  className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${
-                    activeTab === "history"
-                      ? "bg-white text-rose-500 shadow-sm"
-                      : "text-gray-400"
-                  }`}
-                >
-                  적립 내역
-                </button>
-                <button
-                  onClick={() => handleTabChange("guide")}
-                  className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${
-                    activeTab === "guide"
-                      ? "bg-white text-rose-500 shadow-sm"
-                      : "text-gray-400"
-                  }`}
-                >
-                  획득 방법
-                </button>
-                <button
-                  onClick={() => handleTabChange("shop")}
-                  className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${
-                    activeTab === "shop"
-                      ? "bg-white text-rose-500 shadow-sm"
-                      : "text-gray-400"
-                  }`}
-                >
-                  포인트 상점
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 relative overflow-hidden">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="MEMORY POINTS"
+      subtitle="함께 만든 소중한 기록들"
+      headerContent={tabsContent}
+      maxWidth="lg"
+      contentClassName="p-0 h-[75vh] md:h-[65vh] flex flex-col relative bg-gray-50/30"
+    >
+      <div className="flex-1 relative overflow-hidden">
               <AnimatePresence initial={false} custom={direction} mode="popLayout">
                 <motion.div
                   key={activeTab}
@@ -492,23 +436,23 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
                                 </p>
                               </div>
                             </div>
-                            <button
+                            <Button
+                              variant={
+                                item.isSoldOut || currentPoints < item.price
+                                  ? "secondary"
+                                  : "primary"
+                              }
                               onClick={() =>
                                 handlePurchase(item.id, item.price, item.name)
                               }
                               disabled={
-                                isPurchasing === item.id || item.isSoldOut
+                                isPurchasing === item.id ||
+                                item.isSoldOut ||
+                                currentPoints < item.price
                               }
-                              className={`w-full py-3.5 rounded-2xl text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-2 ${
-                                item.isSoldOut
-                                  ? "bg-gray-100 text-gray-400 border border-gray-100 cursor-not-allowed"
-                                  : currentPoints >= item.price
-                                    ? "bg-rose-500 text-white shadow-md shadow-rose-100 hover:bg-rose-600"
-                                    : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-50"
-                              }`}
                             >
                               {isPurchasing === item.id ? (
-                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <Loader2 className="animate-spin text-gray-400" size={16} />
                               ) : item.isSoldOut ? (
                                 <span className="flex items-center gap-1.5 text-gray-400">
                                   <Clock size={14} /> 구매 완료
@@ -516,7 +460,7 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
                               ) : (
                                 `${item.price.toLocaleString()} PT  |  구매하기`
                               )}
-                            </button>
+                            </Button>
                           </motion.div>
                         ))}
 
@@ -536,10 +480,8 @@ const PointHistoryModal: React.FC<PointHistoryModalProps> = ({
                 </motion.div>
               </AnimatePresence>
             </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-  );};
+    </BaseModal>
+  );
+};
 
 export default PointHistoryModal;

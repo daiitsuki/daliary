@@ -36,10 +36,11 @@ const config: Record<ToastType, { icon: React.ReactNode; cls: string }> = {
   },
 };
 
-// ── ToastList renderer ─────────────────────────
-const ToastList: React.FC<{ toasts: ToastItem[] }> = ({ toasts }) => (
+import { createPortal } from 'react-dom';
+
+const ToastList: React.FC<{ toasts: ToastItem[] }> = ({ toasts }) => createPortal(
   <div
-    className="fixed z-[9999] flex flex-col gap-2 items-center pointer-events-none"
+    className="fixed z-[99999] flex flex-col gap-2 items-center pointer-events-none"
     style={{
       top: 'max(env(safe-area-inset-top, 0px) + 12px, 12px)',
       left: '50%',
@@ -66,7 +67,8 @@ const ToastList: React.FC<{ toasts: ToastItem[] }> = ({ toasts }) => (
         );
       })}
     </AnimatePresence>
-  </div>
+  </div>,
+  document.body
 );
 
 // ── Provider ──────────────────────────────────

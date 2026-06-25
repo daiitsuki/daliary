@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  ChevronRight,
   CalendarCheck2,
   Loader2,
   CheckCircle2,

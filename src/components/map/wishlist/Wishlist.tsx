@@ -76,8 +76,27 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
   const { confirm } = useConfirm();
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isVisitFormOpen, setIsVisitFormOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("전체");
-  const [sortBy, setSortBy] = useState<"region" | "category" | "date">("region");
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("wishlistCategory") || "전체";
+    }
+    return "전체";
+  });
+  const [sortBy, setSortBy] = useState<"region" | "category" | "date">(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem("wishlistSortBy");
+      return (saved as "region" | "category" | "date") || "region";
+    }
+    return "region";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("wishlistCategory", selectedCategory);
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    localStorage.setItem("wishlistSortBy", sortBy);
+  }, [sortBy]);
 
   // 카테고리별 개수 계산 및 탭 목록 생성
   const categoriesWithCounts = useMemo(() => {

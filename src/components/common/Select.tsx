@@ -53,7 +53,7 @@ export default function Select({ options, value, onChange, className = '' }: Sel
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 5, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 mt-1.5 min-w-[120px] right-0 bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-[16px] overflow-hidden py-1.5"
+            className="absolute z-50 mt-1.5 w-full left-0 bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-[16px] overflow-y-auto max-h-[240px] custom-scrollbar py-1.5"
           >
             {options.map((option) => (
               <button

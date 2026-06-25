@@ -10,23 +10,64 @@ import TimetableBlockModal from "./TimetableBlockModal";
 import TimetableSettingsModal from "./TimetableSettingsModal";
 import PartnerBlockModal from "./PartnerBlockModal";
 
-const STORAGE_KEY_START = "timetable_start_hour";
-const STORAGE_KEY_END = "timetable_end_hour";
-const STORAGE_KEY_COMPRESSION = "timetable_compression_mode";
-const STORAGE_KEY_WEEK_START = "timetable_week_start";
-const STORAGE_KEY_VISIBLE_DAYS = "timetable_visible_days";
-const STORAGE_KEY_SHOW_TIME = "timetable_show_time";
-const STORAGE_KEY_SHOW_PLACE = "timetable_show_place";
-const STORAGE_KEY_SHOW_MEMO = "timetable_show_memo";
-const STORAGE_KEY_FIT_TO_SCREEN = "timetable_fit_to_screen";
-const STORAGE_KEY_BLOCK_HEIGHT = "timetable_block_height_mode";
+const STORAGE_KEY = "timetable_settings";
+
+const defaultSettings = {
+  startHour: 8,
+  endHour: 22,
+  compressionMode: "compact" as "none" | "compact" | "more_compact",
+  weekStart: "monday" as "sunday" | "monday",
+  visibleDays: [0, 1, 2, 3, 4, 5, 6],
+  showTime: true,
+  showPlace: true,
+  showMemo: false,
+  fitToScreen: false,
+  blockHeightMode: "normal" as "narrow" | "normal" | "wide",
+  lastViewMode: "my" as "my" | "partner"
+};
+
+const getSettings = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return { ...defaultSettings, ...JSON.parse(stored) };
+    }
+  } catch (e) {
+    console.error("Failed to parse timetable settings", e);
+  }
+  
+  // Migration logic for old separate keys
+  const legacyStart = localStorage.getItem("timetable_start_hour");
+  if (legacyStart) {
+    const migrated = {
+      startHour: parseInt(localStorage.getItem("timetable_start_hour") || "8"),
+      endHour: parseInt(localStorage.getItem("timetable_end_hour") || "22"),
+      compressionMode: (localStorage.getItem("timetable_compression_mode") as any) || "compact",
+      weekStart: (localStorage.getItem("timetable_week_start") as any) || "monday",
+      visibleDays: JSON.parse(localStorage.getItem("timetable_visible_days") || "[0,1,2,3,4,5,6]"),
+      showTime: JSON.parse(localStorage.getItem("timetable_show_time") || "true"),
+      showPlace: JSON.parse(localStorage.getItem("timetable_show_place") || "true"),
+      showMemo: JSON.parse(localStorage.getItem("timetable_show_memo") || "false"),
+      fitToScreen: JSON.parse(localStorage.getItem("timetable_fit_to_screen") || "false"),
+      blockHeightMode: (localStorage.getItem("timetable_block_height_mode") as any) || "normal",
+      lastViewMode: "my" as "my" | "partner"
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+    // Clean up old keys
+    ["timetable_start_hour", "timetable_end_hour", "timetable_compression_mode", "timetable_week_start", "timetable_visible_days", "timetable_show_time", "timetable_show_place", "timetable_show_memo", "timetable_fit_to_screen", "timetable_block_height_mode"].forEach(k => localStorage.removeItem(k));
+    return migrated;
+  }
+  
+  return defaultSettings;
+};
 
 const TimetableView = () => {
   const { myBlocks, partnerBlocks, addBlock, updateBlock, deleteBlock, deleteAllBlocks, loading } = useTimetable();
   const { partnerProfile } = useHomeData();
   const { showToast } = useToast();
 
-  const [viewMode, setViewMode] = useState<"my" | "partner">("my");
+  const initialSettings = getSettings();
+  const [viewMode, setViewMode] = useState<"my" | "partner">(initialSettings.lastViewMode);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [editingBlock, setEditingBlock] = useState<TimetableBlock | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -41,43 +82,25 @@ const TimetableView = () => {
   
   const gridRef = useRef<HTMLDivElement>(null);
 
-  const [startHour, setStartHour] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEY_START);
-    return stored ? parseInt(stored) : 8;
-  });
-  const [endHour, setEndHour] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEY_END);
-    return stored ? parseInt(stored) : 22;
-  });
-  const [compressionMode, setCompressionMode] = useState<"none" | "compact" | "more_compact">(() => {
-    return (localStorage.getItem(STORAGE_KEY_COMPRESSION) as any) || "compact";
-  });
-  const [weekStart, setWeekStart] = useState<"sunday" | "monday">(() => {
-    return (localStorage.getItem(STORAGE_KEY_WEEK_START) as any) || "monday";
-  });
-  const [visibleDays, setVisibleDays] = useState<number[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY_VISIBLE_DAYS);
-    return stored ? JSON.parse(stored) : [0, 1, 2, 3, 4, 5, 6];
-  });
-  const [showTime, setShowTime] = useState<boolean>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY_SHOW_TIME);
-    return stored ? JSON.parse(stored) : true;
-  });
-  const [showPlace, setShowPlace] = useState<boolean>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY_SHOW_PLACE);
-    return stored ? JSON.parse(stored) : true;
-  });
-  const [showMemo, setShowMemo] = useState<boolean>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY_SHOW_MEMO);
-    return stored ? JSON.parse(stored) : false;
-  });
-  const [fitToScreen, setFitToScreen] = useState<boolean>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY_FIT_TO_SCREEN);
-    return stored ? JSON.parse(stored) : false;
-  });
-  const [blockHeightMode, setBlockHeightMode] = useState<"narrow" | "normal" | "wide">(() => {
-    return (localStorage.getItem(STORAGE_KEY_BLOCK_HEIGHT) as any) || "normal";
-  });
+  const [startHour, setStartHour] = useState(initialSettings.startHour);
+  const [endHour, setEndHour] = useState(initialSettings.endHour);
+  const [compressionMode, setCompressionMode] = useState(initialSettings.compressionMode);
+  const [weekStart, setWeekStart] = useState(initialSettings.weekStart);
+  const [visibleDays, setVisibleDays] = useState(initialSettings.visibleDays);
+  const [showTime, setShowTime] = useState(initialSettings.showTime);
+  const [showPlace, setShowPlace] = useState(initialSettings.showPlace);
+  const [showMemo, setShowMemo] = useState(initialSettings.showMemo);
+  const [fitToScreen, setFitToScreen] = useState(initialSettings.fitToScreen);
+  const [blockHeightMode, setBlockHeightMode] = useState(initialSettings.blockHeightMode);
+
+  const handleViewModeChange = useCallback((mode: "my" | "partner") => {
+    setViewMode(mode);
+    const newSettings = {
+      ...getSettings(),
+      lastViewMode: mode
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+  }, []);
 
   const handleAddBlock = useCallback((dayOfWeek?: number, defaultHour?: number) => {
     setEditingBlock(null);
@@ -164,16 +187,21 @@ const TimetableView = () => {
     setShowMemo(sMemo);
     setFitToScreen(sFitToScreen);
     setBlockHeightMode(bHeightMode);
-    localStorage.setItem(STORAGE_KEY_START, start.toString());
-    localStorage.setItem(STORAGE_KEY_END, end.toString());
-    localStorage.setItem(STORAGE_KEY_COMPRESSION, mode);
-    localStorage.setItem(STORAGE_KEY_WEEK_START, ws);
-    localStorage.setItem(STORAGE_KEY_VISIBLE_DAYS, JSON.stringify(vd));
-    localStorage.setItem(STORAGE_KEY_SHOW_TIME, JSON.stringify(sTime));
-    localStorage.setItem(STORAGE_KEY_SHOW_PLACE, JSON.stringify(sPlace));
-    localStorage.setItem(STORAGE_KEY_SHOW_MEMO, JSON.stringify(sMemo));
-    localStorage.setItem(STORAGE_KEY_FIT_TO_SCREEN, JSON.stringify(sFitToScreen));
-    localStorage.setItem(STORAGE_KEY_BLOCK_HEIGHT, bHeightMode);
+    
+    const newSettings = {
+      ...getSettings(),
+      startHour: start,
+      endHour: end,
+      compressionMode: mode,
+      weekStart: ws,
+      visibleDays: vd,
+      showTime: sTime,
+      showPlace: sPlace,
+      showMemo: sMemo,
+      fitToScreen: sFitToScreen,
+      blockHeightMode: bHeightMode
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
   };
 
   const handleExport = async () => {
@@ -271,7 +299,7 @@ const TimetableView = () => {
     >
       <TimetableHeader
         viewMode={viewMode}
-        onViewModeChange={setViewMode}
+        onViewModeChange={handleViewModeChange}
         onAddBlock={() => handleAddBlock()}
         onOpenSettings={() => setShowSettings(true)}
         partnerProfile={partnerProfile}

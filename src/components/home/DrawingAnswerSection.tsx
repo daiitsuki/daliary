@@ -1,19 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../lib/supabase";
 import { DrawingAnswer, Profile } from "../../types";
 import { DrawingCanvas } from "./DrawingCanvas";
 import { useToast } from "../../context/ToastContext";
+import BaseModal from "../common/BaseModal";
+
 import {
   Lock,
   Unlock,
   Smile,
   Heart,
   Palette,
-  Trash2,
-  Loader2,
   ChevronDown,
   ChevronUp,
+  Share2,
+  Image as ImageIcon,
 } from "lucide-react";
 
 interface DrawingAnswerSectionProps {
@@ -37,44 +39,31 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
 }) => {
   const { showToast } = useToast();
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(() => {
-    // 상대방만 그림을 그렸을 때 기본적으로 펼쳐둠
-    return !!(partnerDrawing && !myDrawing);
+    try {
+      const stored = localStorage.getItem("drawing_section_state");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.question === drawingQuestion) {
+          return parsed.isExpanded;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return true;
   });
 
+  useEffect(() => {
+    localStorage.setItem(
+      "drawing_section_state",
+      JSON.stringify({ isExpanded, question: drawingQuestion }),
+    );
+  }, [isExpanded, drawingQuestion]);
+
   if (!coupleId || !currentUserId) return null;
-
-  const handleDelete = async () => {
-    if (!myDrawing) return;
-    if (!confirm("제출한 그림을 삭제하고 다시 그리시겠어요?")) return;
-
-    setIsDeleting(true);
-    try {
-      // 1. DB 레코드 삭제
-      const { error: dbError } = await supabase
-        .from("drawing_answers")
-        .delete()
-        .eq("id", myDrawing.id);
-
-      if (dbError) throw dbError;
-
-      // 2. 스토리지(버킷) 파일 삭제 (찌꺼기 방지)
-      const urlParts = myDrawing.image_url.split("/drawings/");
-      if (urlParts.length > 1) {
-        const filePath = urlParts[1].split("?")[0];
-        await supabase.storage.from("drawings").remove([filePath]);
-      }
-
-      showToast("그림이 삭제되었습니다. 다시 그려보세요!", "success");
-      await onComplete();
-    } catch (error) {
-      showToast("삭제에 실패했어요.", "error");
-      console.error("Delete error:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
 
   const handleCanvasComplete = async (blob: Blob) => {
     const now = new Date();
@@ -128,6 +117,220 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
   const partnerNickname = partnerProfile?.nickname || "상대방";
   const bothAnswered = !!(myDrawing && partnerDrawing);
 
+  const handleShareClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsShareMenuOpen(true);
+  };
+
+  const handleShareOption = async (option: "my" | "partner" | "both") => {
+    setIsShareMenuOpen(false);
+    setIsSharing(true);
+    showToast("이미지를 생성 중입니다...", "info");
+
+    try {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas not supported");
+
+      const width = option === "both" ? 1000 : 600;
+
+      // Calculate dynamic height based on text lines
+      ctx.font = "bold 32px sans-serif";
+      const maxWidth = width - 120; // 60px padding on each side
+
+      const wrapText = (
+        context: CanvasRenderingContext2D,
+        text: string,
+        maxW: number,
+      ) => {
+        const lines: string[] = [];
+        let currentLine = "";
+        for (let i = 0; i < text.length; i++) {
+          const char = text[i];
+          const testLine = currentLine + char;
+          if (
+            context.measureText(testLine).width > maxW &&
+            currentLine !== ""
+          ) {
+            lines.push(currentLine);
+            currentLine = char;
+          } else {
+            currentLine = testLine;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+        return lines;
+      };
+
+      const titleText = `"${drawingQuestion}"`;
+      const lines = wrapText(ctx, titleText, maxWidth);
+      const lineHeight = 44;
+      const textHeight = lines.length * lineHeight;
+
+      const headerTopPadding = 70;
+      const headerBottomPadding = 40;
+      const imageSize = 400;
+      const footerPadding = 120; // space for the label and padding
+
+      const height =
+        headerTopPadding +
+        textHeight +
+        headerBottomPadding +
+        imageSize +
+        footerPadding;
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Background
+      ctx.fillStyle = "#fff1f2"; // rose-50
+      ctx.fillRect(0, 0, width, height);
+
+      // Card
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowColor = "rgba(0,0,0,0.1)";
+      ctx.shadowBlur = 30;
+      ctx.shadowOffsetY = 10;
+
+      // manual roundRect
+      const r = 32;
+      const x = 40;
+      const y = 40;
+      const w = width - 80;
+      const h = height - 80;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.arcTo(x + w, y, x + w, y + r, r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+      ctx.lineTo(x + r, y + h);
+      ctx.arcTo(x, y + h, x, y + h - r, r);
+      ctx.lineTo(x, y + r);
+      ctx.arcTo(x, y, x + r, y, r);
+      ctx.fill();
+      ctx.shadowColor = "transparent";
+
+      // Draw Title Lines
+      ctx.fillStyle = "#1f2937";
+      ctx.font = "bold 32px sans-serif";
+      ctx.textAlign = "center";
+      lines.forEach((line, index) => {
+        ctx.fillText(
+          line,
+          width / 2,
+          headerTopPadding + 32 + index * lineHeight,
+        );
+      });
+
+      const imageStartY = headerTopPadding + textHeight + headerBottomPadding;
+
+      const loadImage = (src: string): Promise<HTMLImageElement> => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous"; // Important for Supabase URLs
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
+        });
+      };
+
+      const drawImageWithLabel = async (
+        url: string,
+        label: string,
+        cx: number,
+        color: string,
+      ) => {
+        const img = await loadImage(url);
+
+        ctx.fillStyle = color;
+        const ix = cx - imageSize / 2;
+        const iy = imageStartY;
+
+        // Image BG
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(ix, iy, imageSize, imageSize, 24);
+        } else {
+          ctx.rect(ix, iy, imageSize, imageSize);
+        }
+        ctx.fill();
+
+        ctx.drawImage(img, ix, iy, imageSize, imageSize);
+
+        ctx.fillStyle = "#4b5563";
+        ctx.font = "bold 24px sans-serif";
+        ctx.fillText(label, cx, iy + imageSize + 50);
+      };
+
+      if (option === "both") {
+        await drawImageWithLabel(
+          myDrawing!.image_url,
+          "나의 그림",
+          width / 4 + 20,
+          "#fff1f2",
+        );
+        await drawImageWithLabel(
+          partnerDrawing!.image_url,
+          `${partnerNickname}의 그림`,
+          (width / 4) * 3 - 20,
+          "#f3f4f6",
+        );
+      } else if (option === "my") {
+        await drawImageWithLabel(
+          myDrawing!.image_url,
+          "나의 그림",
+          width / 2,
+          "#fff1f2",
+        );
+      } else if (option === "partner") {
+        await drawImageWithLabel(
+          partnerDrawing!.image_url,
+          `${partnerNickname}의 그림`,
+          width / 2,
+          "#f3f4f6",
+        );
+      }
+
+      // Convert to blob and share
+      canvas.toBlob(async (blob) => {
+        if (!blob) throw new Error("Blob creation failed");
+        const file = new File([blob], "drawing.png", { type: "image/png" });
+
+        if (
+          navigator.share &&
+          navigator.canShare &&
+          navigator.canShare({ files: [file] })
+        ) {
+          try {
+            await navigator.share({
+              title: "달이어리 드로잉",
+              text: `🎨 오늘의 드로잉 질문: "${drawingQuestion}"`,
+              files: [file],
+            });
+            showToast("공유되었습니다.", "success");
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          // Fallback: download
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "drawing.png";
+          a.click();
+          URL.revokeObjectURL(url);
+          showToast("기기에 이미지가 저장되었습니다.", "success");
+        }
+        setIsSharing(false);
+      }, "image/png");
+    } catch (err) {
+      console.error(err);
+      showToast("이미지 생성에 실패했습니다.", "error");
+      setIsSharing(false);
+    }
+  };
+
   return (
     <section className="px-6 mb-6">
       <AnimatePresence mode="wait">
@@ -154,12 +357,22 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                   {drawingQuestion}
                 </p>
               </div>
-              <div className="p-1.5 rounded-full text-gray-300 group-hover/header:bg-rose-50 group-hover/header:text-rose-400 transition-colors shrink-0 mt-1">
-                {isExpanded ? (
-                  <ChevronUp size={20} />
-                ) : (
-                  <ChevronDown size={20} />
-                )}
+              <div className="flex items-center gap-1 shrink-0 mt-1">
+                <button
+                  disabled={isSharing}
+                  onClick={handleShareClick}
+                  className="p-1.5 rounded-full text-gray-400 hover:bg-white hover:text-rose-500 hover:shadow-sm transition-all disabled:opacity-50 z-10 relative active:scale-95"
+                  aria-label="공유하기"
+                >
+                  <Share2 size={18} />
+                </button>
+                <div className="p-1.5 rounded-full text-gray-300 group-hover/header:bg-rose-50 group-hover/header:text-rose-400 transition-colors">
+                  {isExpanded ? (
+                    <ChevronUp size={20} />
+                  ) : (
+                    <ChevronDown size={20} />
+                  )}
+                </div>
               </div>
             </div>
 
@@ -305,6 +518,59 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
         onComplete={handleCanvasComplete}
         questionText={drawingQuestion}
       />
+
+      <BaseModal
+        isOpen={isShareMenuOpen}
+        onClose={() => setIsShareMenuOpen(false)}
+        title="어떤 그림을 공유할까요?"
+        icon={Share2}
+        contentClassName="p-6 pb-8 md:pb-6 flex flex-col gap-3"
+      >
+        <button
+          disabled={!myDrawing}
+          onClick={() => handleShareOption('my')}
+          className="w-full flex items-center gap-3 p-4 rounded-2xl bg-rose-50/50 hover:bg-rose-100/60 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-rose-50/50 disabled:active:scale-100 border border-rose-100"
+        >
+          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+            <Smile size={20} className="text-rose-400" />
+          </div>
+          <div className="text-left">
+            <p className="font-bold text-gray-800 text-[15px]">
+              내 그림 공유하기
+            </p>
+          </div>
+        </button>
+
+        <button
+          disabled={!partnerDrawing || !bothAnswered}
+          onClick={() => handleShareOption('partner')}
+          className="w-full flex items-center gap-3 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100/80 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-gray-50 disabled:active:scale-100 border border-gray-100"
+        >
+          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+            <Heart size={20} className="text-gray-400" />
+          </div>
+          <div className="text-left">
+            <p className="font-bold text-gray-800 text-[15px]">
+              {partnerNickname}님의 그림 공유하기
+            </p>
+          </div>
+        </button>
+
+        <button
+          disabled={!bothAnswered}
+          onClick={() => handleShareOption('both')}
+          className="w-full flex items-center gap-3 p-4 rounded-2xl bg-indigo-50/50 hover:bg-indigo-100/60 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-indigo-50/50 disabled:active:scale-100 border border-indigo-100"
+        >
+          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+            <ImageIcon size={20} className="text-indigo-400" />
+          </div>
+          <div className="text-left">
+            <p className="font-bold text-gray-800 text-[15px]">
+              두 그림 모두 공유하기
+            </p>
+          </div>
+        </button>
+      </BaseModal>
     </section>
   );
 };

@@ -5,7 +5,7 @@ import { motion, Reorder, useDragControls } from "framer-motion";
 import AnniversaryModal from "../common/AnniversaryModal";
 import PointHistoryModal from "./PointHistoryModal";
 import { useCouplePoints } from "../../hooks/useCouplePoints";
-import { useToast } from "../../context/ToastContext";
+
 
 const DEFAULT_ORDER = ["plans", "memory", "timetable", "anniversary", "shop", "settings"];
 
@@ -69,7 +69,7 @@ function DraggableLinkItem({ id, link }: { id: string; link: any }) {
 
 export default function QuickLinksSection() {
   const navigate = useNavigate();
-  const { showToast } = useToast();
+
   const [isAnniversaryModalOpen, setIsAnniversaryModalOpen] = useState(false);
   const [isPointShopModalOpen, setIsPointShopModalOpen] = useState(false);
   const { currentPoints, history } = useCouplePoints();

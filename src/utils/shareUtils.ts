@@ -66,5 +66,11 @@ export const ShareTemplates = {
     title: "[달이어리] 우리의 추억",
     text: `📸 우리의 소중한 추억이 하나 더 기록됐어!\n\n[${title}]\n\n우리가 함께했던 그날의 사진과 이야기를 다시 꺼내볼까? 🥰`,
     url: `${getBaseUrl()}/places?tab=memory&visitId=${visitId}`,
+  }),
+  
+  drawing: (question: string) => ({
+    title: "[달이어리] 오늘의 드로잉",
+    text: `🎨 오늘의 드로잉 질문: "${question}"\n\n내가 그린 그림 보러올래? 🥰`,
+    url: `${getBaseUrl()}/home`,
   })
 };
