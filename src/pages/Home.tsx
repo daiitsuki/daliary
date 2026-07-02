@@ -171,6 +171,7 @@ export default function Home() {
               coupleId={couple?.id}
               currentUserId={currentUserId}
               partnerProfile={partnerProfile}
+              myProfile={myProfile}
               onComplete={refresh}
             />
           </motion.div>

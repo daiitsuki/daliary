@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Settings, LogOut, Heart, PiggyBank } from "lucide-react";
+import { X, User, Settings, Heart, PiggyBank } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Profile } from "../../types";
 import { supabase } from "../../lib/supabase";
@@ -101,20 +101,10 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
     onClose();
   };
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/login", { replace: true });
-      onClose();
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
   const drawerContent = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex overflow-hidden">
+        <div className="absolute inset-0 z-[100] flex overflow-hidden">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -229,13 +219,6 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
                 >
                   v{latestVersion}
                 </button>
-                <button
-                  onClick={handleLogout}
-                  className="text-[11px] text-gray-300 font-medium hover:text-rose-400 flex items-center gap-1 transition-colors"
-                >
-                  <LogOut size={12} />
-                  로그아웃
-                </button>
               </div>
             </div>
           </motion.div>
@@ -246,7 +229,7 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
   return (
     <>
-      {createPortal(drawerContent, document.body)}
+      {createPortal(drawerContent, document.getElementById("app-container") || document.body)}
       <ChangelogModal
         isOpen={isChangelogOpen}
         onClose={() => setIsChangelogOpen(false)}

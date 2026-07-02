@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useCouple } from "../hooks/useCouple";
 import { useToast } from "../context/ToastContext";
+import { useConfirm } from "../context/ConfirmContext";
 import imageCompression from "browser-image-compression";
 import { convertToWebP } from "../utils/imageUtils";
 import { Loader2 } from "lucide-react";
@@ -40,6 +41,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const { profile: contextProfile, fetchCoupleInfo, signOut } = useCouple();
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,7 +65,7 @@ export default function Profile() {
     // FileReader(Base64) 대신 메모리 부하가 없고 가벼운 Object URL 사용
     const url = URL.createObjectURL(file);
     setEditingImage(url);
-    
+
     // 같은 파일을 다시 선택할 수 있도록 파일 로드가 끝난 후 비동기적으로 input 초기화
     setTimeout(() => {
       e.target.value = "";
@@ -73,7 +75,7 @@ export default function Profile() {
   // 편집 완료 후 업로드
   const handleAvatarSave = async (croppedBlob: Blob) => {
     if (!profile) return;
-    
+
     // 편집용 임시 Object URL 메모리 해제
     if (editingImage) {
       URL.revokeObjectURL(editingImage);
@@ -99,7 +101,7 @@ export default function Profile() {
         maxSizeMB: 0.5,
         maxWidthOrHeight: 500,
         useWebWorker: true,
-        fileType: 'image/webp' as const,
+        fileType: "image/webp" as const,
       };
       const compressedFile = await imageCompression(file, options);
       // WebP 변환 (quality 0.8)
@@ -123,7 +125,10 @@ export default function Profile() {
 
       const { error: uploadError } = await supabase.storage
         .from("diary-images")
-        .upload(fileName, webpBlob, { contentType: 'image/webp', upsert: true });
+        .upload(fileName, webpBlob, {
+          contentType: "image/webp",
+          upsert: true,
+        });
 
       if (uploadError) throw uploadError;
 
@@ -153,9 +158,17 @@ export default function Profile() {
 
   // 로그아웃
   const handleLogout = async () => {
+    const isConfirmed = await confirm({
+      title: "로그아웃",
+      message: "이 기기에서 로그아웃합니다.",
+      confirmText: "확인",
+      isDanger: true,
+    });
+
+    if (!isConfirmed) return;
+
     try {
       await signOut();
-      navigate("/login");
     } catch (error) {
       console.error(error);
     }

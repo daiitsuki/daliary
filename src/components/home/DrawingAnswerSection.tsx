@@ -16,6 +16,8 @@ import {
   ChevronUp,
   Share2,
   Image as ImageIcon,
+  Send,
+  Loader2,
 } from "lucide-react";
 
 interface DrawingAnswerSectionProps {
@@ -25,6 +27,7 @@ interface DrawingAnswerSectionProps {
   coupleId: string | undefined;
   currentUserId: string | null;
   partnerProfile: Profile | null;
+  myProfile: Profile | null;
   onComplete: () => Promise<void>;
 }
 
@@ -35,12 +38,14 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
   coupleId,
   currentUserId,
   partnerProfile,
+  myProfile,
   onComplete,
 }) => {
   const { showToast } = useToast();
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem("drawing_section_state");
@@ -116,6 +121,53 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
 
   const partnerNickname = partnerProfile?.nickname || "상대방";
   const bothAnswered = !!(myDrawing && partnerDrawing);
+
+  const handleRequestAnswer = async () => {
+    if (!coupleId || !currentUserId || isRequesting) return;
+
+    const cooldownKey = `last_drawing_request_${coupleId}_${currentUserId}`;
+    const lastRequestTime = localStorage.getItem(cooldownKey);
+    if (lastRequestTime) {
+      const timeDiff = Date.now() - parseInt(lastRequestTime, 10);
+      if (timeDiff < 5 * 60 * 1000) {
+        showToast("이미 알림을 보냈어요. 잠시 후 다시 시도해주세요.", "error");
+        return;
+      }
+    }
+
+    setIsRequesting(true);
+    try {
+      const { data: partner } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("couple_id", coupleId)
+        .neq("id", currentUserId)
+        .maybeSingle();
+
+      if (partner) {
+        const { error } = await supabase.from("notifications").insert({
+          user_id: partner.id,
+          couple_id: coupleId,
+          type: "question_request",
+          title: "답변 요청",
+          content: `${myProfile?.nickname || "상대방"}님이 오늘의 드로잉 질문에 답변하라고 요청했어요!`,
+        });
+
+        if (error) throw error;
+
+        localStorage.setItem(cooldownKey, Date.now().toString());
+        showToast(
+          "오늘의 드로잉 질문에 답변하라는 알림을 보냈어요!",
+          "success",
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("알림 보내기에 실패했어요.", "error");
+    } finally {
+      setIsRequesting(false);
+    }
+  };
 
   const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -351,9 +403,6 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                   <Palette size={26} strokeWidth={2.5} />
                 </div>
                 <p className="text-gray-800 font-bold text-[14px] leading-relaxed tracking-tight pt-0.5">
-                  <span className="inline-flex items-center px-2 py-0.5 bg-rose-400 text-white text-[9px] font-black tracking-wider rounded-full align-text-bottom mr-2 shadow-[0_2px_8px_rgba(251,113,133,0.3)]">
-                    NEW
-                  </span>
                   {drawingQuestion}
                 </p>
               </div>
@@ -497,9 +546,23 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                             <div className="w-10 h-10 bg-gray-100/80 rounded-full flex items-center justify-center mb-3">
                               <Lock size={16} className="text-gray-400" />
                             </div>
-                            <p className="text-[12px] text-gray-500 font-bold mb-1 px-4">
+                            <p className="text-[12px] text-gray-500 font-bold mb-3 px-4 tracking-tight">
                               {partnerNickname}님이 아직 답변하지 않았어요
                             </p>
+                            {myDrawing && (
+                              <button
+                                onClick={handleRequestAnswer}
+                                disabled={isRequesting}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-rose-50/80 text-rose-400 hover:bg-rose-100/80 rounded-full text-[12px] font-semibold transition-colors active:scale-95 disabled:opacity-50"
+                              >
+                                {isRequesting ? (
+                                  <Loader2 size={13} className="animate-spin" />
+                                ) : (
+                                  <Send size={13} />
+                                )}
+                                답변 요청하기
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -528,7 +591,7 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
       >
         <button
           disabled={!myDrawing}
-          onClick={() => handleShareOption('my')}
+          onClick={() => handleShareOption("my")}
           className="w-full flex items-center gap-3 p-4 rounded-2xl bg-rose-50/50 hover:bg-rose-100/60 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-rose-50/50 disabled:active:scale-100 border border-rose-100"
         >
           <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
@@ -543,7 +606,7 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
 
         <button
           disabled={!partnerDrawing || !bothAnswered}
-          onClick={() => handleShareOption('partner')}
+          onClick={() => handleShareOption("partner")}
           className="w-full flex items-center gap-3 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100/80 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-gray-50 disabled:active:scale-100 border border-gray-100"
         >
           <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
@@ -558,7 +621,7 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
 
         <button
           disabled={!bothAnswered}
-          onClick={() => handleShareOption('both')}
+          onClick={() => handleShareOption("both")}
           className="w-full flex items-center gap-3 p-4 rounded-2xl bg-indigo-50/50 hover:bg-indigo-100/60 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-indigo-50/50 disabled:active:scale-100 border border-indigo-100"
         >
           <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">

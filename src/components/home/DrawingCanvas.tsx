@@ -10,6 +10,7 @@ import {
   Palette,
   Maximize2,
   Minimize2,
+  Redo2,
 } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmContext";
@@ -61,6 +62,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
+  const [redoHistory, setRedoHistory] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pointerPos, setPointerPos] = useState<{ x: number; y: number } | null>(
     null,
@@ -89,7 +91,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
         canvas.width = size;
         canvas.height = size;
 
-        const ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
         if (!ctx) return;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
@@ -108,7 +110,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
           const img = new Image();
           img.src = history[history.length - 1];
           img.onload = () => {
-            const ctx = canvasRef.current!.getContext("2d");
+            const ctx = canvasRef.current!.getContext("2d", { willReadFrequently: true });
             if (ctx) {
               ctx.clearRect(
                 0,
@@ -141,7 +143,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
+    const ctx = canvas?.getContext("2d", { willReadFrequently: true });
     if (ctx) {
       ctx.strokeStyle = tool === "pen" ? color : "#000";
       ctx.lineWidth =
@@ -176,16 +178,31 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     canvas.style.cursor = `url("${url}") ${hotspot} ${hotspot}, crosshair`;
   }, [tool, thickness, eraserThickness, color, canvasScale]);
 
-  const getCoordinates = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const getNormalizedPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return null;
     const canvas = canvasRef.current;
+    const zoom = parseFloat((document.body.style as any).zoom || "1");
     const rect = canvas.getBoundingClientRect();
+    
+    // e.clientX와 rect는 모두 브라우저 뷰포트 기준 동일한 스케일의 좌표계입니다.
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    
+    // 캔버스 드로잉 내부 좌표 (원래 방식이 가장 정확함)
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
+    
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
+      cssX: offsetX / zoom, // 오버레이용 CSS 픽셀 좌표 (zoom으로 나누어 정규화)
+      cssY: offsetY / zoom,
+      x: offsetX * scaleX,  // 캔버스 내부 드로잉 좌표
+      y: offsetY * scaleY,
     };
+  };
+
+  const getCoordinates = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const pos = getNormalizedPos(e);
+    return pos ? { x: pos.x, y: pos.y } : null;
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -195,7 +212,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
 
     setActivePanel(null);
 
-    const ctx = canvasRef.current?.getContext("2d");
+    const ctx = canvasRef.current?.getContext("2d", { willReadFrequently: true });
     if (ctx) {
       ctx.strokeStyle = tool === "pen" ? color : "#000";
       ctx.lineWidth =
@@ -215,12 +232,9 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     }
 
     if (isTouchDevice.current) {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (rect) {
-        setPointerPos({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        });
+      const pos = getNormalizedPos(e);
+      if (pos) {
+        setPointerPos({ x: pos.cssX, y: pos.cssY });
       }
     }
   };
@@ -231,18 +245,15 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     if (!coords) return;
 
     if (isDrawing) {
-      const ctx = canvasRef.current?.getContext("2d");
+      const ctx = canvasRef.current?.getContext("2d", { willReadFrequently: true });
       if (ctx) {
         ctx.lineTo(coords.x, coords.y);
         ctx.stroke();
       }
       if (isTouchDevice.current) {
-        const rect = canvasRef.current?.getBoundingClientRect();
-        if (rect) {
-          setPointerPos({
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
-          });
+        const pos = getNormalizedPos(e);
+        if (pos) {
+          setPointerPos({ x: pos.cssX, y: pos.cssY });
         }
       }
     }
@@ -254,11 +265,12 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     if (isDrawing) {
       setIsDrawing(false);
       e.currentTarget.releasePointerCapture(e.pointerId);
-      const ctx = canvasRef.current?.getContext("2d");
+      const ctx = canvasRef.current?.getContext("2d", { willReadFrequently: true });
       if (ctx) ctx.closePath();
 
       if (canvasRef.current) {
         setHistory((prev) => [...prev, canvasRef.current!.toDataURL()]);
+        setRedoHistory([]);
       }
     }
     if (isTouchDevice.current) setPointerPos(null);
@@ -267,10 +279,11 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
   const handlePointerLeave = () => {
     if (isDrawing) {
       setIsDrawing(false);
-      const ctx = canvasRef.current?.getContext("2d");
+      const ctx = canvasRef.current?.getContext("2d", { willReadFrequently: true });
       if (ctx) ctx.closePath();
       if (canvasRef.current) {
         setHistory((prev) => [...prev, canvasRef.current!.toDataURL()]);
+        setRedoHistory([]);
       }
     }
     if (isTouchDevice.current) setPointerPos(null);
@@ -280,11 +293,14 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     if (history.length <= 1) return;
 
     const newHistory = [...history];
-    newHistory.pop();
+    const undoneState = newHistory.pop();
+    if (undoneState) {
+      setRedoHistory((prev) => [...prev, undoneState]);
+    }
     const previousState = newHistory[newHistory.length - 1];
 
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
+    const ctx = canvas?.getContext("2d", { willReadFrequently: true });
     if (canvas && ctx) {
       const img = new Image();
       img.src = previousState;
@@ -300,12 +316,41 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     setActivePanel(null);
   };
 
-  const handleClearAll = () => {
+  const handleRedo = () => {
+    if (redoHistory.length === 0) return;
+
+    const newRedoHistory = [...redoHistory];
+    const nextState = newRedoHistory.pop();
+    
+    if (!nextState) return;
+
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
+    const ctx = canvas?.getContext("2d", { willReadFrequently: true });
+    if (canvas && ctx) {
+      const img = new Image();
+      img.src = nextState;
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const currentOp = ctx.globalCompositeOperation;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.drawImage(img, 0, 0);
+        ctx.globalCompositeOperation = currentOp;
+      };
+      setHistory((prev) => [...prev, nextState]);
+      setRedoHistory(newRedoHistory);
+    }
+    setActivePanel(null);
+  };
+
+  const handleClearAll = () => {
+    if (isCanvasEmpty()) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d", { willReadFrequently: true });
     if (canvas && ctx) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       setHistory((prev) => [...prev, canvas.toDataURL()]);
+      setRedoHistory([]);
     }
     setActivePanel(null);
   };
@@ -321,7 +366,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
 
   const isCanvasEmpty = useCallback(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
+    const ctx = canvas?.getContext("2d", { willReadFrequently: true });
     if (!canvas || !ctx) return true;
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -331,6 +376,30 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     }
     return true;
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen || isSubmitting) return;
+      
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+
+      if (cmdOrCtrl && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          handleRedo();
+        } else {
+          handleUndo();
+        }
+      } else if (cmdOrCtrl && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isSubmitting, history, redoHistory]);
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
@@ -381,8 +450,8 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
     >
       {isFullscreen && (
         <style>{`
-          .z-\\[110\\] { padding: 0 !important; }
-          .z-\\[110\\] > div:last-child {
+          .z-\\[9999\\] { padding: 0 !important; }
+          .z-\\[9999\\] > div:last-child {
             max-width: 100% !important;
             max-height: 100% !important;
             height: 100dvh !important;
@@ -504,7 +573,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
           </AnimatePresence>
 
           <div className="flex justify-between items-center bg-gray-50/50 p-1.5 rounded-[20px] border border-gray-100">
-            <div className="flex gap-1 shrink-0">
+            <div className="flex gap-0.5 shrink-0">
               <button
                 onClick={() => setIsFullscreen(!isFullscreen)}
                 className="hidden md:flex p-3 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors active:scale-95"
@@ -520,9 +589,17 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
                 onClick={handleUndo}
                 disabled={history.length <= 1}
                 className="p-3 rounded-xl text-gray-500 disabled:opacity-30 hover:bg-gray-100 transition-colors active:scale-95"
-                title="되돌리기"
+                title="실행 취소"
               >
                 <Undo2 size={22} />
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={redoHistory.length === 0}
+                className="p-3 rounded-xl text-gray-500 disabled:opacity-30 hover:bg-gray-100 transition-colors active:scale-95"
+                title="다시 실행"
+              >
+                <Redo2 size={22} />
               </button>
             </div>
 

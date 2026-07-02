@@ -294,7 +294,7 @@ const Calendar = () => {
   return (
     <div className="flex-1 overflow-hidden custom-scrollbar bg-gray-50/30 pb-24 lg:pb-0 flex flex-col lg:h-full">
       {/* 탭 전환 UI */}
-      <div className="flex justify-center shrink-0 px-4 pt-4 pb-0 bg-white sticky top-0 z-30 backdrop-blur-md">
+      <div className="flex justify-center shrink-0 px-4 py-4 bg-white sticky top-0 z-30 backdrop-blur-md">
         <div className="flex items-center w-full max-w-[280px] bg-gray-100/80 rounded-2xl p-1 relative">
           {[
             {

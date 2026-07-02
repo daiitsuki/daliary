@@ -34,6 +34,7 @@ const NotificationHistoryModal: React.FC<NotificationHistoryModalProps> = ({ isO
       case "question_answered":
       case "question_request":
         return <MessageSquare size={16} className="text-rose-400" />;
+      case "daily_schedule":
       case "schedule_change":
         return <Calendar size={16} className="text-blue-400" />;
       case "place_added":

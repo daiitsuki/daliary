@@ -268,8 +268,9 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   }, [profile?.id, profile?.couple_id, refetch]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     queryClient.clear();
+    window.location.href = '/login';
   };
 
   return (

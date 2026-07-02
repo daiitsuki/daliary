@@ -12,11 +12,19 @@ const AttendanceButton = () => {
   const handleCheckIn = async () => {
     if (hasCheckedIn || actionLoading) return;
     setActionLoading(true);
-    const success = await checkIn();
-    if (!success) {
-      showToast("출석체크에 실패했어요.", "error");
+    try {
+      const success = await checkIn();
+      if (success) {
+        showToast("오늘의 출석체크가 완료되었습니다! (+50 PT)", "success");
+      } else {
+        showToast("이미 출석체크를 완료했거나 실패했어요.", "error");
+      }
+    } catch (err) {
+      console.error("Check-in error:", err);
+      showToast("출석체크 중 오류가 발생했어요.", "error");
+    } finally {
+      setActionLoading(false);
     }
-    setActionLoading(false);
   };
 
   if (loading || hasCheckedIn) return null;
