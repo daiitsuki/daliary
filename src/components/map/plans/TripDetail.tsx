@@ -418,26 +418,40 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
         setActiveDay={setActiveDay}
       />
 
-      {isVisitFormOpen && selectedPlanForCert && (
-        <VisitForm
-          placeName={selectedPlanForCert.place_name || ""}
-          placeAddress={selectedPlanForCert.address || ""}
-          initialDate={(() => {
-            const start = new Date(trip.start_date);
-            const dateObj = new Date(start);
-            dateObj.setDate(start.getDate() + (activeDay - 1));
-            return dateObj.toISOString().split("T")[0];
-          })()}
-          onClose={() => {
-            setIsVisitFormOpen(false);
-            setSelectedPlanForCert(null);
-          }}
-          onSuccess={() => {
-            setIsVisitFormOpen(false);
-            setSelectedPlanForCert(null);
-          }}
-        />
-      )}
+      <VisitForm
+        isOpen={isVisitFormOpen}
+        placeName={selectedPlanForCert?.place_name || ""}
+        placeAddress={selectedPlanForCert?.address || ""}
+        kakaoPlace={selectedPlanForCert ? {
+          id: `plan_${selectedPlanForCert.id}`,
+          place_name: selectedPlanForCert.place_name || "",
+          address_name: selectedPlanForCert.address || "",
+          road_address_name: selectedPlanForCert.address || "",
+          x: String(selectedPlanForCert.lng || 0),
+          y: String(selectedPlanForCert.lat || 0),
+          category_group_name: selectedPlanForCert.category || "",
+          category_name: selectedPlanForCert.category || "",
+          category_group_code: "",
+          phone: "",
+          place_url: "",
+          distance: "",
+        } : undefined}
+        initialDate={(() => {
+          if (!selectedPlanForCert) return undefined;
+          const start = new Date(trip.start_date);
+          const dateObj = new Date(start);
+          dateObj.setDate(start.getDate() + (activeDay - 1));
+          return dateObj.toISOString().split("T")[0];
+        })()}
+        onClose={() => {
+          setIsVisitFormOpen(false);
+          setSelectedPlanForCert(null);
+        }}
+        onSuccess={() => {
+          setIsVisitFormOpen(false);
+          setSelectedPlanForCert(null);
+        }}
+      />
     </div>
   );
 }

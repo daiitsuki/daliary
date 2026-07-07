@@ -341,17 +341,16 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
         </div>
       )}
 
-      {isVisitFormOpen && selectedPlace && (
-        <VisitForm
-          kakaoPlace={selectedPlace}
-          placeName={selectedPlace.place_name}
-          placeAddress={
-            selectedPlace.road_address_name || selectedPlace.address_name
-          }
-          onClose={handleCloseVisitForm}
-          onSuccess={handleVisitFormSuccess}
-        />
-      )}
+      <VisitForm
+        isOpen={isVisitFormOpen}
+        kakaoPlace={selectedPlace || undefined}
+        placeName={selectedPlace?.place_name || ""}
+        placeAddress={
+          selectedPlace?.road_address_name || selectedPlace?.address_name || ""
+        }
+        onClose={handleCloseVisitForm}
+        onSuccess={handleVisitFormSuccess}
+      />
     </div>
   );
 };

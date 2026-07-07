@@ -425,15 +425,14 @@ const Wishlist: React.FC<WishlistProps> = ({ onShowOnMap }) => {
         </AnimatePresence>
       </div>
 
-      {isVisitFormOpen && selectedPlace && (
-        <VisitForm
-          placeId={selectedPlace.id}
-          placeName={selectedPlace.name}
-          placeAddress={selectedPlace.address}
-          onClose={handleCloseVisitForm}
-          onSuccess={handleVisitFormSuccess}
-        />
-      )}
+      <VisitForm
+        isOpen={isVisitFormOpen}
+        placeId={selectedPlace?.id}
+        placeName={selectedPlace?.name || ""}
+        placeAddress={selectedPlace?.address || ""}
+        onClose={handleCloseVisitForm}
+        onSuccess={handleVisitFormSuccess}
+      />
     </div>
   );
 };

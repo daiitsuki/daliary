@@ -230,13 +230,13 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
         ctx.fillStyle = textColor;
         ctx.font = "500 24px sans-serif";
         ctx.textBaseline = "middle";
-        
+
         const textStartY = by + boxHeight / 2 - ((lines.length - 1) * 36) / 2;
 
         lines.forEach((line, idx) => {
           ctx.fillText(line, bx + 30, textStartY + idx * 36);
         });
-        
+
         ctx.textBaseline = "alphabetic";
 
         currentY += boxHeight + 80;
@@ -323,14 +323,14 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
               <button
                 disabled={isSharing}
                 onClick={() => setIsShareMenuOpen(true)}
-                className="w-6.5 h-6.5 flex items-center justify-center bg-gray-50/80 hover:bg-rose-50 text-gray-300 hover:text-rose-400 rounded-full transition-all active:scale-90 border border-gray-100/50 disabled:opacity-50"
+                className="w-8 h-8 flex items-center justify-center bg-gray-50/80 hover:bg-rose-50 text-gray-300 hover:text-rose-400 rounded-full transition-all active:scale-90 border border-gray-100/50 disabled:opacity-50"
                 title="공유하기"
               >
                 <Share2 size={13} />
               </button>
               <button
                 onClick={() => setIsHistoryOpen(true)}
-                className="w-6.5 h-6.5 flex items-center justify-center bg-gray-50/80 hover:bg-rose-50 text-gray-300 hover:text-rose-400 rounded-full transition-all active:scale-90 border border-gray-100/50"
+                className="w-8 h-8 flex items-center justify-center bg-gray-50/80 hover:bg-rose-50 text-gray-300 hover:text-rose-400 rounded-full transition-all active:scale-90 border border-gray-100/50"
                 title="지난 기록 보기"
               >
                 <History size={14} />
@@ -338,7 +338,7 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
             </div>
 
             <div className="relative z-10">
-              <div className="flex gap-3 mb-4 pr-16">
+              <div className="flex gap-3 mb-4 pr-20">
                 <span className="text-3xl font-black text-rose-200/60 leading-none select-none italic">
                   Q.
                 </span>

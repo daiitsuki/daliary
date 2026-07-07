@@ -6,7 +6,18 @@ import { KOREA_REGIONS } from "../constants/regions";
 export const getRegionFromAddress = (address: string | null): string => {
   if (!address) return "기타";
 
+  if (address.includes("전남광주통합특별시")) {
+    const parts = address.split(" ");
+    const secondPart = parts[1] || "";
+    if (secondPart.endsWith("시") || secondPart.endsWith("군")) {
+      return "전남";
+    } else if (secondPart.endsWith("구")) {
+      return "광주";
+    }
+  }
+
   for (const region of KOREA_REGIONS) {
+    if (region === "광주" && address.includes("경기도 광주시")) continue;
     if (address.includes(region)) return region;
   }
 
@@ -27,6 +38,11 @@ export const getRegionFromAddress = (address: string | null): string => {
  */
 export const extractCityCounty = (address: string | null): string => {
   if (!address) return "";
+
+  if (address.includes("전남광주통합특별시")) {
+    const parts = address.split(" ");
+    return parts[1] || "전남광주통합특별시";
+  }
 
   // 1. 시, 군을 찾는 정규표현식 (ex: 전주시, 구례군)
   const match = address.match(/([가-힣]+(?:시|군))/);

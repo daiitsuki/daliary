@@ -133,15 +133,15 @@ const DatePicker = ({
   useEffect(() => {
     if (isOpen) {
       window.history.pushState({ modal: "date-picker" }, "");
-      
+
       const handlePopState = (event: PopStateEvent) => {
         if (event.state?.modal !== "date-picker") {
           setIsOpen(false);
         }
       };
-      
+
       window.addEventListener("popstate", handlePopState);
-      
+
       return () => {
         window.removeEventListener("popstate", handlePopState);
         if (window.history.state?.modal === "date-picker") {
@@ -209,7 +209,7 @@ const DatePicker = ({
   return (
     <div className="relative w-full">
       {label && (
-        <label className="block text-[10px] sm:text-xs font-black text-gray-300 uppercase tracking-widest px-1 mb-2">
+        <label className="block text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest px-1 mb-2">
           {label}
         </label>
       )}
@@ -322,17 +322,22 @@ const DatePicker = ({
                     날짜 선택
                   </h3>
 
-                                     <div className="flex gap-2 relative overflow-hidden touch-pan-y" style={{ height: WHEEL_HEIGHT }}>
+                  <div
+                    className="flex gap-2 relative overflow-hidden touch-pan-y"
+                    style={{ height: WHEEL_HEIGHT }}
+                  >
                     {/* Selection Highlight Bar */}
                     <div className="absolute top-1/2 left-0 right-0 h-10 -translate-y-1/2 bg-rose-50 rounded-xl pointer-events-none border border-rose-100 z-0" />
 
                     {/* Years */}
-                                          <div 
-                                            ref={yearRef}
-                                            onScroll={(e) => handleScroll(e, years, setSelectedYear)}
-                                            className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar text-center snap-y snap-mandatory relative z-10"
-                                            style={{ paddingBlock: PADDING_Y }}
-                                          >                      {years.map((y, i) => (
+                    <div
+                      ref={yearRef}
+                      onScroll={(e) => handleScroll(e, years, setSelectedYear)}
+                      className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar text-center snap-y snap-mandatory relative z-10"
+                      style={{ paddingBlock: PADDING_Y }}
+                    >
+                      {" "}
+                      {years.map((y, i) => (
                         <button
                           key={y}
                           onClick={() => {
@@ -347,12 +352,14 @@ const DatePicker = ({
                     </div>
 
                     {/* Months */}
-                                          <div 
-                                            ref={monthRef}
-                                            onScroll={(e) => handleScroll(e, months, setSelectedMonth)}
-                                            className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar text-center snap-y snap-mandatory relative z-10"
-                                            style={{ paddingBlock: PADDING_Y }}
-                                          >
+                    <div
+                      ref={monthRef}
+                      onScroll={(e) =>
+                        handleScroll(e, months, setSelectedMonth)
+                      }
+                      className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar text-center snap-y snap-mandatory relative z-10"
+                      style={{ paddingBlock: PADDING_Y }}
+                    >
                       {months.map((m, i) => (
                         <button
                           key={m}
@@ -368,12 +375,14 @@ const DatePicker = ({
                     </div>
 
                     {/* Days */}
-                                          <div 
-                                            ref={dayRef}
-                                            onScroll={(e) => handleScroll(e, days, setSelectedDay)}
-                                            className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar text-center snap-y snap-mandatory relative z-10"
-                                            style={{ paddingBlock: PADDING_Y }}
-                                          >                      {days.map((d, i) => (
+                    <div
+                      ref={dayRef}
+                      onScroll={(e) => handleScroll(e, days, setSelectedDay)}
+                      className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar text-center snap-y snap-mandatory relative z-10"
+                      style={{ paddingBlock: PADDING_Y }}
+                    >
+                      {" "}
+                      {days.map((d, i) => (
                         <button
                           key={d}
                           onClick={() => {

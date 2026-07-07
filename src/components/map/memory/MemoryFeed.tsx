@@ -185,17 +185,13 @@ export default function MemoryFeed() {
       </AnimatePresence>
 
       {/* SINGLE MODAL INSTANCE */}
-      <AnimatePresence>
-        {selectedVisit && (
-          <VisitDetailModal
-            key={`modal-${selectedVisit.id}`}
-            visit={modalVisit as any}
-            onClose={handleCloseModal}
-            onUpdate={handleUpdate}
-            onDelete={handleDelete}
-          />
-        )}
-      </AnimatePresence>
+      <VisitDetailModal
+        isOpen={!!selectedVisit}
+        visit={modalVisit as any}
+        onClose={handleCloseModal}
+        onUpdate={handleUpdate}
+        onDelete={handleDelete}
+      />
 
       <div className="flex-1 overflow-y-auto custom-scrollbar pb-32 pt-4 px-4">
         <div className="max-w-md mx-auto">

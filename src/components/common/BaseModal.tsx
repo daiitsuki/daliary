@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Moon } from "lucide-react";
@@ -37,11 +37,16 @@ const BaseModal = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (isOpen) {
       window.history.pushState({ modal: "base-modal" }, "");
       const handlePopState = (event: PopStateEvent) => {
-        if (event.state?.modal !== "base-modal") onClose();
+        if (event.state?.modal !== "base-modal") onCloseRef.current();
       };
       window.addEventListener("popstate", handlePopState);
       return () => {
@@ -51,7 +56,7 @@ const BaseModal = ({
         }
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   const modalVariants = {
     initial: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },

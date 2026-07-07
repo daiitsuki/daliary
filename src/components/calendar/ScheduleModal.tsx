@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Users, Trash2, Share2 } from "lucide-react";
+import {
+  User,
+  Users,
+  Trash2,
+  Share2,
+  CalendarPlusIcon,
+  Edit,
+} from "lucide-react";
 import DatePicker from "../common/DatePicker";
 import { CATEGORY_CONFIG, CategoryType } from "./constants";
 import { Schedule, ScheduleInput } from "../../hooks/useSchedules";
@@ -8,6 +14,8 @@ import { Profile } from "../../types";
 import { shareContent, ShareTemplates } from "../../utils/shareUtils";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmContext";
+import BaseModal from "../common/BaseModal";
+import Button from "../common/Button";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -35,11 +43,13 @@ const ScheduleModal = ({
   const [startDate, setStartDate] = useState(initialDate);
   const [endDate, setEndDate] = useState(initialDate);
   const [category, setCategory] = useState<CategoryType>("couple");
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
   const { confirm } = useConfirm();
   const { showToast } = useToast();
 
-  // Update state when opening for edit or new
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
       if (scheduleToEdit) {
@@ -58,45 +68,14 @@ const ScheduleModal = ({
     }
   }, [isOpen, scheduleToEdit, initialDate]);
 
-  // Handle Resize for responsive animation
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // 뒤로가기 시 모달 닫기 로직
-  useEffect(() => {
-    if (isOpen) {
-      window.history.pushState({ modal: "schedule" }, "");
-      
-      const handlePopState = (event: PopStateEvent) => {
-        if (event.state?.modal !== "schedule") {
-          onClose();
-        }
-      };
-      
-      window.addEventListener("popstate", handlePopState);
-      
-      return () => {
-        window.removeEventListener("popstate", handlePopState);
-        if (window.history.state?.modal === "schedule") {
-          window.history.back();
-        }
-      };
-    }
-  }, [isOpen, onClose]);
-
   const handleStartDateChange = (date: string) => {
     setStartDate(date);
-    // 시작일이 종료일보다 늦어지면 종료일을 시작일과 맞춤
     if (new Date(date) > new Date(endDate)) {
       setEndDate(date);
     }
   };
 
   const handleEndDateChange = (date: string) => {
-    // 종료일이 시작일보다 빠르면 무시하거나 시작일로 맞춤
     if (new Date(date) < new Date(startDate)) {
       showToast("종료일은 시작일보다 빠를 수 없습니다.", "error");
       setEndDate(startDate);
@@ -105,27 +84,41 @@ const ScheduleModal = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title) return;
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!title.trim()) {
+      showToast("일정 제목을 입력해주세요.", "error");
+      return;
+    }
 
-    // 최종 검증
     if (new Date(startDate) > new Date(endDate)) {
       showToast("날짜 설정이 올바르지 않습니다.", "error");
       return;
     }
-    
-    const data = {
-      title,
-      description,
-      start_date: startDate,
-      end_date: endDate,
-      category,
-      color: CATEGORY_CONFIG[category].color,
-    };
-    
-    await onSave(data);
-    onClose();
+
+    setIsSaving(true);
+    try {
+      const data = {
+        title,
+        description,
+        start_date: startDate,
+        end_date: endDate,
+        category,
+        color: CATEGORY_CONFIG[category].color,
+      };
+
+      await onSave(data);
+      showToast(
+        scheduleToEdit ? "일정이 수정되었어요." : "일정이 등록되었어요.",
+        "success",
+      );
+      onClose();
+    } catch (error: any) {
+      console.error(error);
+      showToast(error.message || "일정 저장 중 오류가 발생했어요.", "error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -137,165 +130,167 @@ const ScheduleModal = ({
         isDanger: true,
       });
       if (isConfirmed) {
-        await onDelete(scheduleToEdit.id);
-        onClose();
+        setIsDeleting(true);
+        try {
+          await onDelete(scheduleToEdit.id);
+          showToast("일정이 삭제되었어요.", "success");
+          onClose();
+        } catch (error: any) {
+          console.error(error);
+          showToast(
+            error.message || "일정 삭제 중 오류가 발생했어요.",
+            "error",
+          );
+        } finally {
+          setIsDeleting(false);
+        }
       }
     }
   };
 
   const handleShare = async () => {
     const template = ShareTemplates.schedule(startDate, title);
-    const result = await shareContent(template.title, template.text, template.url);
-    if (result === 'copied') {
-      showToast("클립보드에 복사되었어요. 메신저에 붙여넣기 해주세요!", "success");
-    } else if (result === 'failed') {
+    const result = await shareContent(
+      template.title,
+      template.text,
+      template.url,
+    );
+    if (result === "copied") {
+      showToast(
+        "클립보드에 복사되었어요. 메신저에 붙여넣기 해주세요!",
+        "success",
+      );
+    } else if (result === "failed") {
       showToast("링크 복사에 실패했어요.", "error");
     }
   };
 
-  const modalVariants = {
-    initial: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
-    animate: isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 },
-    exit: isMobile ? { y: "100%" } : { opacity: 0, scale: 0.95, y: 20 },
-  };
+  const headerContent = scheduleToEdit ? (
+    <div className="absolute right-[4.5rem] top-[1.375rem]">
+      <button
+        type="button"
+        onClick={handleShare}
+        className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors"
+        title="일정 공유하기"
+      >
+        <Share2 size={20} />
+      </button>
+    </div>
+  ) : null;
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 overflow-hidden">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/50"
-          />
-          <motion.div
-            variants={modalVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ type: "tween", ease: "easeOut", duration: 0.25 }}
-            className="relative w-full max-w-lg bg-white rounded-t-[32px] md:rounded-[32px] shadow-xl flex flex-col max-h-[90vh] overflow-hidden transform-gpu"
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={scheduleToEdit ? "일정 수정" : "새 일정 추가"}
+      icon={scheduleToEdit ? Edit : CalendarPlusIcon}
+      headerContent={headerContent}
+      footer={
+        <div className="flex gap-3">
+          {scheduleToEdit && (
+            <Button
+              type="button"
+              variant="secondary"
+              icon={<Trash2 size={18} />}
+              onClick={handleDelete}
+              disabled={isDeleting || isSaving}
+              className="flex-1"
+            >
+              {" "}
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => handleSubmit()}
+            disabled={isSaving || isDeleting}
+            className={scheduleToEdit ? "flex-[5]" : "flex-1"}
           >
-            <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
-              <div className="px-6 py-6 border-b border-gray-50 flex items-center justify-between shrink-0">
-                <h3 className="text-base sm:text-lg font-black text-gray-800 uppercase tracking-widest">
-                  {scheduleToEdit ? "일정 수정" : "새 일정 추가"}
-                </h3>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={handleShare}
-                    className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors"
-                  >
-                    <Share2 size={20} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="p-2 text-gray-400 hover:bg-gray-50 rounded-full transition-colors"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-                <div className="space-y-2">
-                  <label className="block text-[10px] sm:text-xs font-black text-gray-300 uppercase tracking-widest px-1">
-                    제목
-                  </label>
-                  <input
-                    autoFocus
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="제목을 입력하세요"
-                    className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-rose-200 font-bold text-sm sm:text-base outline-none"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <DatePicker label="시작 날짜" value={startDate} onChange={handleStartDateChange} />
-                  <DatePicker label="종료 날짜" value={endDate} onChange={handleEndDateChange} />
-                </div>
-
-                <div className="space-y-3">
-                  <label className="block text-[10px] sm:text-xs font-black text-gray-300 uppercase tracking-widest px-1">
-                    누구의 일정인가요?
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {(["me", "partner", "couple"] as const).map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setCategory(cat)}
-                        className={`flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 transition-all ${
-                          category === cat
-                            ? "bg-white border-rose-200 shadow-sm ring-2 ring-rose-50"
-                            : "bg-gray-50 border-transparent opacity-60 hover:opacity-100"
-                        }`}
-                      >
-                        <div
-                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shadow-sm"
-                          style={{ backgroundColor: CATEGORY_CONFIG[cat].color }}
-                        >
-                          {cat === "couple" ? (
-                            <Users size={14} className="text-white" />
-                          ) : (
-                            <User size={14} className="text-white" />
-                          )}
-                        </div>
-                        <span className="text-[11px] sm:text-xs font-black text-gray-700 whitespace-nowrap">
-                          {cat === "me"
-                            ? myProfile?.nickname || "나"
-                            : cat === "partner"
-                            ? partnerProfile?.nickname || "상대방"
-                            : "우리"}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[10px] sm:text-xs font-black text-gray-300 uppercase tracking-widest px-1">
-                    상세 내용
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="메모를 남겨보세요"
-                    className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-rose-200 font-bold text-sm sm:text-base h-32 resize-none outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="p-6 bg-gray-50/50 flex gap-3 shrink-0">
-                {scheduleToEdit && (
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    className="p-5 bg-white text-gray-400 rounded-2xl border border-gray-100 hover:text-rose-500 transition-all shadow-sm"
-                  >
-                    <Trash2 size={22} />
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  className="flex-1 py-5 bg-rose-400 text-white rounded-2xl font-black text-sm sm:text-base shadow-xl shadow-rose-100 hover:bg-rose-500 transition-all active:scale-[0.98]"
-                >
-                  {scheduleToEdit ? "수정 내용 저장" : "일정 등록하기"}
-                </button>
-              </div>
-            </form>
-          </motion.div>
+            {scheduleToEdit ? "수정 내용 저장" : "일정 등록하기"}
+          </Button>
         </div>
-      )}
-    </AnimatePresence>
+      }
+    >
+      <form id="schedule-form" onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <label className="block text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest px-1">
+            제목
+          </label>
+          <input
+            autoFocus
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="제목을 입력하세요"
+            className="w-full px-5 py-4 bg-white rounded-2xl border border-gray-100 focus:border-rose-200 focus:ring-2 focus:ring-rose-200 font-bold text-sm sm:text-base outline-none shadow-sm transition-all"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <DatePicker
+            label="시작 날짜"
+            value={startDate}
+            onChange={handleStartDateChange}
+          />
+          <DatePicker
+            label="종료 날짜"
+            value={endDate}
+            onChange={handleEndDateChange}
+          />
+        </div>
+
+        <div className="space-y-3">
+          <label className="block text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest px-1">
+            누구의 일정인가요?
+          </label>
+          <div className="grid grid-cols-3 gap-3">
+            {(["me", "partner", "couple"] as const).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setCategory(cat)}
+                className={`flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all shadow-sm ${
+                  category === cat
+                    ? "bg-white border-rose-200 ring-2 ring-rose-200"
+                    : "bg-white border-transparent hover:bg-gray-50 opacity-60 hover:opacity-100"
+                }`}
+              >
+                <div
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shadow-sm"
+                  style={{ backgroundColor: CATEGORY_CONFIG[cat].color }}
+                >
+                  {cat === "couple" ? (
+                    <Users size={14} className="text-white" />
+                  ) : (
+                    <User size={14} className="text-white" />
+                  )}
+                </div>
+                <span className="text-[11px] sm:text-xs font-black text-gray-700 whitespace-nowrap">
+                  {cat === "me"
+                    ? myProfile?.nickname || "나"
+                    : cat === "partner"
+                      ? partnerProfile?.nickname || "상대방"
+                      : "우리"}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest px-1">
+            상세 내용
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="메모를 남겨보세요"
+            className="w-full px-5 py-4 bg-white rounded-2xl border border-gray-100 focus:border-rose-200 focus:ring-2 focus:ring-rose-200 font-bold text-sm sm:text-base h-32 resize-none outline-none shadow-sm transition-all"
+          />
+        </div>
+      </form>
+    </BaseModal>
   );
 };
 
