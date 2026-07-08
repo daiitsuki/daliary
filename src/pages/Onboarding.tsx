@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCouple } from "../hooks/useCouple";
+import { useCouple } from "../hooks";
 import { motion } from "framer-motion";
 import { Heart, Copy, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
+import Button from "../components/common/Button";
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -91,22 +92,21 @@ export default function Onboarding() {
             </p>
 
             <div className="space-y-4">
-              <button
+              <Button
                 onClick={handleCreate}
                 disabled={actionLoading}
-                className="w-full bg-rose-400 hover:bg-rose-500 text-white font-bold py-4 rounded-xl transition-all shadow-md shadow-rose-100 flex items-center justify-center"
+                variant="primary"
+                className="shadow-md shadow-rose-100"
+                icon={actionLoading ? <Loader2 className="animate-spin mr-2" /> : null}
               >
-                {actionLoading ? (
-                  <Loader2 className="animate-spin mr-2" />
-                ) : null}
                 새로운 초대 코드 만들기
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setMode("join")}
-                className="w-full bg-white border-2 border-rose-100 text-rose-400 hover:bg-rose-50 font-bold py-4 rounded-xl transition-all"
+                variant="outline-primary"
               >
                 초대 코드 입력하기
-              </button>
+              </Button>
             </div>
           </>
         )}
@@ -132,12 +132,13 @@ export default function Onboarding() {
               </button>
             </div>
 
-            <button
+            <Button
               onClick={() => navigate("/home")}
-              className="w-full bg-rose-400 hover:bg-rose-500 text-white font-bold py-4 rounded-xl transition-all shadow-md shadow-rose-100 flex items-center justify-center"
+              variant="primary"
+              className="shadow-md shadow-rose-100"
             >
               달이어리 시작하기 <ArrowRight className="ml-2" size={20} />
-            </button>
+            </Button>
           </>
         )}
 
@@ -170,23 +171,24 @@ export default function Onboarding() {
             )}
 
             <div className="flex space-x-3">
-              <button
+              <Button
                 onClick={() => setMode("select")}
-                className="flex-1 bg-gray-100 text-gray-500 font-bold py-4 rounded-xl transition-all"
+                variant="secondary"
+                fullWidth={false}
+                className="flex-1"
               >
                 이전
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleJoin}
                 disabled={actionLoading}
-                className="flex-[2] bg-rose-400 hover:bg-rose-500 text-white font-bold py-4 rounded-xl transition-all shadow-md shadow-rose-100 flex items-center justify-center"
+                variant="primary"
+                fullWidth={false}
+                className="flex-[2] shadow-md shadow-rose-100"
+                icon={actionLoading ? <Loader2 className="animate-spin" /> : undefined}
               >
-                {actionLoading ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  "연결하기"
-                )}
-              </button>
+                연결하기
+              </Button>
             </div>
           </>
         )}

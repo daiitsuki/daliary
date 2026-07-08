@@ -1,4 +1,4 @@
-import { useSchedulesContext, Schedule, ScheduleInput } from '../context/SchedulesContext';
+import { useSchedulesContext, Schedule, ScheduleInput } from "../../context/SchedulesContext";
 
 // Export types for convenience
 export type { Schedule, ScheduleInput };

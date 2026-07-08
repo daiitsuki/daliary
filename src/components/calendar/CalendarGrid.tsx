@@ -1,7 +1,7 @@
 import { useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
-import { Schedule } from "../../hooks/useSchedules";
+import { Schedule } from "../../hooks";
 
 interface CalendarGridProps {
   currentDate: Date;

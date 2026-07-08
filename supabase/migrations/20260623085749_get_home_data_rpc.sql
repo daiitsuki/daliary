@@ -12,6 +12,7 @@ DECLARE
   v_answers json := '[]'::json;
   v_drawing_answers json := '[]'::json;
   v_today date;
+  v_has_my_drawing boolean := false;
 BEGIN
   IF v_user_id IS NULL THEN
     RETURN NULL;
@@ -57,9 +58,22 @@ BEGIN
   END IF;
   
   -- 5. Drawing Answers
+  -- 내가 그림을 그렸는지 확인
+  SELECT EXISTS (
+    SELECT 1 FROM public.drawing_answers 
+    WHERE couple_id = v_couple_id AND question_date = v_today AND writer_id = v_user_id
+  ) INTO v_has_my_drawing;
+
   SELECT json_agg(row_to_json(d)) INTO v_drawing_answers
   FROM (
-    SELECT * 
+    SELECT 
+      id, couple_id, writer_id, question_date, question_text, 
+      CASE 
+        WHEN writer_id = v_user_id THEN image_url -- 내 그림은 항상 원본 URL
+        WHEN v_has_my_drawing THEN image_url -- 내가 그렸으면 상대방 그림도 원본 URL
+        ELSE 'hidden' -- 내가 안 그렸으면 상대방 그림은 'hidden' 처리
+      END as image_url,
+      created_at
     FROM public.drawing_answers 
     WHERE couple_id = v_couple_id AND question_date = v_today
   ) d;

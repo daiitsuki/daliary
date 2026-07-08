@@ -10,18 +10,23 @@ import { SchedulesProvider } from "./context/SchedulesContext";
 import { PlacesProvider } from "./context/PlacesContext";
 import { HomeProvider } from "./context/HomeContext";
 import { NotificationsProvider } from "./context/NotificationsContext";
-import Home from "./pages/Home";
+import { lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
-import Settings from "./pages/Settings";
-import Profile from "./pages/Profile";
-import Places from "./pages/Places";
-import Calendar from "./pages/Calendar";
-import Games from "./pages/Games";
+
+// 탭/메뉴 클릭 시에만 로드되도록 Code Splitting (지연 로딩) 적용
+const Home = lazy(() => import("./pages/Home"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Places = lazy(() => import("./pages/Places"));
+const Calendar = lazy(() => import("./pages/Calendar"));
+const Games = lazy(() => import("./pages/Games"));
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import BottomNav from "./components/layout/BottomNav";
 
 import UpdateNotification from "./components/common/UpdateNotification";
+import { GlobalErrorBoundary } from "./components/common/GlobalErrorBoundary";
 import NotificationPermissionPopup from "./components/common/NotificationPermissionPopup";
 import ChangelogModal from "./components/common/ChangelogModal";
 import { useState, useEffect } from "react";
@@ -66,44 +71,52 @@ function App() {
                     <div id="app-container" className="w-full h-full md:max-w-5xl md:h-[90vh] bg-white md:rounded-[32px] md:shadow-2xl md:border-8 md:border-white overflow-hidden relative flex flex-col">
                       <Router>
                         <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
-                          <Routes>
-                            <Route path="/login" element={<Auth />} />
+                          <GlobalErrorBoundary>
+                            <Suspense fallback={
+                              <div className="w-full h-full flex items-center justify-center bg-[#FDFBF7]">
+                                <Loader2 className="animate-spin text-rose-400" size={32} />
+                              </div>
+                            }>
+                              <Routes>
+                                <Route path="/login" element={<Auth />} />
 
-                            <Route element={<ProtectedRoute />}>
-                              <Route
-                                path="/"
-                                element={<Navigate to="/home" replace />}
-                              />
-                              <Route path="/home" element={<Home />} />
-                              <Route
-                                path="/calendar"
-                                element={
-                                  <SchedulesProvider>
-                                    <Calendar />
-                                  </SchedulesProvider>
-                                }
-                              />
-                              <Route path="/games" element={<Games />} />
-                              <Route
-                                path="/places"
-                                element={
-                                  <PlacesProvider>
-                                    <Places />
-                                  </PlacesProvider>
-                                }
-                              />
-                              <Route path="/profile" element={<Profile />} />
-                              <Route path="/settings" element={<Settings />} />
-                              <Route
-                                path="/onboarding"
-                                element={<Onboarding />}
-                              />
-                              <Route
-                                path="*"
-                                element={<Navigate to="/home" replace />}
-                              />
-                            </Route>
-                          </Routes>
+                                <Route element={<ProtectedRoute />}>
+                                  <Route
+                                    path="/"
+                                    element={<Navigate to="/home" replace />}
+                                  />
+                                  <Route path="/home" element={<Home />} />
+                                  <Route
+                                    path="/calendar"
+                                    element={
+                                      <SchedulesProvider>
+                                        <Calendar />
+                                      </SchedulesProvider>
+                                    }
+                                  />
+                                  <Route path="/games" element={<Games />} />
+                                  <Route
+                                    path="/places"
+                                    element={
+                                      <PlacesProvider>
+                                        <Places />
+                                      </PlacesProvider>
+                                    }
+                                  />
+                                  <Route path="/profile" element={<Profile />} />
+                                  <Route path="/settings" element={<Settings />} />
+                                  <Route
+                                    path="/onboarding"
+                                    element={<Onboarding />}
+                                  />
+                                  <Route
+                                    path="*"
+                                    element={<Navigate to="/home" replace />}
+                                  />
+                                </Route>
+                              </Routes>
+                            </Suspense>
+                          </GlobalErrorBoundary>
                         </div>
 
                         <UpdateNotification />

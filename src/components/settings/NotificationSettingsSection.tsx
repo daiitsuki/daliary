@@ -7,7 +7,7 @@ import {
   CheckCircle2,
   Gamepad2,
 } from "lucide-react";
-import { useNotifications } from "../../hooks/useNotifications";
+import { useNotifications } from "../../hooks";
 import { NotificationSettings } from "../../context/NotificationsContext";
 import { motion, AnimatePresence } from "framer-motion";
 

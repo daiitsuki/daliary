@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCouple } from "../hooks/useCouple";
+import { useCouple } from "../hooks";
 import { useToast } from "../context/ToastContext";
 import { motion, Variants } from "framer-motion";
 import { supabase } from "../lib/supabase";

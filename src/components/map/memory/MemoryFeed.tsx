@@ -4,7 +4,7 @@ import {
   useMemoryFeed,
   useVisitById,
   MemoryFeedItem,
-} from "../../../hooks/useMemoryFeed";
+} from "../../../hooks";
 import MemoryCard from "./MemoryCard";
 import { Camera, Loader2, ArrowLeft, Heart, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";

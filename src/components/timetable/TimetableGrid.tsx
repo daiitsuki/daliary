@@ -1,7 +1,7 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, MapPin, Clock, AlignLeft, EyeOff } from "lucide-react";
-import { TimetableBlock } from "../../hooks/useTimetable";
+import { TimetableBlock } from "../../hooks";
 
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 

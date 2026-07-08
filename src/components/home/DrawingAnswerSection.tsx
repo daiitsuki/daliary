@@ -407,14 +407,6 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                 </p>
               </div>
               <div className="flex items-center gap-1 shrink-0 mt-1">
-                <button
-                  disabled={isSharing}
-                  onClick={handleShareClick}
-                  className="p-1.5 rounded-full text-gray-400 hover:bg-white hover:text-rose-500 hover:shadow-sm transition-all disabled:opacity-50 z-10 relative active:scale-95"
-                  aria-label="공유하기"
-                >
-                  <Share2 size={18} />
-                </button>
                 <div className="p-1.5 rounded-full text-gray-300 group-hover/header:bg-rose-50 group-hover/header:text-rose-400 transition-colors">
                   {isExpanded ? (
                     <ChevronUp size={20} />
@@ -521,11 +513,15 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                         ) : partnerDrawing && !myDrawing ? (
                           // Partner submitted, but I haven't -> Blurred Silhouette
                           <div className="relative w-full max-w-[240px] aspect-square rounded-2xl border border-gray-100 overflow-hidden bg-gray-50/50 flex flex-col items-center justify-center">
-                            <img
-                              src={partnerDrawing.image_url}
-                              alt="블러 처리된 상대 그림"
-                              className="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-110 select-none pointer-events-none"
-                            />
+                            {partnerDrawing.image_url === 'hidden' ? (
+                              <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-rose-100 to-indigo-100 blur-xl opacity-60 scale-110 select-none pointer-events-none" />
+                            ) : (
+                              <img
+                                src={partnerDrawing.image_url}
+                                alt="블러 처리된 상대 그림"
+                                className="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-110 select-none pointer-events-none"
+                              />
+                            )}
                             <div className="relative z-10 flex flex-col items-center text-center p-4">
                               <div className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm mb-3">
                                 <Lock size={20} className="text-rose-400" />
@@ -566,6 +562,18 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                           </div>
                         )}
                       </div>
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setIsShareMenuOpen(true); }}
+                        disabled={isSharing || !myDrawing}
+                        className="w-9 h-9 flex items-center justify-center bg-rose-50/50 text-rose-400 rounded-xl hover:bg-rose-100/60 transition-colors disabled:opacity-50"
+                        title="그림 공유하기"
+                        aria-label="그림 공유하기"
+                      >
+                        <Share2 size={17} />
+                      </button>
                     </div>
                   </div>
                 </motion.div>

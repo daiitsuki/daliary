@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from "../../lib/supabase";
 import imageCompression from 'browser-image-compression';
-import { convertToWebP } from '../utils/imageUtils';
+import { convertToWebP } from "../../utils/imageUtils";
 
 interface VerifyVisitParams {
   placeId: string;

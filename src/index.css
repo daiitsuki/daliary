@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @theme {
+  --color-primary: #ff496b;
+  --color-primary-hover: #ff2759;
+
   --animate-float: float 2s ease-in-out infinite;
 
   @keyframes float {

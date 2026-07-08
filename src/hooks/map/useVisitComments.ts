@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "../lib/supabase";
-import { VisitComment } from "../types";
-import { useCouple } from "./useCouple";
+import { supabase } from "../../lib/supabase";
+import { VisitComment } from "../../types";
+import { useCouple } from "../";
 
 export const useVisitComments = (visitId: string | undefined) => {
   const { profile } = useCouple();

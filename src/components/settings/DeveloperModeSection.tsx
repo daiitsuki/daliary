@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Terminal, Send } from "lucide-react";
-import { useNotifications } from "../../hooks/useNotifications";
-import { useCouple } from "../../hooks/useCouple";
+import { useNotifications } from "../../hooks";
+import { useCouple } from "../../hooks";
 import { useToast } from "../../context/ToastContext";
 import { supabase } from "../../lib/supabase";
 

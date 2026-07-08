@@ -7,7 +7,7 @@ import { motion, Variants, AnimatePresence } from "framer-motion";
 import { getRegionFromAddress } from "../../../lib/address";
 import WishlistCard from "./WishlistCard";
 import Select from "../../common/Select";
-import { useSwipe } from "../../../hooks/useSwipe";
+import { useSwipe } from "../../../hooks";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },

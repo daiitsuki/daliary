@@ -9,8 +9,8 @@ import {
   Lightbulb,
   Info,
 } from "lucide-react";
-import { useGameScore } from "../../hooks/useGameScore";
-import { useHomeData } from "../../hooks/useHomeData";
+import { useGameScore } from "../../hooks";
+import { useHomeData } from "../../hooks";
 import { useToast } from "../../context/ToastContext";
 
 type Tile = {

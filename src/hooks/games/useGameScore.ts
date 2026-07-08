@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "../lib/supabase";
-import { useCouple } from "./useCouple";
+import { supabase } from "../../lib/supabase";
+import { useCouple } from "../";
 
 export type GameType = "2048" | "watermelon" | "brick_breaker" | "stack";
 

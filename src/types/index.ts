@@ -67,3 +67,21 @@ export interface DrawingAnswer {
   image_url: string;
   created_at: string;
 }
+
+export type GameStatus = 'waiting' | 'playing' | 'finished';
+
+export interface MultiplayerGame {
+  id: string;
+  couple_id: string;
+  game_type: string;
+  host_id: string;
+  guest_id: string | null;
+  host_ready: boolean;
+  guest_ready: boolean;
+  status: GameStatus;
+  game_state: any; // Type narrowed down in specific game implementations
+  current_turn_id: string | null;
+  winner_id: string | null;
+  created_at: string;
+  updated_at: string;
+}

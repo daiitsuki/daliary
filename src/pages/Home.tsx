@@ -2,8 +2,8 @@ import { useState } from "react";
 import { motion, Variants } from "framer-motion";
 import { Copy, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import { useHomeData } from "../hooks/useHomeData";
-import { useCouplePoints } from "../hooks/useCouplePoints";
+import { useHomeData } from "../hooks";
+import { useCouplePoints } from "../hooks";
 
 // Sub Components
 import HomeHeader from "../components/home/HomeHeader";

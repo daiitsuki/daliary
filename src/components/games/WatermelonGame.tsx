@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, Trophy, Star, ChevronLeft, User, Info, Lightbulb } from "lucide-react";
 import Matter from "matter-js";
-import { useGameScore } from "../../hooks/useGameScore";
-import { useHomeData } from "../../hooks/useHomeData";
+import { useGameScore } from "../../hooks";
+import { useHomeData } from "../../hooks";
 import { useToast } from "../../context/ToastContext";
 
 // Asset Imports

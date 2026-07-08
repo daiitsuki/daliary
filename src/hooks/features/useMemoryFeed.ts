@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
-import { useHomeData } from './useHomeData';
+import { supabase } from "../../lib/supabase";
+import { useHomeData } from "../";
 
 export interface MemoryFeedItem {
   id: string;

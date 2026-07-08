@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, BellOff, X } from "lucide-react";
-import { useNotifications } from "../../hooks/useNotifications";
-import { useCouple } from "../../hooks/useCouple";
+import { useNotifications } from "../../hooks";
+import { useCouple } from "../../hooks";
 import { useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { useToast } from "../../context/ToastContext";

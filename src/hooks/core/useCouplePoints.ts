@@ -1,4 +1,4 @@
-import { useCouplePointsContext } from '../context/CouplePointsContext';
+import { useCouplePointsContext } from "../../context/CouplePointsContext";
 
 export const useCouplePoints = () => {
   const { totalPoints, currentPoints, history, levelInfo, loading, refreshPoints, refreshItems } = useCouplePointsContext();

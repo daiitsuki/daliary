@@ -16,9 +16,9 @@ import {
   Equal,
 } from "lucide-react";
 import TimePicker from "../../common/TimePicker";
-import { useTripPlans } from "../../../hooks/useTrips";
+import { useTripPlans } from "../../../hooks";
 import { TripPlan } from "../../../types";
-import { usePlaceSearch, KakaoPlace } from "../../../hooks/usePlaceSearch";
+import { usePlaceSearch, KakaoPlace } from "../../../hooks";
 import BaseModal from "../../common/BaseModal";
 import Button from "../../common/Button";
 

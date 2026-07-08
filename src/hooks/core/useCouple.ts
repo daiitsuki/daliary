@@ -1,4 +1,4 @@
-import { useCoupleContext } from '../context/CoupleContext';
+import { useCoupleContext } from "../../context/CoupleContext";
 
 /**
  * useCouple 훅은 CoupleContext의 상태를 편리하게 접근하기 위한 래퍼입니다.

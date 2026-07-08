@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { useCouple } from '../hooks/useCouple';
+import { useCouple } from "../hooks";
 import { Profile, DrawingAnswer } from '../types';
 import { getTodayDrawingQuestion } from '../data/drawingQuestions';
 
@@ -104,7 +104,7 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: drawingData, isLoading: drawingLoading } = useQuery({
     queryKey: ['drawing_data', couple?.id],
     queryFn: async () => {
-      if (!couple?.id) return null;
+      if (!couple?.id || !currentUserId) return null;
       
       const now = new Date();
       const kstOffset = 9 * 60 * 60 * 1000;
@@ -114,6 +114,38 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const day = String(kstNow.getDate()).padStart(2, '0');
       const today = `${year}-${month}-${day}`;
 
+      // 1. 먼저 내 그림이 있는지 확인
+      const { data: myData, error: myError } = await supabase
+        .from('drawing_answers')
+        .select('*')
+        .eq('couple_id', couple.id)
+        .eq('writer_id', currentUserId)
+        .eq('question_date', today);
+
+      if (myError) throw myError;
+
+      const hasMyDrawing = myData && myData.length > 0;
+
+      if (!hasMyDrawing) {
+        // 2. 내 그림이 없으면 상대방의 데이터는 image_url을 제외하고 가져옴 (네트워크 노출 방지)
+        const { data: partnerData, error: partnerError } = await supabase
+          .from('drawing_answers')
+          .select('id, couple_id, writer_id, question_date, question_text, created_at')
+          .eq('couple_id', couple.id)
+          .neq('writer_id', currentUserId)
+          .eq('question_date', today);
+
+        if (partnerError) throw partnerError;
+
+        const dummyPartnerData = (partnerData || []).map(d => ({
+          ...d,
+          image_url: 'hidden'
+        }));
+        
+        return [...(myData || []), ...dummyPartnerData] as DrawingAnswer[];
+      }
+
+      // 3. 내 그림이 있을 때만 전체(상대방 포함) 그림 데이터를 가져옴
       const { data, error } = await supabase
         .from('drawing_answers')
         .select('*')

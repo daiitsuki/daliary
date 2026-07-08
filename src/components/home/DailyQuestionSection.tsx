@@ -9,8 +9,10 @@ import {
   Loader2,
   Share2,
   Image as ImageIcon,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import QuestionHistoryModal from "./QuestionHistoryModal";
 import BaseModal from "../common/BaseModal";
 import { supabase } from "../../lib/supabase";
@@ -50,6 +52,29 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
+
+  const [isExpanded, setIsExpanded] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem("daily_section_state");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (todayQuestion && parsed.question === todayQuestion.content) {
+          return parsed.isExpanded;
+        }
+      }
+    } catch (e) {}
+    return true;
+  });
+
+  useEffect(() => {
+    if (todayQuestion) {
+      localStorage.setItem(
+        "daily_section_state",
+        JSON.stringify({ isExpanded, question: todayQuestion.content }),
+      );
+    }
+  }, [isExpanded, todayQuestion]);
+
   const bothAnswered = !!(myAnswer && partnerAnswer);
   const partnerNickname = partnerProfile?.nickname || "상대방";
 
@@ -319,33 +344,36 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
             animate={{ opacity: 1, y: 0 }}
             className="bg-white p-6 rounded-[32px] shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-rose-50/50 relative overflow-hidden group"
           >
-            <div className="absolute top-6 right-6 flex items-center gap-2 z-19">
-              <button
-                disabled={isSharing}
-                onClick={() => setIsShareMenuOpen(true)}
-                className="w-8 h-8 flex items-center justify-center bg-gray-50/80 hover:bg-rose-50 text-gray-300 hover:text-rose-400 rounded-full transition-all active:scale-90 border border-gray-100/50 disabled:opacity-50"
-                title="공유하기"
-              >
-                <Share2 size={13} />
-              </button>
-              <button
-                onClick={() => setIsHistoryOpen(true)}
-                className="w-8 h-8 flex items-center justify-center bg-gray-50/80 hover:bg-rose-50 text-gray-300 hover:text-rose-400 rounded-full transition-all active:scale-90 border border-gray-100/50"
-                title="지난 기록 보기"
-              >
-                <History size={14} />
-              </button>
-            </div>
-
             <div className="relative z-10">
-              <div className="flex gap-3 mb-4 pr-20">
-                <span className="text-3xl font-black text-rose-200/60 leading-none select-none italic">
-                  Q.
-                </span>
-                <p className="text-gray-800 font-bold text-[14px] leading-relaxed tracking-tight pt-1">
-                  {todayQuestion.content}
-                </p>
+              <div
+                className="flex items-start justify-between gap-3 cursor-pointer group/header select-none mb-2 px-1"
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                <div className="flex gap-3 pr-2 mt-1">
+                  <span className="text-2xl font-black text-rose-200/60 leading-none italic shrink-0 mt-0.5">
+                    Q.
+                  </span>
+                  <p className="text-gray-800 font-bold text-[14px] leading-relaxed tracking-tight pt-0.5">
+                    {todayQuestion.content}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0 mt-1">
+                  <div className="p-1.5 rounded-full text-gray-300 group-hover/header:bg-rose-50 group-hover/header:text-rose-400 transition-colors">
+                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </div>
+                </div>
               </div>
+
+              <AnimatePresence initial={false}>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pt-4">
 
               {!myAnswer ? (
                 <div className="relative group/input">
@@ -426,7 +454,31 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
                     )}
                   </div>
                 </div>
-              )}
+                      )}
+
+                      <div className="mt-4 flex justify-end gap-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setIsHistoryOpen(true); }}
+                          className="w-9 h-9 flex items-center justify-center bg-gray-50 text-gray-400 rounded-xl hover:bg-gray-100 hover:text-gray-500 transition-colors"
+                          title="지난 기록 보기"
+                          aria-label="지난 기록 보기"
+                        >
+                          <History size={17} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setIsShareMenuOpen(true); }}
+                          disabled={isSharing || !myAnswer}
+                          className="w-9 h-9 flex items-center justify-center bg-rose-50/50 text-rose-400 rounded-xl hover:bg-rose-100/60 transition-colors disabled:opacity-50"
+                          title="공유하기"
+                          aria-label="공유하기"
+                        >
+                          <Share2 size={17} />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}

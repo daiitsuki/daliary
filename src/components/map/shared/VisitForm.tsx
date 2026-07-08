@@ -4,7 +4,7 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import { useVisitVerification } from "../../../hooks/useVisitVerification";
+import { useVisitVerification } from "../../../hooks";
 import {
   KOREA_REGIONS,
   SUB_REGIONS,
@@ -19,8 +19,8 @@ import {
   InfoIcon,
 } from "lucide-react";
 import DatePicker from "../../common/DatePicker";
-import { usePlaceSearch, KakaoPlace } from "../../../hooks/usePlaceSearch";
-import { useCouple } from "../../../hooks/useCouple";
+import { usePlaceSearch, KakaoPlace } from "../../../hooks";
+import { useCouple } from "../../../hooks";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
 import { parseTripTitle } from "../../../utils/tripHelpers";

@@ -6,8 +6,8 @@ import {
   CheckCircle2,
   Heart,
 } from "lucide-react";
-import { useCouplePoints } from "../../hooks/useCouplePoints";
-import { useAttendance } from "../../hooks/useAttendance";
+import { useCouplePoints } from "../../hooks";
+import { useAttendance } from "../../hooks";
 import { useToast } from "../../context/ToastContext";
 import PointHistoryModal from "./PointHistoryModal";
 

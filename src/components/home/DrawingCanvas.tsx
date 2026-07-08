@@ -441,8 +441,8 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
       onClose={onClose}
       icon={Palette}
       title={
-        <span className="font-bold text-gray-800 text-sm truncate flex items-center gap-1.5 max-w-[240px] md:max-w-[300px]">
-          <span className="truncate">{questionText}</span>
+        <span className={`font-bold text-gray-800 text-sm flex items-center gap-1.5 ${isFullscreen ? 'whitespace-normal break-keep pr-4' : 'truncate max-w-[240px] md:max-w-[300px]'}`}>
+          <span className={isFullscreen ? '' : 'truncate'}>{questionText}</span>
         </span>
       }
       contentClassName="p-0 flex flex-col h-full bg-[#f3f4f6]"
@@ -520,7 +520,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute bottom-[100%] left-0 right-0 mb-2 mx-5 bg-white border border-gray-100 rounded-2xl p-4 shadow-[0_10px_30px_rgba(0,0,0,0.08)] flex flex-col gap-4"
+                className="absolute bottom-[100%] left-1/2 -translate-x-1/2 mb-2 w-[calc(100%-40px)] max-w-[360px] bg-white border border-gray-100 rounded-2xl p-4 shadow-[0_10px_30px_rgba(0,0,0,0.08)] flex flex-col gap-4"
               >
                 <div className="flex justify-between px-1">
                   {COLORS.map((c) => (
@@ -554,7 +554,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute bottom-[100%] left-0 right-0 mb-2 mx-5 bg-white border border-gray-100 rounded-2xl p-4 shadow-[0_10px_30px_rgba(0,0,0,0.08)] flex justify-center items-center gap-6"
+                className="absolute bottom-[100%] left-1/2 -translate-x-1/2 mb-2 w-[calc(100%-40px)] max-w-[360px] bg-white border border-gray-100 rounded-2xl p-4 shadow-[0_10px_30px_rgba(0,0,0,0.08)] flex justify-center items-center gap-6"
               >
                 {ERASER_THICKNESS_LEVELS.map((t) => (
                   <button

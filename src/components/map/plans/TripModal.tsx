@@ -10,7 +10,7 @@ import {
   Edit,
 } from "lucide-react";
 import DatePicker from "../../common/DatePicker";
-import { useTrips } from "../../../hooks/useTrips";
+import { useTrips } from "../../../hooks";
 import { Trip } from "../../../types";
 import { useToast } from "../../../context/ToastContext";
 import {

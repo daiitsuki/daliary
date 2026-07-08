@@ -5,9 +5,10 @@ import RegionDashboard from '../components/map/dashboard/RegionDashboard';
 import Wishlist from '../components/map/wishlist/Wishlist';
 import TravelPlans from '../components/map/plans/TravelPlans';
 import MemoryFeed from '../components/map/memory/MemoryFeed';
-import { Search, Map as MapIcon, Star, CalendarDays, Camera } from 'lucide-react';
+import { Search, Map as MapIcon, Star, CalendarDays, Camera, Loader2 } from 'lucide-react';
 import { Place } from '../context/PlacesContext';
 import { motion, Variants } from 'framer-motion';
+import { useKakaoLoader } from "react-kakao-maps-sdk";
 
 const LAST_VIEWED_TAB_KEY = 'daliary_last_map_tab';
 
@@ -15,9 +16,71 @@ export default function Places() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [targetPlace, setTargetPlace] = useState<Place | null>(null);
   
+  const [kakaoLoading, kakaoError] = useKakaoLoader({
+    appkey: import.meta.env.VITE_KAKAO_MAP_API_KEY,
+    libraries: ["services", "clusterer", "drawing"],
+  });
+
   const activeTab = (searchParams.get('tab') as 'dashboard' | 'search' | 'wishlist' | 'plans' | 'memory') || null;
 
   // 초기 탭 설정: URL에 없으면 localStorage에서 가져옴
+  const renderContent = () => {
+    if (kakaoLoading) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50/30">
+          <Loader2 className="w-8 h-8 animate-spin text-rose-400 mb-4" />
+          <p className="text-sm text-gray-500 font-medium tracking-tight animate-pulse">지도를 불러오는 중입니다...</p>
+        </div>
+      );
+    }
+    if (kakaoError) {
+      return (
+        <div className="flex-1 flex items-center justify-center bg-gray-50/30 text-rose-500 font-medium">
+          지도를 불러오는데 실패했습니다.
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case 'dashboard':
+        return (
+          <motion.div 
+            key="dashboard"
+            variants={containerVariants} 
+            initial="hidden" 
+            animate="visible" 
+            className="h-full"
+          >
+            <motion.div variants={itemVariants} className="h-full">
+              <RegionDashboard />
+            </motion.div>
+          </motion.div>
+        );
+      case 'memory':
+        return (
+          <motion.div 
+            key="memory"
+            variants={containerVariants} 
+            initial="hidden" 
+            animate="visible" 
+            className="h-full"
+          >
+            <motion.div variants={itemVariants} className="h-full">
+              <MemoryFeed />
+            </motion.div>
+          </motion.div>
+        );
+      case 'search':
+        return <PlaceSearch targetPlace={targetPlace} />;
+      case 'wishlist':
+        return <Wishlist onShowOnMap={handleShowOnMap} />;
+      case 'plans':
+        return <TravelPlans />;
+      default:
+        return null;
+    }
+  };
+
   useEffect(() => {
     if (!activeTab) {
       // visitId가 있으면 memory 탭으로 우선 설정
@@ -121,45 +184,7 @@ export default function Places() {
 
       {/* 메인 컨텐츠 영역 */}
       <main className="flex-1 relative min-h-0 overflow-hidden">
-        {activeTab === 'dashboard' && (
-          <motion.div 
-            key="dashboard"
-            variants={containerVariants} 
-            initial="hidden" 
-            animate="visible" 
-            className="h-full"
-          >
-            <motion.div variants={itemVariants} className="h-full">
-              <RegionDashboard />
-            </motion.div>
-          </motion.div>
-        )}
-
-        {activeTab === 'memory' && (
-          <motion.div 
-            key="memory"
-            variants={containerVariants} 
-            initial="hidden" 
-            animate="visible" 
-            className="h-full"
-          >
-            <motion.div variants={itemVariants} className="h-full">
-              <MemoryFeed />
-            </motion.div>
-          </motion.div>
-        )}
-        
-        {activeTab === 'search' && (
-          <PlaceSearch targetPlace={targetPlace} />
-        )}
-        
-        {activeTab === 'wishlist' && (
-          <Wishlist onShowOnMap={handleShowOnMap} />
-        )}
-
-        {activeTab === 'plans' && (
-          <TravelPlans />
-        )}
+        {renderContent()}
       </main>
     </div>
   );

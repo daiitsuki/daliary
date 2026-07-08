@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { useCouple } from '../hooks/useCouple';
+import { useCouple } from "../hooks";
 import { CATEGORY_CONFIG } from '../components/calendar/constants';
 
 export interface Schedule {

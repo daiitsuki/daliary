@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timer, Trophy, RotateCcw, ChevronLeft, AlertCircle, Play, Ticket } from "lucide-react";
 import { supabase } from "../../lib/supabase";
-import { useCouplePoints } from "../../hooks/useCouplePoints";
+import { useCouplePoints } from "../../hooks";
 import { useCouplePointsContext } from "../../context/CouplePointsContext";
 import { useToast } from "../../context/ToastContext";
 

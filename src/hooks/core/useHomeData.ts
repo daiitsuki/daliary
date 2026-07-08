@@ -1,5 +1,5 @@
-import { useHomeContext } from '../context/HomeContext';
-import { useCouple } from './useCouple';
+import { useHomeContext } from "../../context/HomeContext";
+import { useCouple } from "../";
 
 /**
  * useHomeData 훅은 이제 HomeContext를 사용하여

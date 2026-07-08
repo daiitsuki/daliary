@@ -8,6 +8,7 @@ import React, {
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle } from "lucide-react";
+import Button from "../components/common/Button";
 
 interface ConfirmOptions {
   title?: string;
@@ -93,20 +94,20 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
                 </p>
 
                 <div className="flex gap-2 sm:gap-3 w-full mt-1 sm:mt-2">
-                  <button
+                  <Button
                     onClick={() => handleClose(false)}
-                    className="flex-1 py-3 sm:py-3.5 bg-gray-100 text-gray-400 text-[13px] sm:text-sm font-bold rounded-xl sm:rounded-2xl hover:bg-gray-200 transition-colors active:scale-95"
+                    variant="outline"
+                    className="flex-1"
                   >
                     {cancelText}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => handleClose(true)}
-                    className={`flex-1 py-3 sm:py-3.5 text-white text-[13px] sm:text-sm font-bold rounded-xl sm:rounded-2xl transition-colors active:scale-95 shadow-sm
-                      ${isDanger ? "bg-rose-500 hover:bg-rose-600 shadow-rose-200" : "bg-gray-800 hover:bg-gray-900 shadow-gray-200"}
-                    `}
+                    variant={isDanger ? "danger" : "primary"}
+                    className="flex-1"
                   >
                     {confirmText}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </motion.div>

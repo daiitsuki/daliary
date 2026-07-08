@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { supabase } from "../lib/supabase";
-import { useCouple } from "./useCouple";
+import { supabase } from "../../lib/supabase";
+import { useCouple } from "../";
 
 export interface KakaoPlace {
   id: string;

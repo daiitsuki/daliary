@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Trash2, MapPin, Loader2, Plus, Edit2 } from "lucide-react";
 import TimePicker from "../common/TimePicker";
-import { TimetableBlock, TimetableBlockInput } from "../../hooks/useTimetable";
-import { usePlaceSearch, KakaoPlace } from "../../hooks/usePlaceSearch";
+import { TimetableBlock, TimetableBlockInput } from "../../hooks";
+import { usePlaceSearch, KakaoPlace } from "../../hooks";
 import { useConfirm } from "../../context/ConfirmContext";
 import BaseModal from "../common/BaseModal";
 import Button from "../common/Button";
@@ -214,12 +214,12 @@ const TimetableBlockModal = ({
     <div className="w-full flex gap-3">
       {blockToEdit && (
         <Button
-          variant="secondary"
+          variant="danger-ghost"
           onClick={handleDeleteClick}
           disabled={isSaving}
           className="!w-auto px-5 shrink-0"
         >
-          <Trash2 size={20} className="text-gray-400 transition-colors" />
+          <Trash2 size={20} />
         </Button>
       )}
       <Button

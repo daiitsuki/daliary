@@ -1,4 +1,4 @@
-import { useTimetableContext, TimetableBlock, TimetableBlockInput } from '../context/TimetableContext';
+import { useTimetableContext, TimetableBlock, TimetableBlockInput } from "../../context/TimetableContext";
 
 export type { TimetableBlock, TimetableBlockInput };
 

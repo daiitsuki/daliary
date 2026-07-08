@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { Schedule } from "./useSchedules";
-import staticHolidaysData from "../data/holidays.json";
-import { useToast } from "../context/ToastContext";
+import { Schedule } from "../";
+import staticHolidaysData from "../../data/holidays.json";
+import { useToast } from "../../context/ToastContext";
 
 interface HolidayData {
   date: string;

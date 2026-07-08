@@ -10,8 +10,8 @@ import {
   startOfDay,
 } from "date-fns";
 import { ko } from "date-fns/locale";
-import { useAnniversaries } from "../../hooks/useAnniversaries";
-import { useCouple } from "../../hooks/useCouple";
+import { useAnniversaries } from "../../hooks";
+import { useCouple } from "../../hooks";
 import DatePicker from "./DatePicker";
 import BaseModal from "./BaseModal";
 import Button from "./Button";

@@ -6,8 +6,8 @@ import {
   Heart,
   Plane,
 } from "lucide-react";
-import { useHolidays } from "../../hooks/useHolidays";
-import { useAnniversaries } from "../../hooks/useAnniversaries";
+import { useHolidays } from "../../hooks";
+import { useAnniversaries } from "../../hooks";
 
 export default function CalendarSettingsSection() {
   const {

@@ -15,8 +15,8 @@ import {
   Trophy,
   Lightbulb,
 } from "lucide-react";
-import { useGameScore } from "../../hooks/useGameScore";
-import { useHomeData } from "../../hooks/useHomeData";
+import { useGameScore } from "../../hooks";
+import { useHomeData } from "../../hooks";
 
 // --- Constants ---
 const CANVAS_WIDTH = 340;

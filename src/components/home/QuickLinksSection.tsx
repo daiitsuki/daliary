@@ -4,7 +4,7 @@ import { Map, Heart, Camera, Settings, ShoppingBag, Calendar } from "lucide-reac
 import { motion, Reorder, useDragControls } from "framer-motion";
 import AnniversaryModal from "../common/AnniversaryModal";
 import PointHistoryModal from "./PointHistoryModal";
-import { useCouplePoints } from "../../hooks/useCouplePoints";
+import { useCouplePoints } from "../../hooks";
 
 
 const DEFAULT_ORDER = ["plans", "memory", "timetable", "anniversary", "shop", "settings"];

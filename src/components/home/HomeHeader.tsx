@@ -4,7 +4,7 @@ import ImageViewerModal from "../common/ImageViewerModal";
 import AnniversaryModal from "../common/AnniversaryModal";
 import MenuDrawer from "../common/MenuDrawer";
 import NotificationHistoryModal from "./NotificationHistoryModal";
-import { useNotifications } from "../../hooks/useNotifications";
+import { useNotifications } from "../../hooks";
 import { Profile, Couple } from "../../types";
 
 interface HomeHeaderProps {

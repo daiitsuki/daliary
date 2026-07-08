@@ -10,13 +10,19 @@ import {
   Layers,
   ChevronRight,
   Trophy,
+  Users,
 } from "lucide-react";
-import Game2048 from "../components/games/Game2048";
-import BlindTimerGame from "../components/games/BlindTimerGame";
-import WatermelonGame from "../components/games/WatermelonGame";
-import SwipeBrickBreaker from "../components/games/SwipeBrickBreaker";
-import StackGame from "../components/games/StackGame";
-import { useAllGameScores } from "../hooks/useGameScore";
+import { lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
+// 개별 게임 컴포넌트들을 지연 로딩 (수박게임 클릭 시에만 물리엔진 다운로드 등)
+const Game2048 = lazy(() => import("../components/games/Game2048"));
+const BlindTimerGame = lazy(() => import("../components/games/BlindTimerGame"));
+const WatermelonGame = lazy(() => import("../components/games/WatermelonGame"));
+const SwipeBrickBreaker = lazy(() => import("../components/games/SwipeBrickBreaker"));
+const StackGame = lazy(() => import("../components/games/StackGame"));
+const ConnectFourGame = lazy(() => import("../components/games/connect-four/ConnectFourGame"));
+import { useAllGameScores } from "../hooks";
 
 export default function Games() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -72,14 +78,29 @@ export default function Games() {
     },
   };
 
-  if (selectedGame === "2048") return <Game2048 onBack={handleBack} />;
-  if (selectedGame === "blind-timer")
-    return <BlindTimerGame onBack={handleBack} />;
-  if (selectedGame === "watermelon")
-    return <WatermelonGame onBack={handleBack} />;
-  if (selectedGame === "brick-breaker")
-    return <SwipeBrickBreaker onBack={handleBack} />;
-  if (selectedGame === "stack") return <StackGame onBack={handleBack} />;
+  const renderSelectedGame = () => {
+    switch (selectedGame) {
+      case "2048": return <Game2048 onBack={handleBack} />;
+      case "blind-timer": return <BlindTimerGame onBack={handleBack} />;
+      case "watermelon": return <WatermelonGame onBack={handleBack} />;
+      case "brick-breaker": return <SwipeBrickBreaker onBack={handleBack} />;
+      case "stack": return <StackGame onBack={handleBack} />;
+      case "connect-four": return <ConnectFourGame onBack={handleBack} />;
+      default: return null;
+    }
+  };
+
+  if (selectedGame) {
+    return (
+      <Suspense fallback={
+        <div className="min-h-full flex items-center justify-center bg-[#FDFBF7]">
+          <Loader2 className="animate-spin text-rose-400" size={32} />
+        </div>
+      }>
+        {renderSelectedGame()}
+      </Suspense>
+    );
+  }
 
   const gameList = [
     {
@@ -130,6 +151,16 @@ export default function Games() {
       color: "bg-amber-50 text-amber-500 border-amber-100/50",
       rewardInfo: "최대 500PT",
       ticket: true,
+    },
+  ];
+
+  const multiplayerGames = [
+    {
+      id: "connect-four",
+      title: "사목 (Connect Four)",
+      desc: "커플 실시간 보드게임 대결!",
+      icon: Users,
+      color: "bg-blue-50 text-blue-500 border-blue-100/50",
     },
   ];
 
@@ -239,6 +270,49 @@ export default function Games() {
                   ) : (
                     <div className="h-5"></div>
                   )}
+                </button>
+              ))}
+            </div>
+
+            {/* Divider */}
+            <div className="w-full h-px bg-gray-50 mb-6"></div>
+
+            {/* Multiplayer Section */}
+            <div className="flex items-center mb-4">
+              <h2 className="text-[13px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <Users size={12} className="text-blue-300" /> 실시간 대결
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 mb-6">
+              {multiplayerGames.map((game) => (
+                <button
+                  key={game.id}
+                  onClick={() => handleSelectGame(game.id)}
+                  className="w-full bg-gray-50/50 rounded-[24px] p-4 border border-gray-100/50 flex items-center gap-4 transition-all hover:bg-gray-50 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98] group relative overflow-hidden text-left"
+                >
+                  <div
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 border ${game.color} shadow-sm transition-transform group-hover:scale-105`}
+                  >
+                    <game.icon size={20} />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="text-[14px] font-black text-gray-800">
+                        {game.title}
+                      </h3>
+                    </div>
+                    <p className="text-[11px] font-bold text-gray-400 truncate">
+                      {game.desc}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-gray-300 group-hover:text-blue-500 shadow-sm transition-colors border border-gray-100">
+                      <ChevronRight size={16} strokeWidth={3} />
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>

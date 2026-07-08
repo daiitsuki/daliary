@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Clock, MapPin, AlignLeft } from "lucide-react";
-import { TimetableBlock } from "../../hooks/useTimetable";
+import { TimetableBlock } from "../../hooks";
 import { useEffect, useState } from "react";
 import Button from "../common/Button";
 
@@ -111,7 +111,7 @@ const PartnerBlockModal = ({ isOpen, onClose, block }: PartnerBlockModalProps) =
 
             {/* Footer */}
             <div className="p-4 bg-gray-50/50 flex justify-center shrink-0">
-              <Button variant="secondary" onClick={onClose}>
+              <Button variant="outline" onClick={onClose}>
                 닫기
               </Button>
             </div>

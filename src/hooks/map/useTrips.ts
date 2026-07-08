@@ -4,9 +4,9 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from "@tanstack/react-query";
-import { supabase } from "../lib/supabase";
-import { useCouple } from "./useCouple";
-import { Trip, TripPlan } from "../types";
+import { supabase } from "../../lib/supabase";
+import { useCouple } from "../";
+import { Trip, TripPlan } from "../../types";
 
 export const useTrips = () => {
   const { couple } = useCouple();

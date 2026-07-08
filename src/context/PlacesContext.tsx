@@ -2,7 +2,7 @@ import React, { createContext, useContext } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { KOREA_REGIONS } from '../constants/regions';
-import { useCouple } from '../hooks/useCouple';
+import { useCouple } from "../hooks";
 
 export interface VisitWithPlace {
   id: string;

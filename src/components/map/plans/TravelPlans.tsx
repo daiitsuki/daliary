@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useSwipe } from "../../../hooks/useSwipe";
-import { useTrips } from "../../../hooks/useTrips";
+import { useSwipe } from "../../../hooks";
+import { useTrips } from "../../../hooks";
 import {
   Plus,
   Calendar,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Map, MapMarker, CustomOverlayMap } from "react-kakao-maps-sdk";
-import { usePlaceSearch, KakaoPlace } from "../../../hooks/usePlaceSearch";
+import { usePlaceSearch, KakaoPlace } from "../../../hooks";
 import {
   Search,
   MapPin,

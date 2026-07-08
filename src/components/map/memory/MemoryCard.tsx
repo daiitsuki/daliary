@@ -9,10 +9,10 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MemoryFeedItem } from "../../../hooks/useMemoryFeed";
+import { MemoryFeedItem } from "../../../hooks";
 import { supabase } from "../../../lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
-import { useHomeData } from "../../../hooks/useHomeData";
+import { useHomeData } from "../../../hooks";
 import { useConfirm } from "../../../context/ConfirmContext";
 import { shareContent, ShareTemplates } from "../../../utils/shareUtils";
 import { useToast } from "../../../context/ToastContext";

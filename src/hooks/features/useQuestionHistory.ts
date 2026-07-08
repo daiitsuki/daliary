@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
+import { supabase } from "../../lib/supabase";
 import { useCallback } from 'react';
 
 interface Answer {

@@ -1,6 +1,6 @@
 import { Package, Ticket, HelpCircle } from "lucide-react";
 import { useCouplePointsContext } from "../../context/CouplePointsContext";
-import { useHomeData } from "../../hooks/useHomeData";
+import { useHomeData } from "../../hooks";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 

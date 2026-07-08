@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { useCouple } from '../hooks/useCouple';
+import { useCouple } from "../hooks";
 import { useToast } from './ToastContext';
 
 export interface AppNotification {

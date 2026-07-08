@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, CalendarCheck2, Loader2 } from "lucide-react";
-import { useAttendance } from "../../hooks/useAttendance";
+import { useAttendance } from "../../hooks";
 import { useToast } from "../../context/ToastContext";
 
 const AttendanceButton = () => {

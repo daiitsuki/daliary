@@ -19,8 +19,8 @@ import { supabase } from "../../../lib/supabase";
 import imageCompression from "browser-image-compression";
 import { convertToWebP } from "../../../utils/imageUtils";
 import { VisitWithPlace } from "../../../context/PlacesContext";
-import { useVisitComments } from "../../../hooks/useVisitComments";
-import { useCouple } from "../../../hooks/useCouple";
+import { useVisitComments } from "../../../hooks";
+import { useCouple } from "../../../hooks";
 import { useConfirm } from "../../../context/ConfirmContext";
 import { useToast } from "../../../context/ToastContext";
 import {

@@ -7,7 +7,7 @@ import {
   Send,
   History,
 } from "lucide-react";
-import { useQuestionHistory } from "../../hooks/useQuestionHistory";
+import { useQuestionHistory } from "../../hooks";
 import { useCouplePointsContext } from "../../context/CouplePointsContext";
 import { supabase } from "../../lib/supabase";
 import { useState } from "react";

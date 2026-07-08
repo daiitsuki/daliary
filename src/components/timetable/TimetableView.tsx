@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef } from "react";
 import { toPng } from "html-to-image";
 import { motion } from "framer-motion";
-import { useTimetable, TimetableBlock, TimetableBlockInput } from "../../hooks/useTimetable";
-import { useHomeData } from "../../hooks/useHomeData";
+import { useTimetable, TimetableBlock, TimetableBlockInput } from "../../hooks";
+import { useHomeData } from "../../hooks";
 import { useToast } from "../../context/ToastContext";
 import TimetableHeader from "./TimetableHeader";
 import TimetableGrid from "./TimetableGrid";

@@ -1,4 +1,4 @@
-import { useCouplePointsContext } from '../context/CouplePointsContext';
+import { useCouplePointsContext } from "../../context/CouplePointsContext";
 
 export const useAttendance = () => {
   const { hasCheckedIn, loading, checkIn, refreshAttendance } = useCouplePointsContext();

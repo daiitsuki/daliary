@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, Calendar, MessageSquare, MapPin, TrendingUp, CheckCircle2, ShoppingBag, Gamepad2, Plane } from "lucide-react";
-import { useNotifications } from "../../hooks/useNotifications";
+import { useNotifications } from "../../hooks";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import BaseModal from "../common/BaseModal";

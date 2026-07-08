@@ -1,4 +1,4 @@
-import { useUserStats } from "../../hooks/useUserStats";
+import { useUserStats } from "../../hooks";
 import {
   CalendarCheck,
   MessageCircleQuestion,

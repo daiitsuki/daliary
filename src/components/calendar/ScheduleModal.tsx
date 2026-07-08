@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import DatePicker from "../common/DatePicker";
 import { CATEGORY_CONFIG, CategoryType } from "./constants";
-import { Schedule, ScheduleInput } from "../../hooks/useSchedules";
+import { Schedule, ScheduleInput } from "../../hooks";
 import { Profile } from "../../types";
 import { shareContent, ShareTemplates } from "../../utils/shareUtils";
 import { useToast } from "../../context/ToastContext";
@@ -190,7 +190,7 @@ const ScheduleModal = ({
           {scheduleToEdit && (
             <Button
               type="button"
-              variant="secondary"
+              variant="danger-ghost"
               icon={<Trash2 size={18} />}
               onClick={handleDelete}
               disabled={isDeleting || isSaving}

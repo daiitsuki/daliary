@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Search, Calendar as CalendarIcon, ChevronRight } from "lucide-react";
-import { Schedule } from "../../hooks/useSchedules";
+import { Schedule } from "../../hooks";
 import { Profile } from "../../types";
 
 interface ScheduleListProps {

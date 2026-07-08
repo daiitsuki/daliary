@@ -7,8 +7,8 @@ import { Profile } from "../../types";
 import { supabase } from "../../lib/supabase";
 import { changelog } from "../../data/changelog";
 import ChangelogModal from "./ChangelogModal";
-import { useCouple } from "../../hooks/useCouple";
-import { useCouplePoints } from "../../hooks/useCouplePoints";
+import { useCouple } from "../../hooks";
+import { useCouplePoints } from "../../hooks";
 import { useHomeContext } from "../../context/HomeContext";
 import { differenceInSeconds, parseISO, startOfDay } from "date-fns";
 

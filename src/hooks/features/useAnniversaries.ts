@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useCouple } from "./useCouple";
-import { Schedule } from "../context/SchedulesContext";
+import { useCouple } from "../";
+import { Schedule } from "../../context/SchedulesContext";
 
 // Module-level cache
 let cachedAnniversarySchedules: Schedule[] | null = null;

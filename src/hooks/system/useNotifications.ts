@@ -1,4 +1,4 @@
-import { useNotificationsContext } from '../context/NotificationsContext';
+import { useNotificationsContext } from "../../context/NotificationsContext";
 
 /**
  * useNotifications 훅은 이제 NotificationsContext의 상태를 제공하는 래퍼입니다.
