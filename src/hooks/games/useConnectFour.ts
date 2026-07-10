@@ -20,8 +20,6 @@ export function useConnectFour() {
   const {
     game,
     loading: baseLoading,
-    createGame: baseCreate,
-    joinGame,
     setReady,
     startGame: baseStart,
     updateGameState: baseUpdate,
@@ -31,14 +29,6 @@ export function useConnectFour() {
   } = useMultiplayerGame('connect_four');
 
   const [isUpdating, setIsUpdating] = useState(false);
-
-  const createRoom = () => {
-    return baseCreate({
-      board: Array(ROWS).fill(null).map(() => Array(COLS).fill(null)),
-      red_player_id: '',
-      yellow_player_id: ''
-    });
-  };
 
   const invitePartner = (myName: string = '상대방') => {
     return sendInvitePush(
@@ -152,8 +142,6 @@ export function useConnectFour() {
     loading: baseLoading,
     isMyTurn: game?.current_turn_id === profile?.id,
     profileId: profile?.id,
-    createRoom,
-    joinGame,
     setReady,
     invitePartner,
     startMatch,

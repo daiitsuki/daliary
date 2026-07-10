@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, Trophy, AlertCircle } from "lucide-react";
 import {
@@ -22,8 +22,6 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
     loading,
     isMyTurn,
     profileId,
-    createRoom,
-    joinGame,
     setReady,
     invitePartner,
     startMatch,
@@ -43,16 +41,96 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
 
   const { confirm } = useConfirm();
   const [showResultModal, setShowResultModal] = useState(false);
+  const [localLobbyView, setLocalLobbyView] = useState(false);
+  
+  const previousStatusRef = useRef<string | undefined>(undefined);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    if (game?.status === "finished") {
+    if (game && isInitialMount.current) {
+      isInitialMount.current = false;
+      if (game.status === "finished") {
+        setLocalLobbyView(true);
+      }
+    }
+  }, [game]);
+
+  useEffect(() => {
+    if (previousStatusRef.current === "playing" && game?.status === "finished") {
       setShowResultModal(true);
-    } else {
-      setShowResultModal(false);
+    }
+    previousStatusRef.current = game?.status;
+  }, [game?.status]);
+
+  const tokenRef = useRef<string | null>(null);
+  
+  useEffect(() => {
+    // Get token for keepalive fetch
+    import('../../../lib/supabase').then(({ supabase }) => {
+      supabase.auth.getSession().then((response) => {
+        tokenRef.current = response.data.session?.access_token || null;
+      });
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+        tokenRef.current = session?.access_token || null;
+      });
+      return () => subscription.unsubscribe();
+    });
+  }, []);
+
+  const stateRef = useRef({ game, profileId, setReady });
+  useEffect(() => {
+    stateRef.current = { game, profileId, setReady };
+  }, [game, profileId, setReady]);
+
+  useEffect(() => {
+    const handleUnmountOrUnload = () => {
+      const { game, profileId, setReady } = stateRef.current;
+      if (game && profileId) {
+        const isHost = game.host_id === profileId;
+        const myReady = isHost ? game.host_ready : game.guest_ready;
+        if (myReady && game.status !== 'playing') {
+          // 브라우저 종료 시에도 요청이 전달되도록 keepalive fetch 사용
+          if (tokenRef.current) {
+            const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/multiplayer_games?id=eq.${game.id}`;
+            fetch(url, {
+              method: 'PATCH',
+              headers: {
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${tokenRef.current}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify(isHost ? { host_ready: false } : { guest_ready: false }),
+              keepalive: true
+            }).catch(() => {});
+          } else {
+            setReady(game.id, false).catch(() => {});
+          }
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleUnmountOrUnload);
+    window.addEventListener('pagehide', handleUnmountOrUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnmountOrUnload);
+      window.removeEventListener('pagehide', handleUnmountOrUnload);
+      handleUnmountOrUnload(); // 컴포넌트 언마운트 시(뒤로가기 등)에도 실행
+    };
+  }, []);
+
+  useEffect(() => {
+    if (game?.status === "playing") {
+      setLocalLobbyView(false);
     }
   }, [game?.status]);
 
   const handleCloseResult = () => {
+    setShowResultModal(false);
+  };
+
+  const handleReturnToLobby = () => {
+    setLocalLobbyView(true);
     setShowResultModal(false);
   };
 
@@ -94,6 +172,12 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
       return;
     }
 
+    // 게임이 끝난 상태에서 보드판을 보고 있다면, 게임을 아예 나가는 대신 로비로 이동
+    if (game && game.status === "finished" && !localLobbyView) {
+      setLocalLobbyView(true);
+      return;
+    }
+
     if (game && (game.status === 'waiting' || game.status === 'finished')) {
       leaveGame(game.id);
     }
@@ -131,7 +215,7 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        {!game || game.status === "waiting" ? (
+        {!game || game.status === "waiting" || localLobbyView ? (
           <ConnectFourLobby
             game={game}
             profileId={profileId}
@@ -140,12 +224,9 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
             partnerRawName={partnerRawName}
             myProfile={myProfile}
             partnerProfile={partnerProfile}
-            onCreateRoom={createRoom}
-            onJoinRoom={joinGame}
             onInvite={() => invitePartner(myName)}
             onReady={setReady}
             onStart={startMatch}
-            onLeave={leaveGame}
           />
         ) : (
           <motion.div
@@ -285,6 +366,18 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
                 기권하기
               </Button>
             )}
+
+            {/* Return to Lobby Button */}
+            {game.status === "finished" && (
+              <Button
+                onClick={handleReturnToLobby}
+                variant="primary"
+                size="md"
+                className="mt-2"
+              >
+                로비로 돌아가기
+              </Button>
+            )}
           </motion.div>
         )}
       </div>
@@ -327,8 +420,8 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
             </>
           )}
           <div className="w-full mt-4">
-            <Button onClick={handleCloseResult} variant="primary" size="md">
-              돌아가기
+            <Button onClick={handleReturnToLobby} variant="primary" size="md">
+              로비로 돌아가기
             </Button>
           </div>
         </div>

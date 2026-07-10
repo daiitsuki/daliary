@@ -15,7 +15,7 @@ const AttendanceButton = () => {
     try {
       const success = await checkIn();
       if (success) {
-        showToast("오늘의 출석체크가 완료되었습니다! (+50 PT)", "success");
+        showToast("오늘의 출석체크가 완료되었어요.", "success");
       } else {
         showToast("이미 출석체크를 완료했거나 실패했어요.", "error");
       }
@@ -27,7 +27,7 @@ const AttendanceButton = () => {
     }
   };
 
-  if (loading || hasCheckedIn) return null;
+  if (loading) return null;
 
   return (
     <div className="6">
