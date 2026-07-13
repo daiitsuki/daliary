@@ -184,6 +184,7 @@ DROP TRIGGER IF EXISTS on_profile_avatar_updated ON public.profiles;
 -- ==============================================================================
 -- 3. Create the new unified triggers
 -- ==============================================================================
+DROP TRIGGER IF EXISTS tr_notify_visit_comment ON public.visit_comments;
 CREATE TRIGGER tr_notify_visit_comment
 AFTER INSERT ON public.visit_comments
 FOR EACH ROW

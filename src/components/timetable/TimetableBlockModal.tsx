@@ -7,6 +7,8 @@ import { usePlaceSearch, KakaoPlace } from "../../hooks";
 import { useConfirm } from "../../context/ConfirmContext";
 import BaseModal from "../common/BaseModal";
 import Button from "../common/Button";
+import Input from "../common/Input";
+import Textarea from "../common/Textarea";
 
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -211,13 +213,13 @@ const TimetableBlockModal = ({
   };
 
   const footerContent = (
-    <div className="w-full flex gap-3">
+    <div className="flex w-full gap-3">
       {blockToEdit && (
         <Button
           variant="danger-ghost"
           onClick={handleDeleteClick}
           disabled={isSaving}
-          className="!w-auto px-5 shrink-0"
+          className="!w-auto shrink-0 px-5"
         >
           <Trash2 size={20} />
         </Button>
@@ -249,34 +251,28 @@ const TimetableBlockModal = ({
     >
       <div className="space-y-7">
         {errorMsg && (
-          <div className="bg-rose-50 text-rose-500 text-sm font-bold px-4 py-3 rounded-2xl flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-500">
             <X size={16} />
             {errorMsg}
           </div>
         )}
 
         {/* 제목 */}
-        <div className="space-y-2">
-          <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-            제목
-          </label>
-          <input
-            autoFocus
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="수업명, 일정명을 입력하세요"
-            className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-inner focus:ring-2 focus:ring-rose-200 font-bold text-sm sm:text-base outline-none"
-            required
-          />
-        </div>
+        <Input
+          label="제목"
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="수업명, 일정명을 입력하세요"
+          required
+        />
 
         {/* 요일 */}
-        <div className="space-y-3">
-          <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
+        <div className="flex flex-col gap-1.5">
+          <label className="ml-1 text-sm font-bold text-gray-700">
             요일 (중복 선택 가능)
           </label>
-          <div className="flex gap-2">
+          <div className="flex justify-between gap-1.5 sm:gap-2">
             {DAYS.map((day, idx) => {
               const isSelected = selectedDays.includes(idx);
               return (
@@ -284,7 +280,7 @@ const TimetableBlockModal = ({
                   key={idx}
                   type="button"
                   onClick={() => toggleDay(idx)}
-                  className={`flex-1 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all ${
+                  className={`flex aspect-square max-w-[42px] flex-1 items-center justify-center rounded-2xl text-xs font-black transition-all sm:text-sm ${
                     isSelected
                       ? "bg-rose-400 text-white shadow-lg shadow-rose-100"
                       : `bg-gray-50 hover:bg-gray-100 ${
@@ -304,10 +300,8 @@ const TimetableBlockModal = ({
         </div>
 
         {/* 시간 */}
-        <div className="space-y-3">
-          <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-            시간
-          </label>
+        <div className="flex flex-col gap-1.5">
+          <label className="ml-1 text-sm font-bold text-gray-700">시간</label>
           <div className="grid grid-cols-2 gap-4">
             <TimePicker
               label="시작 시간"
@@ -324,19 +318,17 @@ const TimetableBlockModal = ({
         </div>
 
         {/* 색상 */}
-        <div className="space-y-3">
-          <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-            색상
-          </label>
+        <div className="flex flex-col gap-1.5">
+          <label className="ml-1 text-sm font-bold text-gray-700">색상</label>
           <div className="flex flex-wrap gap-2.5">
             {PRESET_COLORS.map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => setColor(c)}
-                className={`w-9 h-9 rounded-full transition-all ${
+                className={`h-9 w-9 rounded-full transition-all ${
                   color === c
-                    ? "scale-125 ring-2 ring-offset-2 ring-gray-400"
+                    ? "scale-125 ring-2 ring-rose-400 ring-offset-2"
                     : "hover:scale-110"
                 }`}
                 style={{ backgroundColor: c }}
@@ -346,96 +338,72 @@ const TimetableBlockModal = ({
         </div>
 
         {/* 장소 */}
-        <div className="space-y-2">
-          <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-            장소 (선택)
-          </label>
-          <div className="relative">
-            <div className="relative flex items-center">
-              <MapPin
-                size={16}
-                className="absolute left-4 text-gray-500 pointer-events-none"
-              />
-              <input
-                type="text"
-                value={placeQuery}
-                onChange={handlePlaceQueryChange}
-                onFocus={() => placeQuery.trim() && setShowPlaceSearch(true)}
-                placeholder="어디로 가야하나요?"
-                className="w-full pl-10 pr-10 py-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-inner focus:ring-2 focus:ring-rose-200 font-bold text-sm outline-none"
-              />
-              {isSearching && (
-                <Loader2
-                  size={16}
-                  className="absolute right-4 text-gray-500 animate-spin"
-                />
-              )}
-              {!isSearching && placeQuery && (
-                <button
-                  type="button"
-                  onClick={handleClearPlace}
-                  className="absolute right-4 w-5 h-5 flex items-center justify-center bg-gray-200 text-gray-400 rounded-full hover:bg-rose-100 hover:text-rose-400 transition-all"
-                >
-                  <X size={10} strokeWidth={3} />
-                </button>
-              )}
-            </div>
+        <div className="relative">
+          <Input
+            label="장소 (선택)"
+            value={placeQuery}
+            onChange={handlePlaceQueryChange}
+            onFocus={() => placeQuery.trim() && setShowPlaceSearch(true)}
+            placeholder="어디로 가야하나요?"
+            leftIcon={<MapPin size={16} />}
+            rightIcon={
+              isSearching ? (
+                <Loader2 size={16} className="animate-spin text-gray-500" />
+              ) : undefined
+            }
+            onClear={handleClearPlace}
+          />
 
-            {/* 검색 결과 드롭다운 */}
-            <AnimatePresence>
-              {showPlaceSearch && placeResults.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-10 max-h-48 overflow-y-auto custom-scrollbar"
-                >
-                  {placeResults.slice(0, 5).map((place) => (
-                    <button
-                      key={place.id}
-                      type="button"
-                      onClick={() => handleSelectPlace(place)}
-                      className="w-full flex items-start gap-3 px-4 py-3 hover:bg-rose-50 transition-colors text-left"
-                    >
-                      <MapPin
-                        size={14}
-                        className="text-rose-400 mt-0.5 shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-gray-800 truncate">
-                          {place.place_name}
-                        </p>
-                        <p className="text-[11px] text-gray-400 truncate">
-                          {place.road_address_name || place.address_name}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {placeAddress && (
-              <p className="mt-1.5 px-2 text-[11px] text-gray-400 font-medium truncate">
-                📍 {placeAddress}
-              </p>
+          {/* 검색 결과 드롭다운 */}
+          <AnimatePresence>
+            {showPlaceSearch && placeResults.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+                className="custom-scrollbar absolute top-full right-0 left-0 z-10 mt-2 max-h-48 overflow-hidden overflow-y-auto rounded-2xl border border-gray-100 bg-white shadow-xl"
+              >
+                {placeResults.slice(0, 5).map((place) => (
+                  <button
+                    key={place.id}
+                    type="button"
+                    onClick={() => handleSelectPlace(place)}
+                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-rose-50"
+                  >
+                    <MapPin
+                      size={14}
+                      className="mt-0.5 shrink-0 text-rose-400"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-gray-800">
+                        {place.place_name}
+                      </p>
+                      <p className="truncate text-[11px] text-gray-400">
+                        {place.road_address_name || place.address_name}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
+
+          {placeAddress && (
+            <p className="mt-1.5 truncate px-2 text-[11px] font-medium text-gray-400">
+              📍 {placeAddress}
+            </p>
+          )}
         </div>
 
         {/* 메모 */}
-        <div className="space-y-2">
-          <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-            메모 (선택)
-          </label>
-          <textarea
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            placeholder="추가 메모를 남겨보세요"
-            className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-inner focus:ring-2 focus:ring-rose-200 font-bold text-sm sm:text-base h-24 resize-none outline-none"
-          />
-        </div>
+        <Textarea
+          label="메모 (선택)"
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+          placeholder="추가 메모를 남겨보세요"
+          className="h-24"
+        />
       </div>
     </BaseModal>
   );

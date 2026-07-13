@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calculator, Heart, Search, Plus, CalendarHeart } from "lucide-react";
+import { Calculator, Heart, Plus, CalendarHeart } from "lucide-react";
 import {
   format,
   addDays,

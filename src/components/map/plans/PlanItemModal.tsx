@@ -21,6 +21,8 @@ import { TripPlan } from "../../../types";
 import { usePlaceSearch, KakaoPlace } from "../../../hooks";
 import BaseModal from "../../common/BaseModal";
 import Button from "../../common/Button";
+import Input from "../../common/Input";
+import Textarea from "../../common/Textarea";
 
 interface PlanItemModalProps {
   isOpen: boolean;
@@ -42,13 +44,12 @@ const CATEGORIES = [
 ];
 
 const CATEGORY_STYLES: Record<string, string> = {
-  restaurant: "text-orange-500 bg-orange-50 border-orange-200 ring-orange-50",
-  transport: "text-blue-500 bg-blue-50 border-blue-200 ring-blue-50",
-  cafe: "text-amber-500 bg-amber-50 border-amber-200 ring-amber-50",
-  accommodation:
-    "text-indigo-500 bg-indigo-50 border-indigo-200 ring-indigo-50",
-  activity: "text-rose-500 bg-rose-50 border-rose-200 ring-rose-50",
-  etc: "text-gray-500 bg-gray-50 border-gray-200 ring-gray-50",
+  restaurant: "text-orange-500 bg-white border-orange-200 ring-orange-200",
+  transport: "text-blue-500 bg-white border-blue-200 ring-blue-200",
+  cafe: "text-amber-500 bg-white border-amber-200 ring-amber-200",
+  accommodation: "text-indigo-500 bg-white border-indigo-200 ring-indigo-200",
+  activity: "text-rose-500 bg-white border-rose-200 ring-rose-200",
+  etc: "text-gray-500 bg-white border-gray-200 ring-gray-200",
 };
 
 const CATEGORY_ACTIVE_COLORS: Record<string, string> = {
@@ -58,6 +59,15 @@ const CATEGORY_ACTIVE_COLORS: Record<string, string> = {
   accommodation: "bg-indigo-500",
   activity: "bg-rose-500",
   etc: "bg-gray-500",
+};
+
+const CATEGORY_FOCUS_STYLES: Record<string, string> = {
+  restaurant: "focus:border-orange-200 focus:ring-orange-200",
+  transport: "focus:border-blue-200 focus:ring-blue-200",
+  cafe: "focus:border-amber-200 focus:ring-amber-200",
+  accommodation: "focus:border-indigo-200 focus:ring-indigo-200",
+  activity: "focus:border-rose-200 focus:ring-rose-200",
+  etc: "focus:border-gray-200 focus:ring-gray-200",
 };
 
 export default function PlanItemModal({
@@ -267,10 +277,10 @@ export default function PlanItemModal({
                 key={cat.id}
                 type="button"
                 onClick={() => setCategory(cat.id)}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 outline-none transition-all duration-200 ${
                   active
-                    ? `bg-white ${style} shadow-sm ring-2`
-                    : "bg-gray-50 border-transparent opacity-60 hover:opacity-100"
+                    ? `${style} shadow-sm ring-2`
+                    : `bg-gray-50 border-transparent opacity-60 hover:opacity-100 hover:bg-gray-100 focus:opacity-100 focus:bg-white focus:ring-2 ${CATEGORY_FOCUS_STYLES[cat.id]}`
                 }`}
               >
                 <div
@@ -360,20 +370,18 @@ export default function PlanItemModal({
 
           {!placeName ? (
             <div className="flex gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                  onFocus={() => {
-                    if (results.length > 0) setShowSearchResults(true);
-                  }}
-                  onKeyDown={handleSearchKeyDown}
-                  placeholder="어디로 가시나요?"
-                  className="w-full pl-11 pr-4 py-3.5 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-rose-100 outline-none text-sm font-bold transition-all placeholder:text-gray-300"
-                />
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
-              </div>
+              <Input
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                onFocus={() => {
+                  if (results.length > 0) setShowSearchResults(true);
+                }}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="어디로 가시나요?"
+                className="font-bold"
+                wrapperClassName="flex-1"
+                leftIcon={<Search size={16} />}
+              />
               <button
                 type="button"
                 onClick={() => handleSearch()}
@@ -463,13 +471,13 @@ export default function PlanItemModal({
 
         {/* Memo Section */}
         <div className="relative">
-          <textarea
+          <Textarea
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
             placeholder="간단한 메모를 남겨주세요"
-            className="w-full px-6 py-5 bg-gray-50 rounded-[28px] border-none focus:ring-2 focus:ring-rose-100 outline-none text-sm font-bold transition-all placeholder:text-gray-300 min-h-[120px] resize-none"
+            className="font-bold min-h-[120px]"
           />
-          <div className="absolute right-5 bottom-5 text-gray-200">
+          <div className="absolute right-5 bottom-5 text-gray-200 pointer-events-none">
             <AlignLeft size={20} />
           </div>
         </div>

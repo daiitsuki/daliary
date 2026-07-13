@@ -85,3 +85,24 @@ export interface MultiplayerGame {
   created_at: string;
   updated_at: string;
 }
+
+export interface RelayNovel {
+  id: string;
+  couple_id: string;
+  title: string;
+  status: 'ongoing' | 'completed';
+  turn_count: number;
+  last_turn_content: string | null;
+  last_turn_author_id: string | null;
+  setting_notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RelayNovelTurn {
+  id: string;
+  novel_id: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+}

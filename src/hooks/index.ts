@@ -24,6 +24,7 @@ export * from './features/useMemoryFeed';
 export * from './features/useQuestionHistory';
 export * from './features/useSchedules';
 export * from './features/useTimetable';
+export * from './features/useRelayNovel';
 
 // system
 export * from './system/useAppUpdate';

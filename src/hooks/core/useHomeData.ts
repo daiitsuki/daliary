@@ -22,6 +22,7 @@ export const useHomeData = () => {
     drawingQuestion: context.drawingQuestion,
     myDrawing: context.myDrawing,
     partnerDrawing: context.partnerDrawing,
+    ongoingRelayNovel: context.ongoingRelayNovel,
     refresh: context.refresh
   };
 };

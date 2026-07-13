@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import VisitForm from "../shared/VisitForm";
 import { Place, usePlaces } from "../../../context/PlacesContext";
+import Input from "../../common/Input";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "../../../context/ToastContext";
 
@@ -206,18 +207,16 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
 
       {/* 상단 플로팅 검색 바 및 결과 */}
       <div className="absolute top-4 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[420px] z-[40] flex flex-col gap-2">
-        <div className="group p-1 bg-white backdrop-blur-xl rounded-3xl shadow-lg border border-white/60 transition-all duration-300 focus-within:shadow-xl focus-within:bg-white focus-within:border-rose-100">
-          <form onSubmit={handleSearch} className="relative">
-            <input
-              type="text"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="장소를 입력하세요"
-              className="w-full pl-11 pr-4 py-3 bg-white rounded-xl outline-none text-sm transition-all placeholder:text-gray-400 font-medium"
-            />
-            <Search className="absolute left-4 top-3.5 text-gray-400 w-4.5 h-4.5 group-focus-within:text-rose-400 transition-colors" />
-          </form>
-        </div>
+        <form onSubmit={handleSearch} className="relative">
+          <Input
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="장소를 입력하세요"
+            className="bg-white"
+            leftIcon={<Search size={18} />}
+            onClear={() => setKeyword("")}
+          />
+        </form>
 
         {/* 검색 결과 드롭다운 */}
         {(isSearching ||

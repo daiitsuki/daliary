@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, User, Settings, Heart, PiggyBank } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Profile } from "../../types";
-import { supabase } from "../../lib/supabase";
+
 import { changelog } from "../../data/changelog";
 import ChangelogModal from "./ChangelogModal";
 import { useCouple } from "../../hooks";

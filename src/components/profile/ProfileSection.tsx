@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Camera, User, Check } from "lucide-react";
 import { Profile } from "../../types";
 import { motion, AnimatePresence } from "framer-motion";
+import Input from "../common/Input";
 
 interface ProfileSectionProps {
   profile: Profile | null;
@@ -46,84 +47,84 @@ export default function ProfileSection({
 
   return (
     <section className="space-y-3">
-      <div className="bg-white rounded-[28px] p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-rose-100/30 flex flex-col items-center">
+      <div className="flex flex-col items-center rounded-[28px] border border-rose-100/30 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:p-6">
         <div className="relative mb-6">
-        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-50 overflow-hidden border-[3px] border-white shadow-sm flex items-center justify-center relative group">
-          {displayedUrl ? (
-            <>
-              {/* 현재 표시되는 이미지 */}
-              <img
-                src={displayedUrl}
-                alt="Profile"
-                className="w-full h-full object-cover absolute inset-0 transition-opacity group-hover:opacity-80"
-              />
-              {/* 백그라운드 프리로드용 이미지 */}
-              {pendingUrl && (
+          <div className="group relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-[3px] border-white bg-gray-50 shadow-sm sm:h-24 sm:w-24">
+            {displayedUrl ? (
+              <>
+                {/* 현재 표시되는 이미지 */}
                 <img
-                  src={pendingUrl}
-                  alt="New Profile Pending"
-                  onLoad={handleImageLoad}
-                  className="absolute inset-0 w-0 h-0 opacity-0 pointer-events-none"
+                  src={displayedUrl}
+                  alt="Profile"
+                  className="absolute inset-0 h-full w-full object-cover transition-opacity group-hover:opacity-80"
                 />
-              )}
-            </>
-          ) : pendingUrl ? (
-            <img
-              src={pendingUrl}
-              alt="Profile Loading"
-              onLoad={handleImageLoad}
-              className="w-full h-full object-cover absolute inset-0"
-            />
-          ) : (
-            <User size={36} className="text-gray-200" />
-          )}
+                {/* 백그라운드 프리로드용 이미지 */}
+                {pendingUrl && (
+                  <img
+                    src={pendingUrl}
+                    alt="New Profile Pending"
+                    onLoad={handleImageLoad}
+                    className="pointer-events-none absolute inset-0 h-0 w-0 opacity-0"
+                  />
+                )}
+              </>
+            ) : pendingUrl ? (
+              <img
+                src={pendingUrl}
+                alt="Profile Loading"
+                onLoad={handleImageLoad}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <User size={36} className="text-gray-200" />
+            )}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 flex items-center justify-center bg-black/20 text-white opacity-0 transition-opacity group-hover:opacity-100"
+            >
+              <Camera size={20} strokeWidth={2.5} />
+            </button>
+          </div>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+            className="absolute right-0 bottom-0 rounded-full border border-gray-50 bg-white p-2 text-gray-400 shadow-md transition-all hover:text-rose-500 active:scale-90"
           >
-            <Camera size={20} strokeWidth={2.5} />
+            <Camera size={14} strokeWidth={2.5} />
           </button>
-        </div>
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="absolute bottom-0 right-0 bg-white text-gray-400 p-2 rounded-full shadow-md hover:text-rose-500 transition-all active:scale-90 border border-gray-50"
-        >
-          <Camera size={14} strokeWidth={2.5} />
-        </button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="image/*"
-          onChange={onAvatarChange}
-        />
-      </div>
-
-      <div className="w-full max-w-sm">
-        <div className="relative group">
           <input
-            type="text"
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={onAvatarChange}
+          />
+        </div>
+
+        <div className="w-full max-w-sm">
+          <Input
             value={nickname}
             onChange={(e) => onNicknameChange(e.target.value)}
-            className="w-full text-center bg-gray-50/50 p-3 sm:p-3.5 pr-12 rounded-xl border border-transparent focus:bg-white focus:border-rose-100 focus:ring-4 focus:ring-rose-50/50 outline-none font-semibold text-gray-800 text-base transition-all placeholder:text-gray-300"
-            placeholder="어떻게 불러드릴까요?"
+            className="text-center text-base font-semibold"
+            placeholder="원하는 닉네임을 입력하세요."
+            clearable={false}
+            maxLength={10}
+            rightIcon={
+              <AnimatePresence>
+                {showSave && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8, x: 10 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                    onClick={onSave}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500 text-white shadow-md shadow-rose-200 transition-colors hover:bg-rose-600 active:scale-90"
+                  >
+                    <Check size={16} strokeWidth={3} />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            }
           />
-
-          <AnimatePresence>
-            {showSave && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.8, x: 10 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.8, x: 10 }}
-                onClick={onSave}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 bg-rose-500 text-white rounded-lg shadow-md shadow-rose-200 flex items-center justify-center hover:bg-rose-600 transition-colors active:scale-90"
-              >
-                <Check size={16} strokeWidth={3} />
-              </motion.button>
-            )}
-          </AnimatePresence>
         </div>
-      </div>
       </div>
     </section>
   );

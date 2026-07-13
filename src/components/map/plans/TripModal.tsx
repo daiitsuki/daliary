@@ -20,6 +20,7 @@ import {
 } from "../../../utils/tripHelpers";
 import BaseModal from "../../common/BaseModal";
 import Button from "../../common/Button";
+import Input from "../../common/Input";
 
 interface TripModalProps {
   isOpen: boolean;
@@ -101,22 +102,17 @@ export default function TripModal({ isOpen, trip, onClose }: TripModalProps) {
       contentClassName="bg-white p-6"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
-            여행 제목
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="어디로 떠나시나요?"
-            className="w-full px-5 py-4  bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-rose-200 outline-none text-sm font-bold transition-all placeholder:text-gray-300"
-          />
-        </div>
+        <Input
+          label="여행 제목"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="어디로 떠나시나요?"
+          required
+        />
 
         {/* 아이콘 선택 */}
-        <div>
-          <label className="block text-[10px]  sm:text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-bold text-gray-700 ml-1">
             아이콘 선택
           </label>
           <div className="grid grid-cols-6 gap-2">

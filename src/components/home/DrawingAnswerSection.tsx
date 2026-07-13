@@ -169,11 +169,6 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
     }
   };
 
-  const handleShareClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsShareMenuOpen(true);
-  };
-
   const handleShareOption = async (option: "my" | "partner" | "both") => {
     setIsShareMenuOpen(false);
     setIsSharing(true);

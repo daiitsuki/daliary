@@ -11,6 +11,7 @@ import HeartGauge from "../components/home/HeartGauge";
 import DailyQuestionSection from "../components/home/DailyQuestionSection";
 import { DrawingAnswerSection } from "../components/home/DrawingAnswerSection";
 import QuickLinksSection from "../components/home/QuickLinksSection";
+import RelayNovelWidget from "../components/home/RelayNovelWidget";
 import { useToast } from "../context/ToastContext";
 
 export default function Home() {
@@ -27,6 +28,7 @@ export default function Home() {
     drawingQuestion,
     myDrawing,
     partnerDrawing,
+    ongoingRelayNovel,
     refresh,
   } = useHomeData();
 
@@ -174,6 +176,18 @@ export default function Home() {
               myProfile={myProfile}
               onComplete={refresh}
             />
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            {partnerProfile && (
+              <RelayNovelWidget
+                ongoingRelayNovel={ongoingRelayNovel}
+                partnerNickname={partnerProfile.nickname || "상대방"}
+                myProfileId={currentUserId || ""}
+                partnerId={partnerProfile.id}
+                myNickname={myProfile?.nickname || ""}
+              />
+            )}
           </motion.div>
 
           <motion.div variants={itemVariants}>

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCouple } from "../hooks";
-import { Profile, DrawingAnswer } from '../types';
+import { Profile, DrawingAnswer, RelayNovel } from '../types';
 import { getTodayDrawingQuestion } from '../data/drawingQuestions';
 
 interface Answer {
@@ -27,6 +27,7 @@ interface HomeContextType {
   drawingQuestion: string;
   myDrawing: DrawingAnswer | null;
   partnerDrawing: DrawingAnswer | null;
+  ongoingRelayNovel: RelayNovel | null;
   loading: boolean;
   refresh: () => Promise<void>;
   currentUserId: string | null;
@@ -163,6 +164,27 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const myDrawing = drawingData?.find(d => d.writer_id === currentUserId) || null;
   const partnerDrawing = drawingData?.find(d => d.writer_id !== currentUserId) || null;
 
+  // React Query for Ongoing Relay Novel
+  const { data: ongoingRelayNovel = null, isLoading: relayNovelLoading } = useQuery({
+    queryKey: ['ongoing_relay_novel', couple?.id],
+    queryFn: async () => {
+      if (!couple?.id) return null;
+      const { data, error } = await supabase
+        .from('relay_novels')
+        .select('*')
+        .eq('couple_id', couple.id)
+        .eq('status', 'ongoing')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data as RelayNovel) || null;
+    },
+    enabled: !!couple?.id && !coupleLoading,
+    staleTime: 1000 * 60 * 5,
+  });
+
   const calculateDDay = useCallback(() => {
     if (couple?.anniversary_date) {
       const now = new Date();
@@ -186,7 +208,8 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await Promise.all([
       queryClient.refetchQueries({ queryKey: ['home_profiles', couple?.id] }),
       queryClient.refetchQueries({ queryKey: ['daily_data', couple?.id] }),
-      queryClient.refetchQueries({ queryKey: ['drawing_data', couple?.id] })
+      queryClient.refetchQueries({ queryKey: ['drawing_data', couple?.id] }),
+      queryClient.refetchQueries({ queryKey: ['ongoing_relay_novel', couple?.id] })
     ]);
   }, [queryClient, couple?.id]);
 
@@ -208,6 +231,13 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { event: '*', schema: 'public', table: 'drawing_answers', filter: `couple_id=eq.${couple.id}` }, 
         () => queryClient.invalidateQueries({ queryKey: ['drawing_data', couple.id] })
       )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'relay_novels', filter: `couple_id=eq.${couple.id}` }, 
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['ongoing_relay_novel', couple.id] });
+          queryClient.invalidateQueries({ queryKey: ['completed_relay_novels', couple.id] });
+        }
+      )
       .subscribe();
 
     return () => { 
@@ -226,7 +256,8 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
       drawingQuestion,
       myDrawing,
       partnerDrawing,
-      loading: profilesLoading || dailyLoading || drawingLoading,
+      ongoingRelayNovel,
+      loading: profilesLoading || dailyLoading || drawingLoading || relayNovelLoading,
       refresh,
       currentUserId
     }}>

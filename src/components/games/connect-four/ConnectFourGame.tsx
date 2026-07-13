@@ -11,6 +11,9 @@ import ConnectFourBoard from "./ConnectFourBoard";
 import BaseModal from "../../common/BaseModal";
 import Button from "../../common/Button";
 import { useConfirm } from "../../../context/ConfirmContext";
+import { useGameReactions } from "../../../hooks/games/useGameReactions";
+import ReactionLayer from "../common/ReactionLayer";
+import ReactionPicker from "../common/ReactionPicker";
 
 interface ConnectFourGameProps {
   onBack: () => void;
@@ -42,6 +45,8 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
   const { confirm } = useConfirm();
   const [showResultModal, setShowResultModal] = useState(false);
   const [localLobbyView, setLocalLobbyView] = useState(false);
+  
+  const { reactions, sendReaction } = useGameReactions(game?.id);
   
   const previousStatusRef = useRef<string | undefined>(undefined);
   const isInitialMount = useRef(true);
@@ -198,7 +203,12 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
   }
 
   return (
-    <div className="flex-1 bg-[#FDFDFE] flex flex-col relative pb-10">
+    <div className="flex-1 bg-[#FDFDFE] flex flex-col relative pb-10 overflow-hidden">
+      {/* Reactions Overlay */}
+      {game?.status === "playing" && (
+        <ReactionLayer reactions={reactions} myProfileId={profileId} splitSides={true} />
+      )}
+      
       {/* Header */}
       <header className="px-4 py-3 flex items-center justify-between sticky top-0 bg-[#FDFDFE]/90 backdrop-blur-md z-40">
         <button
@@ -252,9 +262,10 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
               />
 
               {/* My Profile */}
-              <div
-                className={`flex flex-col items-center gap-1.5 transition-all duration-300 z-10 ${isMyTurn && game.status === "playing" ? "scale-105 opacity-100" : "scale-95 opacity-50 grayscale-[50%]"}`}
-              >
+              <div className="relative z-50">
+                <div
+                  className={`flex flex-col items-center gap-1.5 transition-all duration-300 z-10 ${isMyTurn && game.status === "playing" ? "scale-105 opacity-100" : "scale-95 opacity-50 grayscale-[50%]"}`}
+                >
                 <div className="relative">
                   <div
                     className={`w-12 h-12 rounded-full border-[3px] ${isRed ? "border-rose-500" : "border-amber-400"} flex items-center justify-center overflow-hidden bg-gray-50 shadow-sm relative z-10`}
@@ -280,9 +291,10 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
                 >
                   {myRawName}
                 </span>
+                </div>
               </div>
 
-              {/* Turn Text Center */}
+            {/* Turn Text Center */}
               <div className="flex flex-col items-center z-10">
                 {game.status === "playing" ? (
                   <>
@@ -355,16 +367,18 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
               />
             )}
 
-            {/* Surrender Button */}
+            {/* Surrender Button & Reaction Picker */}
             {game.status === "playing" && (
-              <Button
-                onClick={handleSurrender}
-                variant="danger-ghost"
-                size="sm"
-                className="mt-2"
-              >
-                기권하기
-              </Button>
+              <div className="flex flex-col gap-4 mt-2">
+                <ReactionPicker onSelect={sendReaction} inline />
+                <Button
+                  onClick={handleSurrender}
+                  variant="danger-ghost"
+                  size="sm"
+                >
+                  기권하기
+                </Button>
+              </div>
             )}
 
             {/* Return to Lobby Button */}
