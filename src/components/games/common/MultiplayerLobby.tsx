@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
 import Button from "../../common/Button";
 import { MultiplayerGame } from "../../../types";
 import { useToast } from "../../../context/ToastContext";
 
-interface ConnectFourLobbyProps {
+interface MultiplayerLobbyProps {
   game: MultiplayerGame | null;
   profileId: string | undefined;
+  gameTitle: string;
+  gameSubtitle: string;
+  icon: React.ReactNode;
   partnerName: string;
   myRawName: string;
   partnerRawName: string;
@@ -16,11 +19,18 @@ interface ConnectFourLobbyProps {
   onInvite: () => void;
   onReady: (id: string, ready: boolean) => void;
   onStart: () => void;
+  // Theme classes (e.g., tailwind text/bg colors)
+  readyColorClass?: string;
+  readyBgClass?: string;
+  readyBorderClass?: string;
 }
 
-export default function ConnectFourLobby({
+export default function MultiplayerLobby({
   game,
   profileId,
+  gameTitle,
+  gameSubtitle,
+  icon,
   partnerName,
   myRawName,
   partnerRawName,
@@ -29,7 +39,10 @@ export default function ConnectFourLobby({
   onInvite,
   onReady,
   onStart,
-}: ConnectFourLobbyProps) {
+  readyColorClass = "text-amber-500",
+  readyBgClass = "bg-amber-50",
+  readyBorderClass = "border-amber-200",
+}: MultiplayerLobbyProps) {
   const { showToast } = useToast();
   const [isPending, setIsPending] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -65,13 +78,10 @@ export default function ConnectFourLobby({
       return () => clearTimeout(timer);
     } else if (countdown === 0) {
       if (isHost) {
-        // 카운트다운이 끝나면 방장이 시작 호출
         onStart();
       } else {
-        // 방장이 네트워크 문제나 강제 종료로 onStart를 못 불렀을 때를 대비한 방어 로직 (3초 대기)
         const timer = setTimeout(() => {
           if (game?.status !== 'playing') {
-            // 강제로 내 준비를 취소하여 교착 상태 해제
             onReady(game!.id, false);
           }
         }, 3000);
@@ -85,7 +95,8 @@ export default function ConnectFourLobby({
   });
 
   const handleInvite = () => {
-    const lastInviteTime = localStorage.getItem("last_connect_four_invite");
+    const storageKey = `last_${game?.game_type || 'game'}_invite`;
+    const lastInviteTime = localStorage.getItem(storageKey);
     const now = Date.now();
 
     if (lastInviteTime && now - parseInt(lastInviteTime, 10) < 60000) {
@@ -100,7 +111,7 @@ export default function ConnectFourLobby({
     }
 
     onInvite();
-    localStorage.setItem("last_connect_four_invite", now.toString());
+    localStorage.setItem(storageKey, now.toString());
     showToast(`${partnerName}에게 게임 초대 알림을 보냈습니다!`, "success");
   };
 
@@ -123,12 +134,10 @@ export default function ConnectFourLobby({
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 bg-blue-50 text-blue-500 border border-blue-100/50 rounded-[14px] flex items-center justify-center">
-              <Users size={18} />
-            </div>
+            {icon}
             <div>
-              <h3 className="text-[13px] font-black text-gray-800">사목 대기방</h3>
-              <p className="text-[10px] font-bold text-gray-400 tracking-wide">CONNECT FOUR</p>
+              <h3 className="text-[13px] font-black text-gray-800">{gameTitle}</h3>
+              <p className="text-[10px] font-bold text-gray-400 tracking-wide">{gameSubtitle}</p>
             </div>
           </div>
         </div>
@@ -142,7 +151,7 @@ export default function ConnectFourLobby({
 
           {/* My Profile */}
           <div className="flex flex-col items-center gap-2 w-1/3 z-10">
-            <div className={`w-14 h-14 rounded-2xl border ${myReady ? 'border-amber-200' : 'border-gray-200'} flex items-center justify-center overflow-hidden bg-white shadow-sm transition-colors`}>
+            <div className={`w-14 h-14 rounded-2xl border ${myReady ? readyBorderClass : 'border-gray-200'} flex items-center justify-center overflow-hidden bg-white shadow-sm transition-colors`}>
                 {myProfile?.avatar_url ? (
                   <img src={myProfile.avatar_url} alt={myRawName} className="w-full h-full object-cover" />
                 ) : (
@@ -151,7 +160,7 @@ export default function ConnectFourLobby({
             </div>
             <div className="flex flex-col items-center mt-0.5">
               <span className="text-[12px] font-black text-gray-800">{myRawName}</span>
-              <span className={`text-[9px] font-black px-2 py-0.5 rounded-md mt-0.5 ${myReady ? 'text-amber-500 bg-amber-50' : 'text-gray-400 bg-gray-100'}`}>
+              <span className={`text-[9px] font-black px-2 py-0.5 rounded-md mt-0.5 ${myReady ? `${readyColorClass} ${readyBgClass}` : 'text-gray-400 bg-gray-100'}`}>
                 {myReady ? '준비완료' : '대기중'}
               </span>
             </div>
@@ -159,7 +168,7 @@ export default function ConnectFourLobby({
 
           {/* Partner Profile */}
           <div className="flex flex-col items-center gap-2 w-1/3 z-10">
-            <div className={`w-14 h-14 rounded-2xl border ${partnerReady ? 'border-amber-200' : 'border-gray-200'} flex items-center justify-center overflow-hidden bg-white shadow-sm transition-colors`}>
+            <div className={`w-14 h-14 rounded-2xl border ${partnerReady ? readyBorderClass : 'border-gray-200'} flex items-center justify-center overflow-hidden bg-white shadow-sm transition-colors`}>
                 {partnerProfile?.avatar_url ? (
                   <img src={partnerProfile.avatar_url} alt={partnerRawName} className="w-full h-full object-cover" />
                 ) : (
@@ -168,7 +177,7 @@ export default function ConnectFourLobby({
             </div>
             <div className="flex flex-col items-center mt-0.5">
               <span className="text-[12px] font-black text-gray-800">{partnerRawName}</span>
-              <span className={`text-[9px] font-black px-2 py-0.5 rounded-md mt-0.5 ${partnerReady ? 'text-amber-500 bg-amber-50' : 'text-gray-400 bg-gray-100'}`}>
+              <span className={`text-[9px] font-black px-2 py-0.5 rounded-md mt-0.5 ${partnerReady ? `${readyColorClass} ${readyBgClass}` : 'text-gray-400 bg-gray-100'}`}>
                 {partnerReady ? '준비완료' : '대기중'}
               </span>
             </div>
@@ -218,4 +227,3 @@ export default function ConnectFourLobby({
     </motion.div>
   );
 }
-
