@@ -83,6 +83,7 @@ export default function RelayNovelModal({
     updateTitle,
     updateSettingNotes,
     deleteTurn,
+    updateTurn,
   } = useRelayNovel(novelId);
 
   const [inputText, setInputText] = useState("");
@@ -90,6 +91,9 @@ export default function RelayNovelModal({
   const [isCompleting, setIsCompleting] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitleValue, setEditTitleValue] = useState("");
+
+  const [editingTurnId, setEditingTurnId] = useState<string | null>(null);
+  const [draftBackup, setDraftBackup] = useState("");
 
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [notesValue, setNotesValue] = useState("");
@@ -114,6 +118,7 @@ export default function RelayNovelModal({
     if (!isOpen) {
       setIsEditingTitle(false);
       setIsNotesOpen(false);
+      setEditingTurnId(null);
     } else if (novel) {
       setEditTitleValue(novel.title);
       // Load draft
@@ -143,7 +148,7 @@ export default function RelayNovelModal({
     const text = e.target.value;
     if (text.length <= 300) {
       setInputText(text);
-      if (novelId) {
+      if (novelId && !editingTurnId) {
         localStorage.setItem(`relay_novel_draft_${novelId}`, text);
       }
     }
@@ -152,6 +157,21 @@ export default function RelayNovelModal({
   const handleSubmit = async () => {
     const formattedText = inputText.trim().replace(/\n{2,}/g, "\n");
     if (!formattedText || isSubmitting) return;
+
+    if (editingTurnId) {
+      if (formattedText === turns.find(t => t.id === editingTurnId)?.content) {
+        handleCancelEdit();
+        return;
+      }
+      setIsSubmitting(true);
+      const success = await updateTurn(editingTurnId, formattedText);
+      if (success) {
+        handleCancelEdit();
+      }
+      setIsSubmitting(false);
+      return;
+    }
+
     setIsSubmitting(true);
     const success = await addTurn(formattedText, partnerId, myNickname);
     if (success) {
@@ -186,7 +206,7 @@ export default function RelayNovelModal({
   const handleDeleteTurn = async (turnId: string) => {
     const isConfirmed = await confirm({
       title: "문장 삭제",
-      message: "마지막으로 작성한 문장을 삭제할까요?",
+      message: "정말 이 문장을 삭제할까요?",
       confirmText: "삭제하기",
       cancelText: "취소",
       isDanger: true,
@@ -194,6 +214,18 @@ export default function RelayNovelModal({
     if (isConfirmed) {
       await deleteTurn(turnId);
     }
+  };
+
+  const startEditing = (turnId: string, currentContent: string) => {
+    setDraftBackup(inputText);
+    setEditingTurnId(turnId);
+    setInputText(currentContent);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTurnId(null);
+    setInputText(draftBackup);
+    setDraftBackup("");
   };
 
   const handleCreateNew = async () => {
@@ -431,8 +463,12 @@ export default function RelayNovelModal({
               {turns.map((turn, index) => {
                 const isMe = turn.author_id === myProfileId;
                 const isLastTurn = index === turns.length - 1;
+                // Allow deleting only the last turn if it's mine
                 const canDelete =
                   isLastTurn && isMe && novel?.status === "ongoing";
+                // Allow editing any of my turns while ongoing
+                const canEdit = isMe && novel?.status === "ongoing";
+                const isEditing = editingTurnId === turn.id;
 
                 return (
                   <div
@@ -442,15 +478,26 @@ export default function RelayNovelModal({
                     }`}
                   >
                     <span className="whitespace-pre-wrap">{turn.content}</span>
-                    {canDelete && (
-                      <button
-                        onClick={() => handleDeleteTurn(turn.id)}
-                        className="ml-2 inline-flex items-center justify-center rounded-md p-1.5 align-middle text-gray-400 transition-all hover:bg-rose-50 hover:text-rose-500"
-                        title="마지막 문장 취소하기"
-                      >
-                        <Undo2 size={14} />
-                      </button>
-                    )}
+                    <div className="inline-flex items-center ml-2 align-middle">
+                      {canEdit && (
+                        <button
+                          onClick={() => startEditing(turn.id, turn.content)}
+                          className="rounded-md p-1.5 text-gray-400 transition-all hover:bg-rose-50 hover:text-rose-500"
+                          title="문장 수정하기"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDeleteTurn(turn.id)}
+                          className="rounded-md p-1.5 text-gray-400 transition-all hover:bg-rose-50 hover:text-rose-500"
+                          title="마지막 문장 취소하기"
+                        >
+                          <Undo2 size={14} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -465,43 +512,62 @@ export default function RelayNovelModal({
         <div className="shrink-0 border-t border-gray-100 bg-white p-4 md:p-6">
           <div className="mx-auto flex max-w-2xl flex-col gap-2">
             <div className="flex items-center justify-end gap-2 px-1">
-              <button
-                onClick={() => setIsNotesOpen(true)}
-                className="flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-[11px] font-bold text-rose-400 transition-colors hover:bg-rose-100 hover:text-rose-500"
-              >
-                <NotebookTabs size={14} />
-                설정집
-              </button>
-              <button
-                onClick={handleComplete}
-                disabled={isCompleting}
-                className="flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1.5 text-[11px] font-bold text-gray-500 transition-colors hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
-              >
-                <BookCheck size={14} />
-                완결하기
-              </button>
+              {editingTurnId ? (
+                <button
+                  onClick={handleCancelEdit}
+                  disabled={isSubmitting}
+                  className="flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-[11px] font-bold text-rose-500 transition-colors hover:bg-rose-100 disabled:opacity-50"
+                >
+                  <X size={14} />
+                  수정 취소
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setIsNotesOpen(true)}
+                    className="flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-[11px] font-bold text-rose-400 transition-colors hover:bg-rose-100 hover:text-rose-500"
+                  >
+                    <NotebookTabs size={14} />
+                    설정집
+                  </button>
+                  <button
+                    onClick={handleComplete}
+                    disabled={isCompleting}
+                    className="flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1.5 text-[11px] font-bold text-gray-500 transition-colors hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
+                  >
+                    <BookCheck size={14} />
+                    완결하기
+                  </button>
+                </>
+              )}
             </div>
             <div className="relative">
               <Textarea
                 value={inputText}
                 onChange={handleInputChange as any}
-                disabled={isSubmitting || hasWrittenTwice}
-                className="text-sm"
+                disabled={isSubmitting || (!editingTurnId && hasWrittenTwice)}
+                className={`text-sm ${editingTurnId ? "bg-rose-50 focus:bg-rose-50" : ""}`}
                 maxLength={300}
                 placeholder={
-                  hasWrittenTwice
+                  editingTurnId
+                    ? "수정할 내용을 입력해주세요"
+                    : hasWrittenTwice
                     ? `최대 2번까지 작성할 수 있습니다.\n${partnerNickname}님의 답장을 기다려주세요!`
                     : "다음 이야기를 이어가주세요 (최대 300자)"
                 }
               />
               <Button
                 onClick={handleSubmit}
-                disabled={!inputText.trim() || isSubmitting || hasWrittenTwice}
-                className="absolute right-3 bottom-9 h-9 w-9 flex-shrink-0 rounded-full !p-0 shadow-md"
+                disabled={!inputText.trim() || isSubmitting || (!editingTurnId && hasWrittenTwice)}
+                className={`absolute right-3 bottom-9 h-9 w-9 flex-shrink-0 rounded-full !p-0 shadow-md ${
+                  editingTurnId ? "bg-rose-400 hover:bg-rose-500" : ""
+                }`}
                 variant="primary"
               >
                 {isSubmitting ? (
                   <Loader2 size={16} className="m-auto animate-spin" />
+                ) : editingTurnId ? (
+                  <Check size={16} className="m-auto text-white" />
                 ) : (
                   <Pencil size={16} className="m-auto" />
                 )}

@@ -221,6 +221,40 @@ export const useRelayNovel = (novelId?: string) => {
     }
   };
 
+  // 5.6 Update Turn
+  const updateTurn = async (turnId: string, newContent: string) => {
+    if (!novelId || !currentUserId || !novel) return false;
+    if (novel.status === 'completed') {
+      showToast('이미 완결된 소설은 수정할 수 없습니다.', 'error');
+      return false;
+    }
+
+    try {
+      const { error } = await supabase.rpc('update_relay_novel_turn', {
+        turn_id_input: turnId,
+        new_content: newContent
+      });
+
+      if (error) throw error;
+
+      // Note: The AFTER UPDATE trigger on DB will sync last_turn_content to relay_novels if needed
+      // and the realtime listener will invalidate the queries anyway,
+      // but we invalidate here immediately for responsiveness.
+      queryClient.invalidateQueries({ queryKey: ['relay_novel_turns', novelId] });
+      queryClient.invalidateQueries({ queryKey: ['relay_novel', novelId] });
+      if (couple?.id) {
+        queryClient.invalidateQueries({ queryKey: ['ongoing_relay_novel', couple.id] });
+      }
+      
+      showToast('문장이 수정되었습니다.', 'success');
+      return true;
+    } catch (err: any) {
+      console.error(err);
+      showToast('문장을 수정하는 중 오류가 발생했습니다.', 'error');
+      return false;
+    }
+  };
+
   // 6. Realtime Sync
   useEffect(() => {
     if (!novelId || !couple?.id || !currentUserId || novel?.status === 'completed') return;
@@ -252,6 +286,7 @@ export const useRelayNovel = (novelId?: string) => {
     updateTitle,
     updateSettingNotes,
     completeNovel,
-    deleteTurn
+    deleteTurn,
+    updateTurn
   };
 };
