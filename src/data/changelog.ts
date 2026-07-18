@@ -359,4 +359,9 @@ export const changelog: ChangelogEntry[] = [
       "(추가) 오셀로 게임에 자동 모드가 추가되었어요.",
     ],
   },
+  {
+    version: "1.1.8",
+    date: "2026-07-18",
+    changes: ["요트다이스 게임이 추가되었어요."],
+  },
 ];

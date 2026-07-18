@@ -12,6 +12,7 @@ import {
   Trophy,
   Users,
   Circle,
+  Dices,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
@@ -29,6 +30,9 @@ const ConnectFourGame = lazy(
 );
 const OthelloGame = lazy(
   () => import("../components/games/othello/OthelloGame"),
+);
+const YachtDiceGame = lazy(
+  () => import("../components/games/yacht-dice/YachtDiceGame"),
 );
 import { useAllGameScores } from "../hooks";
 
@@ -102,6 +106,8 @@ export default function Games() {
         return <ConnectFourGame onBack={handleBack} />;
       case "othello":
         return <OthelloGame onBack={handleBack} />;
+      case "yacht-dice":
+        return <YachtDiceGame onBack={handleBack} />;
       default:
         return null;
     }
@@ -187,6 +193,13 @@ export default function Games() {
       desc: "내 색깔로 보드판을 가득 채워라!",
       icon: Circle,
       color: "bg-sky-50 text-sky-500 border-sky-100/50",
+    },
+    {
+      id: "yacht-dice",
+      title: "요트다이스",
+      desc: "5개의 주사위로 족보를 완성하세요!",
+      icon: Dices,
+      color: "bg-indigo-50 text-indigo-500 border-indigo-100/50",
     },
   ];
 

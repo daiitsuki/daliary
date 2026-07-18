@@ -54,7 +54,7 @@ export default function ReactionLayer({ reactions, myProfileId, splitSides = tru
               }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1.5, ease: 'easeOut' }}
-              className="absolute top-[120px]"
+              className="absolute top-[90px]"
               style={{ left: leftPos }}
             >
               <div className="rounded-full bg-white/80 p-2 shadow-lg backdrop-blur-sm border border-white/40">

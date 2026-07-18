@@ -31,6 +31,7 @@ export function useOthello() {
     updateGameState: baseUpdate,
     endGame: baseEnd,
     leaveGame: baseLeave,
+    claimTimeoutVictory: baseClaimTimeoutVictory,
     sendInvitePush
   } = useMultiplayerGame('othello');
 
@@ -201,6 +202,7 @@ export function useOthello() {
     getValidMoves,
     countDiscs,
     endGame: baseEnd,
-    leaveGame: baseLeave
+    leaveGame: baseLeave,
+    claimTimeoutVictory: baseClaimTimeoutVictory
   };
 }

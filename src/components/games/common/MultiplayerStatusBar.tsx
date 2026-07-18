@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 interface ThemeColors {
   bgClass: string;
   borderClass: string;
@@ -13,6 +15,8 @@ interface MultiplayerStatusBarProps {
   partnerProfile: any;
   myTheme: ThemeColors;
   partnerTheme: ThemeColors;
+  lastUpdatedAt?: string;
+  onClaimVictory?: () => void;
 }
 
 export default function MultiplayerStatusBar({
@@ -24,11 +28,29 @@ export default function MultiplayerStatusBar({
   partnerProfile,
   myTheme,
   partnerTheme,
+  lastUpdatedAt,
+  onClaimVictory,
 }: MultiplayerStatusBarProps) {
   // Determine whose turn it is structurally
   // The background glow matches the current turn player's bgClass
   const turnBgClass = isMyTurn ? myTheme.bgClass : partnerTheme.bgClass;
   const turnTextClass = isMyTurn ? myTheme.textClass : partnerTheme.textClass;
+
+  const [showTimeoutBtn, setShowTimeoutBtn] = useState(false);
+
+  useEffect(() => {
+    if (status !== "playing" || isMyTurn || !lastUpdatedAt) {
+      setShowTimeoutBtn(false);
+      return;
+    }
+    const checkTimeout = () => {
+      const diff = Date.now() - new Date(lastUpdatedAt).getTime();
+      setShowTimeoutBtn(diff > 3 * 60 * 1000);
+    };
+    checkTimeout();
+    const interval = setInterval(checkTimeout, 10000);
+    return () => clearInterval(interval);
+  }, [status, isMyTurn, lastUpdatedAt]);
 
   return (
     <div className="flex items-center justify-between bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
@@ -77,17 +99,26 @@ export default function MultiplayerStatusBar({
             <span className={`text-[13px] font-black mb-1 ${turnTextClass}`}>
               {isMyTurn ? "내 차례입니다" : `${partnerRawName}님의 차례입니다`}
             </span>
-            <div className="flex items-center gap-1">
-              <div className={`w-1.5 h-1.5 rounded-full ${turnBgClass} animate-pulse`} />
-              <div
-                className={`w-1.5 h-1.5 rounded-full ${turnBgClass} animate-pulse`}
-                style={{ animationDelay: "200ms" }}
-              />
-              <div
-                className={`w-1.5 h-1.5 rounded-full ${turnBgClass} animate-pulse`}
-                style={{ animationDelay: "400ms" }}
-              />
-            </div>
+            {showTimeoutBtn ? (
+              <button 
+                onClick={onClaimVictory} 
+                className="mt-1 bg-gray-800 text-white text-[10px] px-2 py-1 rounded-full font-bold shadow hover:bg-gray-700 transition"
+              >
+                상대방 응답없음 (승리선언)
+              </button>
+            ) : (
+              <div className="flex items-center gap-1 mt-1">
+                <div className={`w-1.5 h-1.5 rounded-full ${turnBgClass} animate-pulse`} />
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${turnBgClass} animate-pulse`}
+                  style={{ animationDelay: "200ms" }}
+                />
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${turnBgClass} animate-pulse`}
+                  style={{ animationDelay: "400ms" }}
+                />
+              </div>
+            )}
           </>
         ) : (
           <span className="text-[13px] font-black text-gray-800">게임 종료!</span>

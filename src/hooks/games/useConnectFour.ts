@@ -25,6 +25,7 @@ export function useConnectFour() {
     updateGameState: baseUpdate,
     endGame: baseEnd,
     leaveGame: baseLeave,
+    claimTimeoutVictory: baseClaimTimeoutVictory,
     sendInvitePush
   } = useMultiplayerGame('connect_four');
 
@@ -147,6 +148,7 @@ export function useConnectFour() {
     startMatch,
     dropPiece,
     endGame: baseEnd,
-    leaveGame: baseLeave
+    leaveGame: baseLeave,
+    claimTimeoutVictory: baseClaimTimeoutVictory
   };
 }

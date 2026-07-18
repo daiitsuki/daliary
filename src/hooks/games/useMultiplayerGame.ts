@@ -174,6 +174,11 @@ export function useMultiplayerGame(gameType: string) {
     // 아무것도 하지 않음
   };
 
+  const claimTimeoutVictory = async (gameId: string) => {
+    if (!profile) return;
+    await endGame(gameId, profile.id);
+  };
+
   const sendInvitePush = async (title: string, content: string, url: string) => {
     if (!couple?.id || !profile?.id) return;
     
@@ -204,6 +209,7 @@ export function useMultiplayerGame(gameType: string) {
     updateGameState,
     endGame,
     leaveGame,
+    claimTimeoutVictory,
     sendInvitePush
   };
 }

@@ -3,6 +3,7 @@ export * from './games/useConnectFour';
 export * from './games/useGameScore';
 export * from './games/useMultiplayerGame';
 export * from './games/useSwipe';
+export * from './games/useYachtDice';
 
 // map
 export * from './map/usePlaceSearch';

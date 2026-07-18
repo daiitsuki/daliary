@@ -49,6 +49,7 @@ export default function OthelloGame({ onBack }: OthelloGameProps) {
     countDiscs,
     endGame,
     leaveGame,
+    claimTimeoutVictory,
   } = useOthello();
 
   const { partnerProfile, myProfile } = useHomeData();
@@ -355,6 +356,8 @@ export default function OthelloGame({ onBack }: OthelloGameProps) {
                 partnerProfile={partnerProfile}
                 myTheme={myTheme}
                 partnerTheme={partnerTheme}
+                lastUpdatedAt={game.updated_at}
+                onClaimVictory={() => claimTimeoutVictory(game.id)}
               />
               <div className="flex items-center justify-between px-1">
                 {/* 왼쪽 점수 (내 점수) */}
