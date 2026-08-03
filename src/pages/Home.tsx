@@ -170,7 +170,7 @@ export default function Home() {
             ) : (
               <>
                 {/* Folder Tab Design */}
-                <div className="relative z-20 flex translate-y-[1px] items-end justify-end gap-1.5 px-12">
+                <div className="relative z-10 flex translate-y-[1px] items-end justify-end gap-1.5 px-12">
                   <button
                     onClick={() => setDailyTab("question")}
                     className={`rounded-t-[16px] border-x border-t px-4 pt-2.5 text-[14px] font-bold transition-colors ${
