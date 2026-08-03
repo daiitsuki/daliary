@@ -379,30 +379,27 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
   };
 
   return (
-    <section className="px-6 mb-6">
+    <section className="mb-6 px-6">
       <AnimatePresence mode="wait">
         <motion.div
           key="drawing-section"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-white via-white to-rose-50/40 p-6 rounded-[32px] shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-rose-50/50 relative overflow-hidden group"
+          className="group relative overflow-hidden rounded-[32px] border border-rose-50/50 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.03)]"
         >
           <div className="relative z-10">
             {/* Header / Question (Clickable for Expand/Collapse) */}
             <div
-              className="flex items-start justify-between gap-3 px-1 cursor-pointer group/header select-none"
+              className="group/header flex cursor-pointer items-start justify-between gap-3 px-1 select-none"
               onClick={() => setIsExpanded(!isExpanded)}
             >
-              <div className="flex gap-3 pr-2 mt-1">
-                <div className="text-rose-200/60 shrink-0">
-                  <Palette size={26} strokeWidth={2.5} />
-                </div>
-                <p className="text-gray-800 font-bold text-[14px] leading-relaxed tracking-tight pt-0.5">
+              <div className="mt-1 flex gap-3 pr-2">
+                <p className="pt-0.5 pl-2 text-[13px] leading-relaxed font-bold tracking-tight text-gray-800">
                   {drawingQuestion}
                 </p>
               </div>
-              <div className="flex items-center gap-1 shrink-0 mt-1">
-                <div className="p-1.5 rounded-full text-gray-300 group-hover/header:bg-rose-50 group-hover/header:text-rose-400 transition-colors">
+              <div className="mt-1 flex shrink-0 items-center gap-1">
+                <div className="rounded-full p-1.5 text-gray-300 transition-colors group-hover/header:bg-rose-50 group-hover/header:text-rose-400">
                   {isExpanded ? (
                     <ChevronUp size={20} />
                   ) : (
@@ -424,8 +421,8 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                   <div className="space-y-6 pt-6">
                     {/* My Drawing Box */}
                     <div className="flex flex-col gap-2">
-                      <div className="flex items-center justify-between pl-1">
-                        <p className="text-[11px] text-rose-400 font-bold flex items-center gap-1.5">
+                      <div className="flex items-center justify-between pl-3">
+                        <p className="flex items-center gap-1.5 text-[11px] font-bold text-rose-400">
                           <Smile size={12} className="text-rose-300" /> 나의
                           그림
                         </p>
@@ -445,19 +442,19 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                         )} */}
                       </div>
 
-                      <div className="flex justify-center w-full">
+                      <div className="flex w-full justify-center">
                         {!myDrawing ? (
                           // Blank Canvas Placeholder
                           <button
                             onClick={() => setIsCanvasOpen(true)}
-                            className="w-full max-w-[240px] aspect-square bg-[url('/checkers.png')] bg-white bg-repeat rounded-2xl border-2 border-dashed border-rose-200/60 hover:border-rose-300 transition-all flex flex-col items-center justify-center gap-3 overflow-hidden shadow-sm"
+                            className="flex aspect-square w-full max-w-[240px] flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border-2 border-dashed border-rose-200/60 bg-white bg-[url('/checkers.png')] bg-repeat shadow-sm transition-all hover:border-rose-300"
                             style={{ backgroundSize: "16px 16px" }}
                           >
-                            <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center shadow-sm">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 shadow-sm">
                               <Palette className="text-rose-400" size={20} />
                             </div>
                             <div className="text-center">
-                              <span className="font-bold text-rose-400 text-[13px] block mb-0.5">
+                              <span className="mb-0.5 block text-[13px] font-bold text-rose-400">
                                 캔버스 열기
                               </span>
                               <span className="text-[10px] text-gray-400">
@@ -467,11 +464,11 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                           </button>
                         ) : (
                           // Submitted Drawing
-                          <div className="w-full max-w-[240px] aspect-square bg-rose-50/40 p-4 rounded-2xl border border-rose-100/30 shadow-sm flex items-center justify-center">
+                          <div className="flex aspect-square w-full max-w-[240px] items-center justify-center rounded-2xl border border-rose-100/30 bg-rose-50/40 p-4 shadow-sm">
                             <img
                               src={myDrawing.image_url}
                               alt="내 그림"
-                              className="w-full h-full object-contain"
+                              className="h-full w-full object-contain"
                               style={{ imageRendering: "pixelated" }}
                             />
                           </div>
@@ -480,48 +477,48 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                     </div>
 
                     {/* Partner Drawing Box */}
-                    <div className="pt-6 border-t border-gray-50 flex flex-col gap-2">
-                      <div className="flex items-center justify-between pl-1">
-                        <p className="text-[11px] text-gray-400 font-bold flex items-center gap-1.5">
+                    <div className="flex flex-col gap-2 border-t border-gray-50 pt-6">
+                      <div className="flex items-center justify-between pl-3">
+                        <p className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400">
                           <Heart size={12} className="text-gray-300" />{" "}
                           {partnerNickname}의 그림
                         </p>
                         {bothAnswered && (
-                          <div className="px-2 py-0.5 rounded-full text-[9px] font-bold tracking-widest flex items-center gap-1 border bg-green-50 text-green-500 border-green-100">
+                          <div className="flex items-center gap-1 rounded-full border border-green-100 bg-green-50 px-2 py-0.5 text-[9px] font-bold tracking-widest text-green-500">
                             <Unlock size={9} />
                             OPENED
                           </div>
                         )}
                       </div>
 
-                      <div className="flex justify-center w-full">
+                      <div className="flex w-full justify-center">
                         {bothAnswered ? (
                           // Both Submitted
-                          <div className="w-full max-w-[240px] aspect-square bg-gray-50/80 p-4 rounded-2xl border border-gray-100/50 shadow-sm flex items-center justify-center">
+                          <div className="flex aspect-square w-full max-w-[240px] items-center justify-center rounded-2xl border border-gray-100/50 bg-gray-50/80 p-4 shadow-sm">
                             <img
                               src={partnerDrawing!.image_url}
                               alt="상대 그림"
-                              className="w-full h-full object-contain"
+                              className="h-full w-full object-contain"
                               style={{ imageRendering: "pixelated" }}
                             />
                           </div>
                         ) : partnerDrawing && !myDrawing ? (
                           // Partner submitted, but I haven't -> Blurred Silhouette
-                          <div className="relative w-full max-w-[240px] aspect-square rounded-2xl border border-gray-100 overflow-hidden bg-gray-50/50 flex flex-col items-center justify-center">
-                            {partnerDrawing.image_url === 'hidden' ? (
-                              <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-rose-100 to-indigo-100 blur-xl opacity-60 scale-110 select-none pointer-events-none" />
+                          <div className="relative flex aspect-square w-full max-w-[240px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-gray-100 bg-gray-50/50">
+                            {partnerDrawing.image_url === "hidden" ? (
+                              <div className="pointer-events-none absolute inset-0 h-full w-full scale-110 bg-gradient-to-br from-rose-100 to-indigo-100 opacity-60 blur-xl select-none" />
                             ) : (
                               <img
                                 src={partnerDrawing.image_url}
                                 alt="블러 처리된 상대 그림"
-                                className="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-110 select-none pointer-events-none"
+                                className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-xl select-none"
                               />
                             )}
-                            <div className="relative z-10 flex flex-col items-center text-center p-4">
-                              <div className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm mb-3">
+                            <div className="relative z-10 flex flex-col items-center p-4 text-center">
+                              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm">
                                 <Lock size={20} className="text-rose-400" />
                               </div>
-                              <p className="text-[13px] text-gray-700 font-bold mb-1 leading-tight">
+                              <p className="mb-1 text-[13px] leading-tight font-bold text-gray-700">
                                 {partnerNickname}님이 먼저
                                 <br />
                                 그림을 완성했어요!
@@ -533,18 +530,18 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
                           </div>
                         ) : (
                           // Neither submitted, or I submitted but partner hasn't
-                          <div className="w-full max-w-[240px] aspect-square flex flex-col items-center justify-center text-center bg-gray-50/30 rounded-2xl border border-dashed border-gray-200">
-                            <div className="w-10 h-10 bg-gray-100/80 rounded-full flex items-center justify-center mb-3">
+                          <div className="flex aspect-square w-full max-w-[240px] flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/30 text-center">
+                            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100/80">
                               <Lock size={16} className="text-gray-400" />
                             </div>
-                            <p className="text-[12px] text-gray-500 font-bold mb-3 px-4 tracking-tight">
+                            <p className="mb-3 px-4 text-[12px] font-bold tracking-tight text-gray-500">
                               {partnerNickname}님이 아직 답변하지 않았어요
                             </p>
                             {myDrawing && (
                               <button
                                 onClick={handleRequestAnswer}
                                 disabled={isRequesting}
-                                className="flex items-center gap-1.5 px-4 py-2 bg-rose-50/80 text-rose-400 hover:bg-rose-100/80 rounded-full text-[12px] font-semibold transition-colors active:scale-95 disabled:opacity-50"
+                                className="flex items-center gap-1.5 rounded-full bg-rose-50/80 px-4 py-2 text-[12px] font-semibold text-rose-400 transition-colors hover:bg-rose-100/80 active:scale-95 disabled:opacity-50"
                               >
                                 {isRequesting ? (
                                   <Loader2 size={13} className="animate-spin" />
@@ -561,9 +558,12 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
 
                     <div className="mt-4 flex justify-end">
                       <button
-                        onClick={(e) => { e.stopPropagation(); setIsShareMenuOpen(true); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsShareMenuOpen(true);
+                        }}
                         disabled={isSharing || !myDrawing}
-                        className="w-9 h-9 flex items-center justify-center bg-rose-50/50 text-rose-400 rounded-xl hover:bg-rose-100/60 transition-colors disabled:opacity-50"
+                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50/50 text-rose-400 transition-colors hover:bg-rose-100/60 disabled:opacity-50"
                         title="그림 공유하기"
                         aria-label="그림 공유하기"
                       >
@@ -595,13 +595,13 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
         <button
           disabled={!myDrawing}
           onClick={() => handleShareOption("my")}
-          className="w-full flex items-center gap-3 p-4 rounded-2xl bg-rose-50/50 hover:bg-rose-100/60 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-rose-50/50 disabled:active:scale-100 border border-rose-100"
+          className="flex w-full items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50/50 p-4 transition-all hover:bg-rose-100/60 active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-rose-50/50 disabled:active:scale-100"
         >
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
             <Smile size={20} className="text-rose-400" />
           </div>
           <div className="text-left">
-            <p className="font-bold text-gray-800 text-[15px]">
+            <p className="text-[15px] font-bold text-gray-800">
               내 그림 공유하기
             </p>
           </div>
@@ -610,13 +610,13 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
         <button
           disabled={!partnerDrawing || !bothAnswered}
           onClick={() => handleShareOption("partner")}
-          className="w-full flex items-center gap-3 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100/80 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-gray-50 disabled:active:scale-100 border border-gray-100"
+          className="flex w-full items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-all hover:bg-gray-100/80 active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-gray-50 disabled:active:scale-100"
         >
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
             <Heart size={20} className="text-gray-400" />
           </div>
           <div className="text-left">
-            <p className="font-bold text-gray-800 text-[15px]">
+            <p className="text-[15px] font-bold text-gray-800">
               {partnerNickname}님의 그림 공유하기
             </p>
           </div>
@@ -625,13 +625,13 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
         <button
           disabled={!bothAnswered}
           onClick={() => handleShareOption("both")}
-          className="w-full flex items-center gap-3 p-4 rounded-2xl bg-indigo-50/50 hover:bg-indigo-100/60 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-indigo-50/50 disabled:active:scale-100 border border-indigo-100"
+          className="flex w-full items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 transition-all hover:bg-indigo-100/60 active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-indigo-50/50 disabled:active:scale-100"
         >
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
             <ImageIcon size={20} className="text-indigo-400" />
           </div>
           <div className="text-left">
-            <p className="font-bold text-gray-800 text-[15px]">
+            <p className="text-[15px] font-bold text-gray-800">
               두 그림 모두 공유하기
             </p>
           </div>

@@ -1,6 +1,13 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useCouple } from "../../hooks";
 import { Loader2 } from 'lucide-react';
+import {
+  HomeHeaderSkeleton,
+  HeartGaugeSkeleton,
+  DailyTabSkeleton,
+  RelayNovelWidgetSkeleton,
+  QuickLinksSkeleton,
+} from "../home/HomeSkeletons";
 
 export default function ProtectedRoute() {
   const { couple, loading, profile } = useCouple();
@@ -9,6 +16,24 @@ export default function ProtectedRoute() {
   // 1. Loading State
   // 초기 로딩 중이거나 아직 프로필 확인이 안 된 경우 (온보딩 제외)
   if (loading && location.pathname !== '/onboarding') {
+    const isHome = location.pathname === '/' || location.pathname === '/home';
+    
+    if (isHome) {
+      return (
+        <div className="custom-scrollbar relative flex-1 overflow-y-auto bg-[#FDFDFE] pb-24 h-full w-full">
+           <HomeHeaderSkeleton />
+           <div className="mx-auto max-w-xl space-y-0">
+             <HeartGaugeSkeleton />
+             <div className="px-6 pb-8 pt-4">
+               <DailyTabSkeleton />
+             </div>
+             <RelayNovelWidgetSkeleton />
+             <QuickLinksSkeleton />
+           </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]">
         <Loader2 className="animate-spin text-rose-400" size={32} />

@@ -11,10 +11,12 @@ import {
   Image as ImageIcon,
   ChevronDown,
   ChevronUp,
+  Moon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import QuestionHistoryModal from "./QuestionHistoryModal";
 import BaseModal from "../common/BaseModal";
+import Textarea from "../common/Textarea";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "../../context/ToastContext";
 
@@ -317,23 +319,23 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
   };
 
   return (
-    <section className="px-6 mb-6">
+    <section className="mb-6 px-6">
       <AnimatePresence mode="wait">
         {!todayQuestion ? (
           <motion.div
             key="no-question"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-8 rounded-[32px] shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-rose-50/50 flex flex-col items-center justify-center text-center space-y-3 relative overflow-hidden"
+            className="relative flex flex-col items-center justify-center space-y-3 overflow-hidden rounded-[32px] border border-rose-50/50 bg-white p-8 text-center shadow-[0_10px_40px_rgba(0,0,0,0.03)]"
           >
-            <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-rose-50/30 rounded-full blur-3xl" />
-            <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center text-rose-300">
+            <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-rose-50/30 blur-3xl" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-300">
               <Lock size={20} />
             </div>
-            <p className="text-gray-500 font-bold text-[14px]">
+            <p className="text-[14px] font-bold text-gray-500">
               아직 오늘의 질문이 준비되지 않았어요.
             </p>
-            <p className="text-gray-400 text-[12px]">
+            <p className="text-[12px] text-gray-400">
               새로운 질문을 기다려주세요!
             </p>
           </motion.div>
@@ -342,24 +344,25 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
             key={myAnswer ? "result" : "input"}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-6 rounded-[32px] shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-rose-50/50 relative overflow-hidden group"
+            className="group relative overflow-hidden rounded-[32px] border border-rose-50/50 bg-white p-4 shadow-[0_10px_40px_rgba(0,0,0,0.03)]"
           >
             <div className="relative z-10">
               <div
-                className="flex items-start justify-between gap-3 cursor-pointer group/header select-none mb-2 px-1"
+                className="group/header mb-2 flex cursor-pointer items-start justify-between gap-3 px-1 select-none"
                 onClick={() => setIsExpanded(!isExpanded)}
               >
-                <div className="flex gap-3 pr-2 mt-1">
-                  <span className="text-2xl font-black text-rose-200/60 leading-none italic shrink-0 mt-0.5">
-                    Q.
-                  </span>
-                  <p className="text-gray-800 font-bold text-[14px] leading-relaxed tracking-tight pt-0.5">
+                <div className="mt-1 flex gap-3 pr-2">
+                  <p className="pt-0.5 pl-2 text-[13px] leading-relaxed font-bold tracking-tight text-gray-800">
                     {todayQuestion.content}
                   </p>
                 </div>
-                <div className="flex items-center gap-1 shrink-0 mt-1">
-                  <div className="p-1.5 rounded-full text-gray-300 group-hover/header:bg-rose-50 group-hover/header:text-rose-400 transition-colors">
-                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                <div className="mt-1 flex shrink-0 items-center gap-1">
+                  <div className="rounded-full p-1.5 text-gray-300 transition-colors group-hover/header:bg-rose-50 group-hover/header:text-rose-400">
+                    {isExpanded ? (
+                      <ChevronUp size={20} />
+                    ) : (
+                      <ChevronDown size={20} />
+                    )}
                   </div>
                 </div>
               </div>
@@ -373,102 +376,115 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="pt-4">
-
-              {!myAnswer ? (
-                <div className="relative group/input">
-                  <textarea
-                    value={inputAnswer}
-                    onChange={(e) => setInputAnswer(e.target.value)}
-                    placeholder="서로에게 들려주고 싶은 대답을 남겨주세요..."
-                    className="w-full bg-gray-50/50 p-4 pb-12 rounded-2xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-100 resize-none min-h-[120px] text-[13px] font-medium placeholder:text-gray-300 transition-all border border-transparent focus:border-rose-100 shadow-inner custom-scrollbar"
-                  />
-                  <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                    <button
-                      onClick={onSubmit}
-                      disabled={isSubmitting || !inputAnswer.trim()}
-                      className={`p-2.5 rounded-xl transition-all flex items-center justify-center shadow-md active:scale-90 disabled:opacity-30 disabled:scale-100 disabled:shadow-none ${
-                        inputAnswer.trim()
-                          ? "bg-rose-400 text-white shadow-rose-200/50"
-                          : "bg-gray-200 text-gray-400"
-                      }`}
-                    >
-                      {isSubmitting ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <Send
-                          size={16}
-                          fill={inputAnswer.trim() ? "currentColor" : "none"}
-                        />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  <div className="flex flex-col gap-1.5">
-                    <p className="text-[11px] text-rose-400 font-bold flex items-center gap-1.5 pl-1">
-                      <Smile size={11} className="text-rose-300" /> 나의 답변
-                    </p>
-                    <div className="bg-rose-50/40 p-4 rounded-2xl rounded-tl-none text-gray-700 text-[13px] font-medium leading-relaxed border border-rose-100/30 shadow-sm">
-                      {myAnswer.content}
-                    </div>
-                  </div>
-
-                  <div className="pt-5 border-t border-gray-50">
-                    <div className="flex items-center justify-between mb-2.5 pl-1">
-                      <p className="text-[11px] text-gray-400 font-bold flex items-center gap-1.5">
-                        <Heart size={11} className="text-gray-300" />
-                        {partnerNickname}의 답변
-                      </p>
-                      {bothAnswered && (
-                        <div className="px-2 py-0.5 rounded-full text-[8px] font-bold tracking-widest flex items-center gap-1 border bg-green-50 text-green-500 border-green-100">
-                          <Unlock size={8} />
-                          OPENED
+                    <div className="px-1 pt-2 pb-1">
+                      {!myAnswer ? (
+                        <div className="group/input relative">
+                          <Textarea
+                            value={inputAnswer}
+                            onChange={(e: any) =>
+                              setInputAnswer(e.target.value)
+                            }
+                            placeholder={`${partnerNickname}님에게 들려주고 싶은 대답을 남겨주세요...`}
+                            className="min-h-[120px] pb-12 placeholder:text-xs"
+                          />
+                          <div className="absolute right-3 bottom-3 flex items-center gap-2">
+                            <button
+                              onClick={onSubmit}
+                              disabled={isSubmitting || !inputAnswer.trim()}
+                              className={`flex items-center justify-center rounded-xl p-2.5 shadow-md transition-all active:scale-90 disabled:scale-100 disabled:opacity-30 disabled:shadow-none ${
+                                inputAnswer.trim()
+                                  ? "bg-rose-400 text-white shadow-rose-200/50"
+                                  : "bg-gray-200 text-gray-400"
+                              }`}
+                            >
+                              {isSubmitting ? (
+                                <Loader2 size={16} className="animate-spin" />
+                              ) : (
+                                <Send
+                                  size={16}
+                                  fill={
+                                    inputAnswer.trim() ? "currentColor" : "none"
+                                  }
+                                />
+                              )}
+                            </button>
+                          </div>
                         </div>
-                      )}
-                    </div>
+                      ) : (
+                        <div className="space-y-5">
+                          <div className="flex flex-col gap-1.5">
+                            <p className="flex items-center gap-1.5 pl-1 text-[11px] font-bold text-rose-400">
+                              <Smile size={11} className="text-rose-300" /> 나의
+                              답변
+                            </p>
+                            <div className="rounded-2xl rounded-tl-none border border-rose-100/30 bg-rose-50/40 p-4 text-[13px] leading-relaxed font-medium text-gray-700 shadow-sm">
+                              {myAnswer.content}
+                            </div>
+                          </div>
 
-                    {bothAnswered ? (
-                      <div className="bg-gray-50/80 p-4 rounded-2xl rounded-tr-none text-gray-600 text-[13px] font-medium leading-relaxed border border-gray-100/50 italic shadow-sm">
-                        "{partnerAnswer?.content}"
-                      </div>
-                    ) : (
-                      <div className="py-6 flex flex-col items-center justify-center text-center bg-gray-50/30 rounded-2xl">
-                        <p className="text-[12px] text-gray-400 font-medium mb-3 tracking-tight">
-                          {partnerNickname}님의 답변을 기다리고 있어요
-                        </p>
-                        <button
-                          onClick={handleRequestAnswer}
-                          disabled={isRequesting}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-rose-50/80 text-rose-400 hover:bg-rose-100/80 rounded-full text-[12px] font-semibold transition-colors active:scale-95 disabled:opacity-50"
-                        >
-                          {isRequesting ? (
-                            <Loader2 size={13} className="animate-spin" />
-                          ) : (
-                            <Send size={13} />
-                          )}
-                          답변 요청하기
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                          <div className="border-t border-gray-50 pt-5">
+                            <div className="mb-2.5 flex items-center justify-between pl-1">
+                              <p className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400">
+                                <Heart size={11} className="text-gray-300" />
+                                {partnerNickname}의 답변
+                              </p>
+                              {bothAnswered && (
+                                <div className="flex items-center gap-1 rounded-full border border-green-100 bg-green-50 px-2 py-0.5 text-[8px] font-bold tracking-widest text-green-500">
+                                  <Unlock size={8} />
+                                  OPENED
+                                </div>
+                              )}
+                            </div>
+
+                            {bothAnswered ? (
+                              <div className="rounded-2xl rounded-tr-none border border-gray-100/50 bg-gray-50/80 p-4 text-[13px] leading-relaxed font-medium text-gray-600 italic shadow-sm">
+                                "{partnerAnswer?.content}"
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center rounded-2xl bg-gray-50/30 py-6 text-center">
+                                <p className="mb-3 text-[12px] font-medium tracking-tight text-gray-400">
+                                  {partnerNickname}님의 답변을 기다리고 있어요
+                                </p>
+                                <button
+                                  onClick={handleRequestAnswer}
+                                  disabled={isRequesting}
+                                  className="flex items-center gap-1.5 rounded-full bg-rose-50/80 px-4 py-2 text-[12px] font-semibold text-rose-400 transition-colors hover:bg-rose-100/80 active:scale-95 disabled:opacity-50"
+                                >
+                                  {isRequesting ? (
+                                    <Loader2
+                                      size={13}
+                                      className="animate-spin"
+                                    />
+                                  ) : (
+                                    <Send size={13} />
+                                  )}
+                                  답변 요청하기
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       )}
 
                       <div className="mt-4 flex justify-end gap-2">
                         <button
-                          onClick={(e) => { e.stopPropagation(); setIsHistoryOpen(true); }}
-                          className="w-9 h-9 flex items-center justify-center bg-gray-50 text-gray-400 rounded-xl hover:bg-gray-100 hover:text-gray-500 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsHistoryOpen(true);
+                          }}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-50 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-500"
                           title="지난 기록 보기"
                           aria-label="지난 기록 보기"
                         >
                           <History size={17} />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); setIsShareMenuOpen(true); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsShareMenuOpen(true);
+                          }}
                           disabled={isSharing || !myAnswer}
-                          className="w-9 h-9 flex items-center justify-center bg-rose-50/50 text-rose-400 rounded-xl hover:bg-rose-100/60 transition-colors disabled:opacity-50"
+                          className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50/50 text-rose-400 transition-colors hover:bg-rose-100/60 disabled:opacity-50"
                           title="공유하기"
                           aria-label="공유하기"
                         >
@@ -503,13 +519,13 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
         <button
           disabled={!myAnswer}
           onClick={() => handleShareOption("my")}
-          className="w-full flex items-center gap-3 p-4 rounded-2xl bg-rose-50/50 hover:bg-rose-100/60 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-rose-50/50 disabled:active:scale-100 border border-rose-100"
+          className="flex w-full items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50/50 p-4 transition-all hover:bg-rose-100/60 active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-rose-50/50 disabled:active:scale-100"
         >
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
             <Smile size={20} className="text-rose-400" />
           </div>
           <div className="text-left">
-            <p className="font-bold text-gray-800 text-[15px]">
+            <p className="text-[15px] font-bold text-gray-800">
               내 답변 공유하기
             </p>
           </div>
@@ -518,13 +534,13 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
         <button
           disabled={!partnerAnswer || !bothAnswered}
           onClick={() => handleShareOption("partner")}
-          className="w-full flex items-center gap-3 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100/80 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-gray-50 disabled:active:scale-100 border border-gray-100"
+          className="flex w-full items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-all hover:bg-gray-100/80 active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-gray-50 disabled:active:scale-100"
         >
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
             <Heart size={20} className="text-gray-400" />
           </div>
           <div className="text-left">
-            <p className="font-bold text-gray-800 text-[15px]">
+            <p className="text-[15px] font-bold text-gray-800">
               {partnerNickname}님의 답변 공유하기
             </p>
           </div>
@@ -533,13 +549,13 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
         <button
           disabled={!bothAnswered}
           onClick={() => handleShareOption("both")}
-          className="w-full flex items-center gap-3 p-4 rounded-2xl bg-indigo-50/50 hover:bg-indigo-100/60 transition-all active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-indigo-50/50 disabled:active:scale-100 border border-indigo-100"
+          className="flex w-full items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 transition-all hover:bg-indigo-100/60 active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-indigo-50/50 disabled:active:scale-100"
         >
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
             <ImageIcon size={20} className="text-indigo-400" />
           </div>
           <div className="text-left">
-            <p className="font-bold text-gray-800 text-[15px]">
+            <p className="text-[15px] font-bold text-gray-800">
               두 답변 모두 공유하기
             </p>
           </div>

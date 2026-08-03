@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Plus, ChevronRight } from "lucide-react";
+import { BookOpen, Plus, ChevronRight, Library } from "lucide-react";
 import { RelayNovel } from "../../types";
 import RelayNovelModal from "./RelayNovelModal";
 import CompletedRelayNovelsModal from "./CompletedRelayNovelsModal";
@@ -27,62 +27,62 @@ export default function RelayNovelWidget({
 
   return (
     <>
-      <section className="px-6 mb-6">
-        <motion.div
-          onClick={() => setIsModalOpen(true)}
-          className="bg-white p-6 rounded-[32px] shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-rose-50/50 relative overflow-hidden"
-        >
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-rose-50/50 rounded-full blur-2xl transition-colors duration-500" />
-          
-          <div className="flex items-center gap-3 mb-3 relative z-10">
-            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-400 flex items-center justify-center shrink-0">
-              <BookOpen size={16} strokeWidth={2.5} />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-gray-800 font-bold text-[14px] leading-relaxed tracking-tight flex items-center gap-2">
-                릴레이 소설
-                {novels.length > 0 && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setIsCompletedModalOpen(true); }}
-                    className="text-[10px] font-bold text-rose-400 bg-rose-50 px-2 py-0.5 rounded-full hover:bg-rose-100 transition-colors"
-                  >
-                    완결작 보기
-                  </button>
-                )}
-              </h3>
-            </div>
-          </div>
-
-          <div className="relative z-10">
-            {!ongoingRelayNovel ? (
-              <div className="bg-gray-50/50 rounded-2xl p-4 flex flex-col items-center justify-center text-center border border-gray-100 border-dashed">
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-300 mb-2 shadow-sm">
-                  <Plus size={20} strokeWidth={2.5} />
-                </div>
-                <p className="text-gray-500 font-bold text-[13px]">
-                  새로운 이야기를 시작해보세요
-                </p>
-                <p className="text-gray-400 text-[12px] mt-1">
-                  100턴을 채워 이야기를 완성해보세요!
-                </p>
+      <section className="mb-6 px-6">
+        <div className="flex flex-col gap-2">
+          {/* Main Banner */}
+          <motion.div
+            onClick={() => setIsModalOpen(true)}
+            className="group flex cursor-pointer items-center justify-between rounded-[24px] border border-rose-100/50 bg-white p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-colors hover:bg-rose-50/30"
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-rose-50 text-rose-400 shadow-sm">
+                <BookOpen size={18} strokeWidth={2.5} />
               </div>
-            ) : (
-              <div className="bg-rose-50/30 rounded-2xl p-4 border border-rose-100/30">
-                <p className="text-[12px] text-gray-800 font-bold mb-1.5 flex items-center gap-1 font-serif">
-                  {ongoingRelayNovel.title}
+              <div>
+                <p className="mb-0.5 text-[11px] font-bold tracking-tight text-rose-400/80">
+                  📖{" "}
+                  {ongoingRelayNovel
+                    ? ongoingRelayNovel.title
+                    : "릴레이 소설 이어쓰기"}
                 </p>
-                <div className="flex items-start justify-between gap-3">
-                  <p className="text-gray-600 text-[13px] font-medium leading-relaxed line-clamp-2 italic font-serif">
-                    {ongoingRelayNovel.last_turn_content || "..."}
+                {!ongoingRelayNovel ? (
+                  <p className="text-[13px] leading-tight font-bold text-gray-700">
+                    새로운 이야기를 시작해볼까요?
                   </p>
-                  <div className="w-6 h-6 rounded-full bg-white text-rose-300 flex items-center justify-center shadow-sm shrink-0 mt-1">
-                    <ChevronRight size={14} strokeWidth={2.5} />
-                  </div>
-                </div>
+                ) : (
+                  <p className="xs:max-w-[250px] line-clamp-1 max-w-[200px] font-serif text-[13px] leading-tight font-medium text-gray-600 italic sm:max-w-[300px]">
+                    {ongoingRelayNovel.last_turn_content
+                      ? `"${ongoingRelayNovel.last_turn_content}"`
+                      : "첫 문장을 작성해주세요..."}
+                  </p>
+                )}
               </div>
-            )}
-          </div>
-        </motion.div>
+            </div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 text-gray-400 transition-colors group-hover:bg-rose-100 group-hover:text-rose-400">
+              <ChevronRight
+                size={18}
+                className="transition-transform group-hover:translate-x-0.5"
+              />
+            </div>
+          </motion.div>
+
+          {/* Completed Novels Button (Only if there are completed novels) */}
+          {novels.length > 0 && (
+            <div className="flex justify-end px-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCompletedModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-gray-400 transition-colors hover:text-rose-400"
+              >
+                <Library size={12} />
+                완결작 보러가기
+              </button>
+            </div>
+          )}
+        </div>
       </section>
 
       <RelayNovelModal

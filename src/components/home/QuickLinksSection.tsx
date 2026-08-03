@@ -1,71 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Map, Heart, Camera, Settings, ShoppingBag, Calendar } from "lucide-react";
-import { motion, Reorder, useDragControls } from "framer-motion";
+import { motion } from "framer-motion";
 import AnniversaryModal from "../common/AnniversaryModal";
 import PointHistoryModal from "./PointHistoryModal";
 import { useCouplePoints } from "../../hooks";
-
-
-const DEFAULT_ORDER = ["plans", "memory", "timetable", "anniversary", "shop", "settings"];
-
-function DraggableLinkItem({ id, link }: { id: string; link: any }) {
-  const controls = useDragControls();
-  const IconComponent = link.icon;
-
-  return (
-    <Reorder.Item
-      value={id}
-      dragListener={false}
-      dragControls={controls}
-      className="flex flex-col items-center flex-shrink-0 w-[72px] cursor-grab active:cursor-grabbing touch-pan-x"
-      whileDrag={{ scale: 1.05, zIndex: 50 }}
-      onPointerDown={(e) => {
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const timeout = setTimeout(() => {
-          controls.start(e);
-          if (navigator.vibrate) navigator.vibrate(50);
-        }, 300);
-
-        const onMove = (moveEvent: PointerEvent) => {
-          const dx = Math.abs(moveEvent.clientX - startX);
-          const dy = Math.abs(moveEvent.clientY - startY);
-          if (dx > 10 || dy > 10) {
-            clearTimeout(timeout);
-            cleanup();
-          }
-        };
-
-        const onUp = () => {
-          clearTimeout(timeout);
-          cleanup();
-        };
-
-        const cleanup = () => {
-          window.removeEventListener("pointermove", onMove);
-          window.removeEventListener("pointerup", onUp);
-          window.removeEventListener("pointercancel", onUp);
-        };
-
-        window.addEventListener("pointermove", onMove);
-        window.addEventListener("pointerup", onUp);
-        window.addEventListener("pointercancel", onUp);
-      }}
-    >
-      <button
-        onClick={link.onClick}
-        className="w-13 h-13 rounded-[22px] flex items-center justify-center shadow-sm border transition-all hover:shadow-md bg-white border-gray-50 pointer-events-auto"
-      >
-        <IconComponent size={20} className={link.color} />
-      </button>
-
-      <span className="mt-3 text-[11px] font-bold text-center text-gray-500 whitespace-nowrap pointer-events-none">
-        {link.title}
-      </span>
-    </Reorder.Item>
-  );
-}
 
 export default function QuickLinksSection() {
   const navigate = useNavigate();
@@ -74,77 +13,43 @@ export default function QuickLinksSection() {
   const [isPointShopModalOpen, setIsPointShopModalOpen] = useState(false);
   const { currentPoints, history } = useCouplePoints();
 
-  const [order, setOrder] = useState<string[]>(() => {
-    const saved = localStorage.getItem("quickLinksOrder");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const missing = DEFAULT_ORDER.filter(id => !parsed.includes(id));
-        return [...parsed, ...missing];
-      } catch (e) {}
-    }
-    return DEFAULT_ORDER;
-  });
-
-  useEffect(() => {
-    localStorage.setItem("quickLinksOrder", JSON.stringify(order));
-  }, [order]);
-
-  const linksConfig: Record<string, any> = {
-    plans: {
-      title: "여행계획",
-      icon: Map,
-      onClick: () => navigate("/places?tab=plans"),
-      color: "text-rose-500",
-    },
-    memory: {
-      title: "추억피드",
-      icon: Camera,
-      onClick: () => navigate("/places?tab=memory"),
-      color: "text-rose-500",
-    },
-    timetable: {
-      title: "시간표",
-      icon: Calendar,
-      onClick: () => navigate("/calendar?tab=timetable"),
-      color: "text-rose-500",
-    },
-    anniversary: {
-      title: "기념일",
-      icon: Heart,
-      onClick: () => setIsAnniversaryModalOpen(true),
-      color: "text-rose-500",
-    },
-    shop: {
-      title: "상점",
-      icon: ShoppingBag,
-      onClick: () => setIsPointShopModalOpen(true),
-      color: "text-rose-500",
-    },
-    settings: {
-      title: "설정",
-      icon: Settings,
-      onClick: () => navigate("/settings"),
-      color: "text-rose-500",
-    },
-  };
+  const linksConfig = [
+    { id: "plans", title: "여행계획", icon: Map, onClick: () => navigate("/places?tab=plans") },
+    { id: "memory", title: "추억피드", icon: Camera, onClick: () => navigate("/places?tab=memory") },
+    { id: "timetable", title: "시간표", icon: Calendar, onClick: () => navigate("/calendar?tab=timetable") },
+    { id: "anniversary", title: "기념일", icon: Heart, onClick: () => setIsAnniversaryModalOpen(true) },
+    { id: "shop", title: "상점", icon: ShoppingBag, onClick: () => setIsPointShopModalOpen(true) },
+    { id: "settings", title: "설정", icon: Settings, onClick: () => navigate("/settings") },
+  ];
 
   return (
     <section className="px-6 mb-6">
-      <motion.div className="bg-white rounded-[32px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-rose-50/50 relative overflow-hidden group">
-        {/* Tools Content */}
-        <Reorder.Group
-          axis="x"
-          values={order}
-          onReorder={setOrder}
-          className="relative z-10 flex items-start gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth"
-        >
-          {order.map((id) => {
-            const link = linksConfig[id];
-            if (!link) return null;
-            return <DraggableLinkItem key={id} id={id} link={link} />;
+      <motion.div 
+        className="bg-white rounded-[32px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-rose-50/50"
+      >
+        <div className="grid grid-cols-3 gap-y-5 gap-x-2">
+          {linksConfig.map((link, index) => {
+            const Icon = link.icon;
+            return (
+              <motion.button
+                key={link.id}
+                onClick={link.onClick}
+                className="flex flex-col items-center justify-center group outline-none"
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03, duration: 0.2 }}
+              >
+                <div className="w-12 h-12 rounded-[18px] flex items-center justify-center mb-1.5 transition-all duration-300 bg-slate-50/80 group-hover:bg-rose-50 text-slate-400 group-hover:text-rose-400">
+                  <Icon size={20} strokeWidth={1.5} className="transition-colors duration-300" />
+                </div>
+                <span className="text-[11px] font-medium text-slate-400 group-hover:text-rose-400 transition-colors duration-300">
+                  {link.title}
+                </span>
+              </motion.button>
+            );
           })}
-        </Reorder.Group>
+        </div>
       </motion.div>
 
       <AnniversaryModal

@@ -1,6 +1,11 @@
-import { useState } from "react";
-import { motion, Variants } from "framer-motion";
-import { Copy, Sparkles, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion, Variants, AnimatePresence } from "framer-motion";
+import {
+  Copy,
+  Sparkles,
+  MessageCircleQuestionMark,
+  Palette,
+} from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useHomeData } from "../hooks";
 import { useCouplePoints } from "../hooks";
@@ -13,6 +18,13 @@ import { DrawingAnswerSection } from "../components/home/DrawingAnswerSection";
 import QuickLinksSection from "../components/home/QuickLinksSection";
 import RelayNovelWidget from "../components/home/RelayNovelWidget";
 import { useToast } from "../context/ToastContext";
+import {
+  HomeHeaderSkeleton,
+  HeartGaugeSkeleton,
+  DailyTabSkeleton,
+  RelayNovelWidgetSkeleton,
+  QuickLinksSkeleton,
+} from "../components/home/HomeSkeletons";
 
 export default function Home() {
   const {
@@ -37,6 +49,14 @@ export default function Home() {
 
   const [inputAnswer, setInputAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dailyTab, setDailyTab] = useState<"question" | "drawing">(() => {
+    const saved = localStorage.getItem("dailyTab");
+    return saved === "question" || saved === "drawing" ? saved : "question";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("dailyTab", dailyTab);
+  }, [dailyTab]);
 
   const handleAnswerSubmit = async () => {
     if (!inputAnswer.trim() || !couple || !currentUserId || !todayQuestion)
@@ -71,14 +91,6 @@ export default function Home() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]">
-        <Loader2 className="animate-spin text-rose-400" size={32} />
-      </div>
-    );
-  }
-
   // Stagger Animation Variants
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -100,48 +112,52 @@ export default function Home() {
   };
 
   return (
-    <div className="flex-1 bg-[#FDFDFE] text-gray-800 pb-24 overflow-y-auto custom-scrollbar relative">
-      <HomeHeader
-        myProfile={myProfile}
-        partnerProfile={partnerProfile}
-        dDay={dDay}
-        couple={couple}
-      />
+    <div className="custom-scrollbar relative flex-1 overflow-y-auto bg-[#FDFDFE] pb-24 text-gray-800">
+      {loading ? (
+        <HomeHeaderSkeleton />
+      ) : (
+        <HomeHeader
+          myProfile={myProfile}
+          partnerProfile={partnerProfile}
+          dDay={dDay}
+          couple={couple}
+        />
+      )}
 
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-xl mx-auto space-y-2"
+        className="mx-auto max-w-xl space-y-0"
       >
         <motion.div variants={itemVariants}>
-          <HeartGauge />
+          {loading ? <HeartGaugeSkeleton /> : <HeartGauge />}
         </motion.div>
 
-        <main className="space-y-0 pb-10">
+        <main className="space-y-0 pb-4">
           {/* Invite Code Section (Partner missing case) */}
-          {!partnerProfile && couple?.invite_code && (
-            <motion.div variants={itemVariants} className="px-6 mb-8">
-              <div className="bg-white border border-rose-100/50 rounded-[32px] p-8 text-center shadow-[0_10px_40px_rgba(0,0,0,0.03)] relative overflow-hidden group">
-                <div className="absolute -right-4 -top-4 opacity-[0.05] group-hover:scale-110 transition-transform duration-700">
+          {!loading && !partnerProfile && couple?.invite_code && (
+            <motion.div variants={itemVariants} className="mb-8 px-6">
+              <div className="group relative overflow-hidden rounded-[32px] border border-rose-100/50 bg-white p-8 text-center shadow-[0_10px_40px_rgba(0,0,0,0.03)]">
+                <div className="absolute -top-4 -right-4 opacity-[0.05] transition-transform duration-700 group-hover:scale-110">
                   <Sparkles size={100} className="text-rose-400" />
                 </div>
-                <h3 className="text-gray-800 text-lg font-black mb-1">
+                <h3 className="mb-1 text-lg font-black text-gray-800">
                   초대 코드를 공유해보세요!
                 </h3>
-                <p className="text-gray-400 text-[11px] font-bold mb-6 uppercase tracking-widest">
+                <p className="mb-6 text-[11px] font-bold tracking-widest text-gray-400 uppercase">
                   둘만의 달이어리를 시작할 시간
                 </p>
                 <button
                   onClick={copyInviteCode}
-                  className="bg-rose-50/50 rounded-[22px] px-6 py-4 flex items-center justify-center space-x-3 mx-auto hover:bg-rose-50 transition-all w-full group border border-rose-100/30"
+                  className="group mx-auto flex w-full items-center justify-center space-x-3 rounded-[22px] border border-rose-100/30 bg-rose-50/50 px-6 py-4 transition-all hover:bg-rose-50"
                 >
-                  <span className="text-xl font-mono font-black text-rose-400 tracking-[0.2em]">
+                  <span className="font-mono text-xl font-black tracking-[0.2em] text-rose-400">
                     {couple.invite_code}
                   </span>
                   <Copy
                     size={16}
-                    className="text-rose-300 group-hover:text-rose-400 transition-colors"
+                    className="text-rose-300 transition-colors group-hover:text-rose-400"
                   />
                 </button>
               </div>
@@ -149,49 +165,107 @@ export default function Home() {
           )}
 
           <motion.div variants={itemVariants}>
-            <DailyQuestionSection
-              todayQuestion={todayQuestion}
-              myAnswer={myAnswer}
-              partnerAnswer={partnerAnswer}
-              inputAnswer={inputAnswer}
-              setInputAnswer={setInputAnswer}
-              isSubmitting={isSubmitting}
-              onSubmit={handleAnswerSubmit}
-              coupleId={couple?.id}
-              currentUserId={currentUserId}
-              couple={couple}
-              myProfile={myProfile}
-              partnerProfile={partnerProfile}
-            />
-          </motion.div>
+            {loading ? (
+              <DailyTabSkeleton />
+            ) : (
+              <>
+                {/* Folder Tab Design */}
+                <div className="relative z-20 flex translate-y-[1px] items-end justify-end gap-1.5 px-12">
+                  <button
+                    onClick={() => setDailyTab("question")}
+                    className={`rounded-t-[16px] border-x border-t px-4 pt-2.5 text-[14px] font-bold transition-colors ${
+                      dailyTab === "question"
+                        ? "border-rose-50/50 bg-white pb-3 text-gray-800"
+                        : "border-transparent bg-gray-100/60 pb-2 text-gray-400 hover:bg-gray-200/50"
+                    }`}
+                  >
+                    <MessageCircleQuestionMark
+                      className={
+                        dailyTab === "question"
+                          ? "text-rose-400"
+                          : "text-gray-400"
+                      }
+                      size={20}
+                    />
+                  </button>
+                  <button
+                    onClick={() => setDailyTab("drawing")}
+                    className={`rounded-t-[16px] border-x border-t px-4 pt-2.5 text-[14px] font-bold transition-colors ${
+                      dailyTab === "drawing"
+                        ? "border-rose-50/50 bg-white pb-3 text-gray-800"
+                        : "border-transparent bg-gray-100/60 pb-2 text-gray-400 hover:bg-gray-200/50"
+                    }`}
+                  >
+                    <Palette
+                      className={
+                        dailyTab === "drawing"
+                          ? "text-rose-400"
+                          : "text-gray-400"
+                      }
+                      size={20}
+                    />
+                  </button>
+                </div>
 
-          <motion.div variants={itemVariants}>
-            <DrawingAnswerSection
-              drawingQuestion={drawingQuestion}
-              myDrawing={myDrawing}
-              partnerDrawing={partnerDrawing}
-              coupleId={couple?.id}
-              currentUserId={currentUserId}
-              partnerProfile={partnerProfile}
-              myProfile={myProfile}
-              onComplete={refresh}
-            />
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            {partnerProfile && (
-              <RelayNovelWidget
-                ongoingRelayNovel={ongoingRelayNovel}
-                partnerNickname={partnerProfile.nickname || "상대방"}
-                myProfileId={currentUserId || ""}
-                partnerId={partnerProfile.id}
-                myNickname={myProfile?.nickname || ""}
-              />
+                {/* Tab Content (Instant Exit, Slide Up Enter) */}
+                <div className="overflow-x-clip">
+                  <motion.div
+                    key={dailyTab}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  >
+                    {dailyTab === "question" ? (
+                      <DailyQuestionSection
+                        todayQuestion={todayQuestion}
+                        myAnswer={myAnswer}
+                        partnerAnswer={partnerAnswer}
+                        inputAnswer={inputAnswer}
+                        setInputAnswer={setInputAnswer}
+                        isSubmitting={isSubmitting}
+                        onSubmit={handleAnswerSubmit}
+                        coupleId={couple?.id}
+                        currentUserId={currentUserId}
+                        couple={couple}
+                        myProfile={myProfile}
+                        partnerProfile={partnerProfile}
+                      />
+                    ) : (
+                      <DrawingAnswerSection
+                        drawingQuestion={drawingQuestion}
+                        myDrawing={myDrawing}
+                        partnerDrawing={partnerDrawing}
+                        coupleId={couple?.id}
+                        currentUserId={currentUserId}
+                        partnerProfile={partnerProfile}
+                        myProfile={myProfile}
+                        onComplete={refresh}
+                      />
+                    )}
+                  </motion.div>
+                </div>
+              </>
             )}
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <QuickLinksSection />
+            {loading ? (
+              <RelayNovelWidgetSkeleton />
+            ) : (
+              partnerProfile && (
+                <RelayNovelWidget
+                  ongoingRelayNovel={ongoingRelayNovel}
+                  partnerNickname={partnerProfile.nickname || "상대방"}
+                  myProfileId={currentUserId || ""}
+                  partnerId={partnerProfile.id}
+                  myNickname={myProfile?.nickname || ""}
+                />
+              )
+            )}
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            {loading ? <QuickLinksSkeleton /> : <QuickLinksSection />}
           </motion.div>
         </main>
       </motion.div>

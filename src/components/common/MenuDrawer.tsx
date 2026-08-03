@@ -120,37 +120,37 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="relative w-[280px] max-w-[80%] h-full bg-[#FDFDFE] shadow-2xl flex flex-col"
+            className="relative flex h-full w-[280px] max-w-[80%] flex-col bg-[#FDFDFE] shadow-2xl"
           >
             {/* Header */}
-            <div className="p-6 flex items-center justify-between">
-              <span className="text-xl font-black text-rose-500 tracking-tighter">
+            <div className="flex items-center justify-between p-6">
+              <span className="text-xl font-black tracking-tighter text-rose-500">
                 달이어리
               </span>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="rounded-full p-2 transition-colors hover:bg-gray-100"
               >
                 <X size={20} className="text-gray-400" />
               </button>
             </div>
 
             {/* Profile Summary */}
-            <div className="px-6 py-4 border-b border-gray-50 flex flex-col gap-4">
+            <div className="flex flex-col gap-4 border-b border-gray-50 px-6 py-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 overflow-hidden flex items-center justify-center shrink-0">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-rose-100 bg-rose-50">
                   {myProfile?.avatar_url ? (
                     <img
                       src={myProfile.avatar_url}
                       alt="Profile"
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-cover"
                     />
                   ) : (
                     <User size={24} className="text-rose-200" />
                   )}
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="font-bold text-gray-900 truncate">
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate font-bold text-gray-900">
                     {myProfile?.nickname || "사용자"}
                   </span>
                 </div>
@@ -158,17 +158,17 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
               {/* Stats Area */}
               {couple && (
-                <div className="flex flex-col gap-4 bg-rose-50/40 p-4 rounded-2xl border border-rose-100/30">
+                <div className="flex flex-col gap-4 rounded-2xl border border-rose-100/30 p-4">
                   {elapsedTime && (
                     <div className="flex items-center gap-3.5">
-                      <div className="w-9 h-9 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-rose-100/50 shrink-0">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-rose-100/50 bg-white shadow-sm">
                         <Heart
                           size={18}
-                          className="text-rose-400 fill-rose-400"
+                          className="fill-rose-400 text-rose-400"
                         />
                       </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-bold text-rose-300 tracking-tight mb-0.5">
+                      <div className="flex min-w-0 flex-col">
+                        <span className="mb-0.5 text-[10px] font-bold tracking-tight text-rose-300">
                           {partnerProfile?.nickname
                             ? `${partnerProfile.nickname}님과 함께한 시간`
                             : "함께한 시간"}
@@ -180,11 +180,11 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
                     </div>
                   )}
                   <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-rose-100/50 shrink-0">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-rose-100/50 bg-white shadow-sm">
                       <PiggyBank size={18} className="text-rose-400" />
                     </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[10px] font-bold text-gray-400 tracking-tight mb-0.5">
+                    <div className="flex min-w-0 flex-col">
+                      <span className="mb-0.5 text-[10px] font-bold tracking-tight text-gray-400">
                         잔여 포인트
                       </span>
                       <span className="text-[14px] font-black text-gray-700 tabular-nums">
@@ -197,28 +197,28 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
             </div>
 
             {/* Menu List */}
-            <nav className="flex-1 px-3 py-6 space-y-1">
+            <nav className="flex-1 space-y-1 px-3 py-6">
               {menuItems.map((item, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleNavigate(item.path)}
-                  className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-rose-50 hover:text-rose-500 text-gray-600 active:scale-[0.98]"
+                  className="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-gray-600 transition-all hover:bg-rose-50 hover:text-rose-500 active:scale-[0.98]"
                 >
                   <span className="text-rose-400">{item.icon}</span>
-                  <span className="font-bold text-[15px]">{item.label}</span>
+                  <span className="text-[15px] font-bold">{item.label}</span>
                 </button>
               ))}
             </nav>
 
             {/* Footer */}
-            <div className="p-6 space-y-4">
-              <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
-                <button
-                  onClick={() => setIsChangelogOpen(true)}
-                  className="text-[11px] text-gray-300 font-medium hover:text-rose-400 transition-colors"
-                >
+            <div className="space-y-4 p-6">
+              <div className="flex flex-col items-center justify-between space-y-2 border-t border-gray-50 pt-4">
+                <button className="text-[11px] font-medium text-gray-300 transition-colors">
                   v{latestVersion}
                 </button>
+                <footer className="text-[11px] font-medium text-gray-400">
+                  &copy; 2026 daiitsuki. All rights reserved.
+                </footer>
               </div>
             </div>
           </motion.div>
@@ -229,7 +229,10 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
   return (
     <>
-      {createPortal(drawerContent, document.getElementById("app-container") || document.body)}
+      {createPortal(
+        drawerContent,
+        document.getElementById("app-container") || document.body,
+      )}
       <ChangelogModal
         isOpen={isChangelogOpen}
         onClose={() => setIsChangelogOpen(false)}

@@ -147,6 +147,18 @@ const VisitForm = ({
     };
   }, [previewUrl]);
 
+  // 모달 열릴 때 상태 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setDate(initialDate || new Date().toISOString().split("T")[0]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }, [isOpen, initialDate]);
+
   useEffect(() => {
     if (placeAddress) {
       const parts = placeAddress.split(" ");

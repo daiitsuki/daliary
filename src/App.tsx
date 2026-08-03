@@ -12,6 +12,13 @@ import { HomeProvider } from "./context/HomeContext";
 import { NotificationsProvider } from "./context/NotificationsContext";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
+import {
+  HomeHeaderSkeleton,
+  HeartGaugeSkeleton,
+  DailyTabSkeleton,
+  RelayNovelWidgetSkeleton,
+  QuickLinksSkeleton,
+} from "./components/home/HomeSkeletons";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 
@@ -73,8 +80,24 @@ function App() {
                         <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
                           <GlobalErrorBoundary>
                             <Suspense fallback={
-                              <div className="w-full h-full flex items-center justify-center bg-[#FDFBF7]">
-                                <Loader2 className="animate-spin text-rose-400" size={32} />
+                              <div className="w-full h-full bg-[#FDFDFE] relative flex flex-col overflow-hidden">
+                                {window.location.pathname === '/' || window.location.pathname === '/home' ? (
+                                  <div className="custom-scrollbar relative flex-1 overflow-y-auto pb-24 h-full w-full">
+                                    <HomeHeaderSkeleton />
+                                    <div className="mx-auto max-w-xl space-y-0">
+                                      <HeartGaugeSkeleton />
+                                      <div className="px-6 pb-8 pt-4">
+                                        <DailyTabSkeleton />
+                                      </div>
+                                      <RelayNovelWidgetSkeleton />
+                                      <QuickLinksSkeleton />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-[#FDFDFE]">
+                                    <Loader2 className="animate-spin text-gray-300" size={32} />
+                                  </div>
+                                )}
                               </div>
                             }>
                               <Routes>

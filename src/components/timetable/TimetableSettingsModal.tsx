@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Trash2, Settings2 } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
-import Select from "../common/Select";
 import BaseModal from "../common/BaseModal";
 import Button from "../common/Button";
+import DualRangeSlider from "../common/DualRangeSlider";
+import Toggle from "../common/Toggle";
 
 interface TimetableSettingsModalProps {
   isOpen: boolean;
@@ -34,7 +35,87 @@ interface TimetableSettingsModalProps {
   onResetAll: () => Promise<void>;
 }
 
-const HOUR_OPTIONS = Array.from({ length: 25 }, (_, i) => i); // 0 ~ 24
+
+const HeightIcon = ({ mode, active }: { mode: string; active: boolean }) => {
+  const color = active ? "bg-white" : "bg-gray-300";
+  return (
+    <div className="mb-1 flex h-6 items-center justify-center opacity-90">
+      {mode === "narrow" && (
+        <div className={`h-1.5 w-5 rounded-sm ${color} shadow-sm`} />
+      )}
+      {mode === "normal" && (
+        <div className={`h-3 w-5 rounded-sm ${color} shadow-sm`} />
+      )}
+      {mode === "wide" && (
+        <div className={`h-4.5 w-5 rounded-sm ${color} shadow-sm`} />
+      )}
+    </div>
+  );
+};
+
+const CompressionIcon = ({
+  mode,
+  active,
+}: {
+  mode: string;
+  active: boolean;
+}) => {
+  const color = active ? "bg-white" : "bg-gray-300";
+  return (
+    <div className="mb-1 flex h-6 flex-col items-center justify-center opacity-90">
+      {mode === "none" && (
+        <div className="flex w-5 flex-col gap-2">
+          <div className={`h-1.5 w-full rounded-[2px] ${color} shadow-sm`} />
+          <div className={`h-1.5 w-full rounded-[2px] ${color} shadow-sm`} />
+        </div>
+      )}
+      {mode === "compact" && (
+        <div className="flex w-5 flex-col gap-1">
+          <div className={`h-1.5 w-full rounded-[2px] ${color} shadow-sm`} />
+          <div className={`h-1.5 w-full rounded-[2px] ${color} shadow-sm`} />
+        </div>
+      )}
+      {mode === "more_compact" && (
+        <div className="flex w-5 flex-col gap-px">
+          <div className={`h-1.5 w-full rounded-[2px] ${color} shadow-sm`} />
+          <div className={`h-1.5 w-full rounded-[2px] ${color} shadow-sm`} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+const VisualSegmentedControl = ({
+  options,
+  value,
+  onChange,
+  iconRenderer,
+}: {
+  options: { label: string; value: any }[];
+  value: any;
+  onChange: (val: any) => void;
+  iconRenderer: (mode: string, active: boolean) => React.ReactNode;
+}) => (
+  <div className="flex rounded-2xl border border-gray-100 bg-gray-50/80 p-1.5">
+    {options.map((opt) => {
+      const isActive = value === opt.value;
+      return (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`flex flex-1 flex-col items-center justify-center rounded-xl py-3 transition-all ${
+            isActive
+              ? "bg-rose-400 text-white shadow-md shadow-rose-200"
+              : "text-gray-400 hover:bg-gray-100/50 hover:text-gray-500"
+          }`}
+        >
+          {iconRenderer(opt.value, isActive)}
+          <span className="text-[11px] font-black">{opt.label}</span>
+        </button>
+      );
+    })}
+  </div>
+);
 
 const TimetableSettingsModal = ({
   isOpen,
@@ -80,6 +161,7 @@ const TimetableSettingsModal = ({
       setLocalShowMemo(showMemo);
       setLocalFitToScreen(fitToScreen);
       setLocalBlockHeightMode(blockHeightMode);
+      setIsConfirmingReset(false);
     }
   }, [
     isOpen,
@@ -110,12 +192,8 @@ const TimetableSettingsModal = ({
   const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
 
   const handleSave = () => {
-    if (localStart >= localEnd) {
-      showToast("종료 시간은 시작 시간보다 빠를 수 없어요.", "error");
-      return;
-    }
-    if (localEnd - localStart < 2) {
-      showToast("최소 2시간 이상은 표시해야해요.", "error");
+    if (localEnd - localStart < 4) {
+      showToast("최소 4시간 이상은 표시해야해요.", "error");
       return;
     }
     onSave(
@@ -153,6 +231,7 @@ const TimetableSettingsModal = ({
       variant="primary"
       onClick={handleSave}
       icon={<Check size={16} strokeWidth={3} />}
+      className="bg-rose-400 shadow-rose-200 hover:bg-rose-500"
     >
       설정 저장
     </Button>
@@ -167,134 +246,27 @@ const TimetableSettingsModal = ({
       footer={footerContent}
       maxWidth="md"
     >
-      {/* 그룹 1: 시간 설정 */}
-      <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 space-y-5">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-4 bg-rose-400 rounded-full" />
-          <h4 className="text-sm font-black text-gray-800">표시 시간</h4>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-              시작
-            </label>
-            <Select
-              value={String(localStart)}
-              onChange={(val) => setLocalStart(Number(val))}
-              className="w-full"
-              options={HOUR_OPTIONS.filter((h) => h < localEnd).map((h) => ({
-                value: String(h),
-                label: `${String(h).padStart(2, "0")}:00`,
-              }))}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-              종료
-            </label>
-            <Select
-              value={String(localEnd)}
-              onChange={(val) => setLocalEnd(Number(val))}
-              className="w-full"
-              options={HOUR_OPTIONS.filter((h) => h > localStart).map((h) => ({
-                value: String(h),
-                label: `${String(h).padStart(2, "0")}:00`,
-              }))}
-            />
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-gray-50 space-y-2">
-          <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-            빈 시간 압축
-          </label>
-          <div className="flex bg-gray-50 p-1 rounded-[16px]">
-            {[
-              { value: "none", label: "안 함" },
-              { value: "compact", label: "조금" },
-              { value: "more_compact", label: "많이" },
-            ].map((mode) => (
-              <button
-                key={mode.value}
-                onClick={() => setLocalCompressionMode(mode.value as any)}
-                className={`flex-1 py-2.5 rounded-[12px] text-xs font-black transition-all ${
-                  localCompressionMode === mode.value
-                    ? "bg-white text-rose-500 shadow-sm"
-                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-gray-50 space-y-2">
-          <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-            일정 높이
-          </label>
-          <div className="flex bg-gray-50 p-1 rounded-[16px]">
-            {[
-              { value: "narrow", label: "좁게" },
-              { value: "normal", label: "보통" },
-              { value: "wide", label: "넓게" },
-            ].map((mode) => (
-              <button
-                key={mode.value}
-                onClick={() => setLocalBlockHeightMode(mode.value as any)}
-                className={`flex-1 py-2.5 rounded-[12px] text-xs font-black transition-all ${
-                  localBlockHeightMode === mode.value
-                    ? "bg-white text-rose-500 shadow-sm"
-                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* 그룹 2: 요일 설정 */}
-      <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 space-y-5">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-4 bg-indigo-400 rounded-full" />
-          <h4 className="text-sm font-black text-gray-800">표시 요일</h4>
-        </div>
-
-        <div className="space-y-2">
-          <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-            시작 요일
-          </label>
-          <div className="flex bg-gray-50 p-1 rounded-[16px]">
+      <div className="space-y-8 px-1 py-2">
+        {/* 요일 설정 */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold tracking-widest text-gray-500 uppercase">
+              표시 요일
+            </h4>
             <button
-              onClick={() => setLocalWeekStart("monday")}
-              className={`flex-1 py-2.5 rounded-[12px] text-xs font-black transition-all ${
-                localWeekStart === "monday"
-                  ? "bg-white text-indigo-500 shadow-sm"
-                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
-              }`}
+              onClick={() =>
+                setLocalWeekStart(
+                  localWeekStart === "monday" ? "sunday" : "monday",
+                )
+              }
+              className="flex items-center gap-1 text-[11px] font-bold text-gray-400 transition-colors hover:text-gray-600"
             >
-              월요일부터
-            </button>
-            <button
-              onClick={() => setLocalWeekStart("sunday")}
-              className={`flex-1 py-2.5 rounded-[12px] text-xs font-black transition-all ${
-                localWeekStart === "sunday"
-                  ? "bg-white text-indigo-500 shadow-sm"
-                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
-              }`}
-            >
-              일요일부터
+              {localWeekStart === "monday"
+                ? "월요일부터 시작"
+                : "일요일부터 시작"}{" "}
+              ⇄
             </button>
           </div>
-        </div>
-
-        <div className="pt-4 border-t border-gray-50 space-y-2">
-          <label className="block text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-            표시할 요일
-          </label>
           <div className="flex justify-between gap-1.5">
             {DAYS_ORDER.map((d) => {
               const isSelected = localVisibleDays.includes(d);
@@ -302,10 +274,10 @@ const TimetableSettingsModal = ({
                 <button
                   key={d}
                   onClick={() => toggleDay(d)}
-                  className={`flex-1 h-11 rounded-[14px] text-[11px] sm:text-xs font-black transition-all flex items-center justify-center ${
+                  className={`flex h-11 flex-1 items-center justify-center rounded-xl border text-xs font-black transition-all ${
                     isSelected
-                      ? "bg-indigo-50 text-indigo-500 border border-indigo-100/50 shadow-sm"
-                      : "bg-gray-50 text-gray-300 border border-transparent hover:bg-gray-100"
+                      ? "border-rose-400 bg-rose-400 text-white shadow-md shadow-rose-200"
+                      : "border-transparent bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
                   }`}
                 >
                   {DAY_NAMES[d]}
@@ -314,137 +286,146 @@ const TimetableSettingsModal = ({
             })}
           </div>
         </div>
-      </div>
 
-      {/* 그룹 3: 표시 항목 */}
-      <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 space-y-5">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-4 bg-emerald-400 rounded-full" />
-          <h4 className="text-sm font-black text-gray-800">표시 항목</h4>
-        </div>
-
-        <div className="flex gap-2 bg-gray-50 p-1.5 rounded-[16px]">
-          <button
-            type="button"
-            onClick={() => setLocalShowTime((prev) => !prev)}
-            className={`flex-1 py-3 rounded-[12px] text-xs font-black transition-all flex flex-col items-center justify-center gap-1 ${
-              localShowTime
-                ? "bg-white text-emerald-500 shadow-sm border border-emerald-100"
-                : "text-gray-400 hover:bg-gray-100/50"
-            }`}
-          >
-            <span>시간</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocalShowPlace((prev) => !prev)}
-            className={`flex-1 py-3 rounded-[12px] text-xs font-black transition-all flex flex-col items-center justify-center gap-1 ${
-              localShowPlace
-                ? "bg-white text-emerald-500 shadow-sm border border-emerald-100"
-                : "text-gray-400 hover:bg-gray-100/50"
-            }`}
-          >
-            <span>장소</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocalShowMemo((prev) => !prev)}
-            className={`flex-1 py-3 rounded-[12px] text-xs font-black transition-all flex flex-col items-center justify-center gap-1 ${
-              localShowMemo
-                ? "bg-white text-emerald-500 shadow-sm border border-emerald-100"
-                : "text-gray-400 hover:bg-gray-100/50"
-            }`}
-          >
-            <span>메모</span>
-          </button>
-        </div>
-
-        <div className="pt-4 border-t border-gray-50 space-y-2">
+        {/* 시간 설정 */}
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-[10px] sm:text-xs font-black text-gray-500 uppercase tracking-widest px-1">
-                한눈에 보기
+            <h4 className="text-xs font-bold tracking-widest text-gray-500 uppercase">
+              표시 시간 범위
+            </h4>
+            <span className="rounded-full border border-gray-100 bg-gray-50 px-2 py-0.5 text-[11px] font-bold text-gray-500">
+              {String(localStart).padStart(2, "0")}:00 ~{" "}
+              {String(localEnd).padStart(2, "0")}:00
+            </span>
+          </div>
+          <div className="pt-2 pb-4">
+            <DualRangeSlider
+              min={0}
+              max={24}
+              startValue={localStart}
+              endValue={localEnd}
+              onChange={(start, end) => {
+                setLocalStart(start);
+                setLocalEnd(end);
+              }}
+            />
+          </div>
+        </div>
+
+        {/* 디스플레이 설정 (Always open) */}
+        <div className="space-y-6">
+          <h4 className="text-xs font-bold tracking-widest text-gray-500 uppercase">
+            화면 표시 상세 설정
+          </h4>
+
+          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-gray-50/50">
+            <Toggle
+              checked={localShowTime}
+              onChange={() => setLocalShowTime(!localShowTime)}
+              label="시간 표시"
+            />
+            <Toggle
+              checked={localShowPlace}
+              onChange={() => setLocalShowPlace(!localShowPlace)}
+              label="장소 표시"
+            />
+            <Toggle
+              checked={localShowMemo}
+              onChange={() => setLocalShowMemo(!localShowMemo)}
+              label="메모 표시"
+            />
+            <Toggle
+              checked={localFitToScreen}
+              onChange={() => setLocalFitToScreen(!localFitToScreen)}
+              label="너비 한눈에 보기"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <h4 className="px-1 text-center text-[11px] font-bold text-gray-500">
+                빈 시간 압축
               </h4>
-              <p className="text-[9px] font-bold text-gray-400 px-1 mt-0.5">
-                화면 너비에 맞춰 시간표를 한 번에 보여줍니다
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setLocalFitToScreen((prev) => !prev)}
-              className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all active:scale-90 ${
-                localFitToScreen ? "bg-emerald-400" : "bg-gray-200"
-              }`}
-            >
-              <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${
-                  localFitToScreen ? "translate-x-5.5" : "translate-x-1"
-                }`}
+              <VisualSegmentedControl
+                options={[
+                  { value: "none", label: "안 함" },
+                  { value: "compact", label: "조금" },
+                  { value: "more_compact", label: "많이" },
+                ]}
+                value={localCompressionMode}
+                onChange={setLocalCompressionMode}
+                iconRenderer={(mode, active) => (
+                  <CompressionIcon mode={mode} active={active} />
+                )}
               />
-            </button>
+            </div>
+            <div className="space-y-3">
+              <h4 className="px-1 text-center text-[11px] font-bold text-gray-500">
+                일정 블록 높이
+              </h4>
+              <VisualSegmentedControl
+                options={[
+                  { value: "narrow", label: "좁게" },
+                  { value: "normal", label: "보통" },
+                  { value: "wide", label: "넓게" },
+                ]}
+                value={localBlockHeightMode}
+                onChange={setLocalBlockHeightMode}
+                iconRenderer={(mode, active) => (
+                  <HeightIcon mode={mode} active={active} />
+                )}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 그룹 4: 데이터 관리 (위험) */}
-      <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 space-y-5">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-4 bg-red-400 rounded-full" />
-          <h4 className="text-sm font-black text-gray-800">데이터 관리</h4>
-        </div>
-
+      {/* Dangerous Zone */}
+      <div className="mt-4 flex justify-center">
         <AnimatePresence mode="wait">
           {isConfirmingReset ? (
             <motion.div
               key="confirm"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="flex flex-col gap-3"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full rounded-2xl border border-red-100 bg-red-50 p-4 shadow-sm"
             >
-              <p className="text-[11px] sm:text-xs font-bold text-red-500/90 leading-tight">
-                모든 시간표 데이터가 영구적으로 삭제되며 복구할 수 없습니다.
-                정말 초기화하시겠습니까?
+              <p className="mb-3 text-center text-[11px] font-bold text-red-600">
+                정말 모든 시간표를 지우시겠습니까? 복구할 수 없습니다.
               </p>
               <div className="flex gap-2">
                 <button
-                  type="button"
                   onClick={() => setIsConfirmingReset(false)}
-                  disabled={isResetting}
-                  className="flex-1 py-3 bg-white text-gray-500 text-xs font-black rounded-[14px] border border-gray-200 hover:bg-gray-50 transition-colors"
+                  className="flex-1 rounded-xl border border-gray-200 bg-white py-2 text-xs font-black text-gray-500"
                 >
                   취소
                 </button>
                 <button
-                  type="button"
                   onClick={handleReset}
                   disabled={isResetting}
-                  className="flex-1 py-3 bg-red-500 text-white text-xs font-black rounded-[14px] shadow-lg shadow-red-200 flex items-center justify-center"
+                  className="flex flex-1 items-center justify-center rounded-xl bg-red-500 py-2 text-xs font-black text-white shadow-md shadow-red-200"
                 >
                   {isResetting ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   ) : (
-                    "네, 모두 삭제합니다"
+                    "네, 지울게요"
                   )}
                 </button>
               </div>
             </motion.div>
           ) : (
-            <motion.div
-              key="button"
+            <motion.button
+              key="reset-btn"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              onClick={() => setIsConfirmingReset(true)}
+              className="flex items-center gap-1 p-2 text-[11px] font-bold text-gray-400 transition-colors hover:text-red-400"
             >
-              <button
-                type="button"
-                onClick={() => setIsConfirmingReset(true)}
-                className="w-full py-3.5 bg-white text-red-500 text-xs font-black rounded-[14px] border border-red-100 shadow-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
-              >
-                <Trash2 size={16} />
-                모든 시간표 초기화
-              </button>
-            </motion.div>
+              <Trash2 size={12} />
+              모든 데이터 초기화
+            </motion.button>
           )}
         </AnimatePresence>
       </div>

@@ -364,4 +364,12 @@ export const changelog: ChangelogEntry[] = [
     date: "2026-07-18",
     changes: ["요트다이스 게임이 추가되었어요."],
   },
+  {
+    version: "1.1.9",
+    date: "2026-08-03",
+    changes: [
+      "달이어리의 홈 화면이 개선되었어요.",
+      "다양한 오류를 수정했어요.",
+    ],
+  },
 ];

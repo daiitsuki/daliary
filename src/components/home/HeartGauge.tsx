@@ -38,7 +38,7 @@ const HeartGauge = () => {
   };
 
   return (
-    <div className="mb-6 px-6">
+    <div className="mb-2 px-6">
       <motion.div
         whileTap={{ scale: 0.98 }}
         onClick={() => handleOpenModal("history")}

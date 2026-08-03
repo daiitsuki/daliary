@@ -146,7 +146,7 @@ export default function RelayNovelModal({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
-    if (text.length <= 300) {
+    if (text.length <= 500) {
       setInputText(text);
       if (novelId && !editingTurnId) {
         localStorage.setItem(`relay_novel_draft_${novelId}`, text);
@@ -303,7 +303,7 @@ export default function RelayNovelModal({
               className="bg-rose-50 hover:bg-rose-50"
               onChange={(e) => setStarterContent(e.target.value)}
               placeholder="직접 첫 문장을 작성하거나 랜덤 뽑기를 이용해보세요!"
-              maxLength={300}
+              maxLength={500}
             />
           </div>
 
@@ -466,8 +466,9 @@ export default function RelayNovelModal({
                 // Allow deleting only the last turn if it's mine
                 const canDelete =
                   isLastTurn && isMe && novel?.status === "ongoing";
-                // Allow editing any of my turns while ongoing
-                const canEdit = isMe && novel?.status === "ongoing";
+                // Allow editing any of my turns while ongoing, if partner hasn't written after it
+                const partnerWroteAfter = turns.slice(index + 1).some(t => t.author_id !== myProfileId);
+                const canEdit = isMe && novel?.status === "ongoing" && !partnerWroteAfter;
                 const isEditing = editingTurnId === turn.id;
 
                 return (
@@ -547,13 +548,13 @@ export default function RelayNovelModal({
                 onChange={handleInputChange as any}
                 disabled={isSubmitting || (!editingTurnId && hasWrittenTwice)}
                 className={`text-sm ${editingTurnId ? "bg-rose-50 focus:bg-rose-50" : ""}`}
-                maxLength={300}
+                maxLength={500}
                 placeholder={
                   editingTurnId
                     ? "수정할 내용을 입력해주세요"
                     : hasWrittenTwice
                     ? `최대 2번까지 작성할 수 있습니다.\n${partnerNickname}님의 답장을 기다려주세요!`
-                    : "다음 이야기를 이어가주세요 (최대 300자)"
+                    : "다음 이야기를 이어가주세요 (최대 500자)"
                 }
               />
               <Button
