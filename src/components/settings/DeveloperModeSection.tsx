@@ -3,7 +3,8 @@ import { Terminal, Send } from "lucide-react";
 import { useNotifications } from "../../hooks";
 import { useCouple } from "../../hooks";
 import { useToast } from "../../context/ToastContext";
-import { supabase } from "../../lib/supabase";
+
+import { sendNotification } from "../../utils/notificationUtils";
 
 const DeveloperModeSection: React.FC = () => {
   const { settings, isDeviceActive } = useNotifications();
@@ -21,9 +22,9 @@ const DeveloperModeSection: React.FC = () => {
 
     try {
       setIsSending(true);
-      const { error } = await supabase.from("notifications").insert({
-        user_id: profile.id,
-        couple_id: couple.id,
+      const { error } = await sendNotification({
+        userId: profile.id,
+        coupleId: couple.id,
         type: "test",
         title: "테스트 알림",
         content: "개발자 모드에서 보낸 테스트 알림입니다.",

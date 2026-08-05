@@ -469,7 +469,6 @@ export default function RelayNovelModal({
                 // Allow editing any of my turns while ongoing, if partner hasn't written after it
                 const partnerWroteAfter = turns.slice(index + 1).some(t => t.author_id !== myProfileId);
                 const canEdit = isMe && novel?.status === "ongoing" && !partnerWroteAfter;
-                const isEditing = editingTurnId === turn.id;
 
                 return (
                   <div

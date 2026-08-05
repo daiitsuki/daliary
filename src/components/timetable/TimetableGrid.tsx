@@ -1,9 +1,9 @@
-import { useMemo, useRef, useEffect, useState, useCallback } from "react";
+import { useMemo, useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, MapPin, Clock, AlignLeft, EyeOff } from "lucide-react";
 import { TimetableBlock } from "../../hooks";
-
-const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
+import { DAYS, getBlockStyle, layoutBlocks, getDayColorClass, timeToMinutes } from "../../utils/timetableUtils";
+import { useTimetableLayout } from "../../hooks/features/useTimetableLayout";
 
 interface TimetableGridProps {
   myBlocks: TimetableBlock[];
@@ -26,126 +26,6 @@ interface TimetableGridProps {
   fitToScreen?: boolean;
   blockHeightMode?: "narrow" | "normal" | "wide";
 }
-
-// ──────────────────────────────────────────────
-// 유틸리티
-// ──────────────────────────────────────────────
-
-/** KST 기준 오늘 요일 반환 (0=일 ~ 6=토). 컴포넌트 내부에서 useMemo로 호출 */
-const getKSTTodayDow = (): number => {
-  const now = new Date();
-  const kst = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
-  return kst.getDay();
-};
-
-export const timeToMinutes = (time: string): number => {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
-};
-
-const getBlockStyle = (
-  block: TimetableBlock,
-  startHour: number,
-  endHour: number,
-  getMinuteY: (m: number) => number,
-): { top: number; height: number; visible: boolean } => {
-  const rangeStart = startHour * 60;
-  const rangeEnd = endHour * 60;
-  const blockStart = timeToMinutes(block.start_time);
-  const blockEnd = timeToMinutes(block.end_time);
-
-  // 완전히 범위 밖 → 숨김
-  if (blockEnd <= rangeStart || blockStart >= rangeEnd) {
-    return { top: 0, height: 0, visible: false };
-  }
-
-  const clampedStart = Math.max(blockStart, rangeStart);
-  const clampedEnd = Math.min(blockEnd, rangeEnd);
-
-  const top = getMinuteY(clampedStart);
-  const height = Math.max(getMinuteY(clampedEnd) - top, 20); // 최소 높이 20px
-
-  return { top, height, visible: true };
-};
-
-/**
- * 겹치는 블록들에 column offset(col)과 총 column 수(cols)를 부여.
- *
- * cols 계산 전략:
- * - 각 블록과 시간이 겹치는 블록들의 집합을 찾아 maxCol을 구함
- * - 하나의 블록은 직접 겹치는 블록들의 최대 col + 1로 cols를 설정
- * - 이후 연결된 블록 그룹 내에서 cols를 동일하게 맞춤 (전파)
- */
-const layoutBlocks = (
-  blocks: TimetableBlock[],
-): Array<{ block: TimetableBlock; col: number; cols: number }> => {
-  if (blocks.length === 0) return [];
-
-  const sorted = [...blocks].sort(
-    (a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time),
-  );
-
-  const result: Array<{ block: TimetableBlock; col: number; cols: number }> =
-    [];
-  const columns: TimetableBlock[][] = [];
-
-  // 1단계: 열 배정
-  for (const block of sorted) {
-    const start = timeToMinutes(block.start_time);
-    let placed = false;
-
-    for (const c of columns) {
-      const lastInCol = c[c.length - 1];
-      if (timeToMinutes(lastInCol.end_time) <= start) {
-        c.push(block);
-        result.push({ block, col: columns.indexOf(c), cols: 0 });
-        placed = true;
-        break;
-      }
-    }
-    if (!placed) {
-      columns.push([block]);
-      result.push({ block, col: columns.length - 1, cols: 0 });
-    }
-  }
-
-  // 2단계: 각 블록의 직접 겹침 기반 cols 계산
-  for (const item of result) {
-    const s = timeToMinutes(item.block.start_time);
-    const e = timeToMinutes(item.block.end_time);
-    let maxCol = item.col;
-    for (const other of result) {
-      const os = timeToMinutes(other.block.start_time);
-      const oe = timeToMinutes(other.block.end_time);
-      if (os < e && oe > s) {
-        maxCol = Math.max(maxCol, other.col);
-      }
-    }
-    item.cols = maxCol + 1;
-  }
-
-  // 3단계: 연결된 그룹 내 cols 값 통일 (간접 겹침 전파)
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const item of result) {
-      const s = timeToMinutes(item.block.start_time);
-      const e = timeToMinutes(item.block.end_time);
-      for (const other of result) {
-        const os = timeToMinutes(other.block.start_time);
-        const oe = timeToMinutes(other.block.end_time);
-        if (os < e && oe > s && other.cols !== item.cols) {
-          const newCols = Math.max(item.cols, other.cols);
-          item.cols = newCols;
-          other.cols = newCols;
-          changed = true;
-        }
-      }
-    }
-  }
-
-  return result;
-};
 
 // ──────────────────────────────────────────────
 // 컴포넌트
@@ -175,32 +55,25 @@ const TimetableGrid = ({
   // 단일 스크롤 컨테이너 ref
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const blocks = viewMode === "my" ? myBlocks : partnerBlocks;
 
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const [currentTime, setCurrentTime] = useState(() => {
-    const now = new Date();
-    return now.getHours() * 60 + now.getMinutes();
+  const {
+    currentTime,
+    todayDow,
+    hourHeights,
+    totalHeight,
+    getMinuteY,
+    hiddenBlocksCount,
+    hours,
+  } = useTimetableLayout({
+    blocks,
+    startHour,
+    endHour,
+    blockHeightMode: blockHeightMode || "normal",
+    compressionMode,
+    isExporting: isExporting || false,
+    visibleDays,
   });
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      setCurrentTime(now.getHours() * 60 + now.getMinutes());
-    }, 60000); // 1분마다 업데이트
-    return () => clearInterval(interval);
-  }, []);
-
-  /** 렌더링 시점 기준 오늘 요일 (자정 넘김 대응) - 저장 시에는 -1로 숨김 처리 */
-  const todayDow = useMemo(
-    () => (isExporting ? -1 : getKSTTodayDow()),
-    [isExporting],
-  );
 
   const orderedDays = useMemo(() => {
     return weekStart === "monday"
@@ -211,74 +84,6 @@ const TimetableGrid = ({
   const activeDays = useMemo(() => {
     return orderedDays.filter((d) => visibleDays.includes(d));
   }, [orderedDays, visibleDays]);
-
-  const blocks = viewMode === "my" ? myBlocks : partnerBlocks;
-  
-  const ACTIVE_HOUR_PX = useMemo(() => {
-    if (blockHeightMode === "narrow") return isMobile ? 40 : 48;
-    if (blockHeightMode === "wide") return isMobile ? 72 : 80;
-    return isMobile ? 56 : 64; // normal
-  }, [blockHeightMode, isMobile]);
-
-  const EMPTY_HOUR_PX = useMemo(() => {
-    return compressionMode === "none" ? ACTIVE_HOUR_PX : compressionMode === "compact" ? 40 : 24;
-  }, [compressionMode, ACTIVE_HOUR_PX]);
-
-  const hourHeights = useMemo(() => {
-    const heights = [];
-    for (let h = startHour; h < endHour; h++) {
-      const hStart = h * 60;
-      const hEnd = (h + 1) * 60;
-
-      const isActive = blocks.some((b) => {
-        const bStart = timeToMinutes(b.start_time);
-        const bEnd = timeToMinutes(b.end_time);
-        return bStart < hEnd && bEnd > hStart;
-      });
-
-      heights.push(isActive ? ACTIVE_HOUR_PX : EMPTY_HOUR_PX);
-    }
-    return heights;
-  }, [blocks, startHour, endHour, EMPTY_HOUR_PX, ACTIVE_HOUR_PX]);
-
-  const totalHeight = useMemo(
-    () => hourHeights.reduce((a, b) => a + b, 0),
-    [hourHeights],
-  );
-
-  const getMinuteY = useCallback(
-    (minute: number) => {
-      if (minute <= startHour * 60) return 0;
-      if (minute >= endHour * 60) return totalHeight;
-
-      let y = 0;
-      const hourIdx = Math.floor(minute / 60) - startHour;
-
-      for (let i = 0; i < hourIdx; i++) {
-        y += hourHeights[i];
-      }
-
-      const remainder = minute % 60;
-      y += (remainder / 60) * hourHeights[hourIdx];
-
-      return y;
-    },
-    [startHour, endHour, hourHeights, totalHeight],
-  );
-
-  const hiddenBlocksCount = useMemo(() => {
-    return blocks.filter(
-      (b) =>
-        !visibleDays.includes(b.day_of_week) ||
-        !getBlockStyle(b, startHour, endHour, getMinuteY).visible,
-    ).length;
-  }, [blocks, startHour, endHour, getMinuteY, visibleDays]);
-
-  const hourCount = endHour - startHour;
-  const hours = useMemo(
-    () => Array.from({ length: hourCount + 1 }, (_, i) => startHour + i),
-    [startHour, endHour, hourCount],
-  );
 
   const blocksByDay = useMemo(() => {
     return DAYS.map((_, dayIdx) => {
@@ -383,15 +188,7 @@ const TimetableGrid = ({
                 style={fitToScreen ? {} : { minWidth: 80 }}
               >
                 <span
-                  className={`text-xs font-black ${
-                    dayIdx === todayDow
-                      ? "text-rose-500"
-                      : dayIdx === 0
-                        ? "text-red-400"
-                        : dayIdx === 6
-                          ? "text-blue-500"
-                          : "text-gray-500"
-                  }`}
+                  className={`text-xs font-black ${getDayColorClass(dayIdx, todayDow)}`}
                 >
                   {DAYS[dayIdx]}
                 </span>

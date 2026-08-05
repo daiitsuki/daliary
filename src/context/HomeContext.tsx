@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCouple } from "../hooks";
 import { Profile, DrawingAnswer, RelayNovel } from '../types';
 import { getTodayDrawingQuestion } from '../data/drawingQuestions';
+import { getKSTDateString, getKSTNow } from '../utils/dateUtils';
 
 interface Answer {
   id: string;
@@ -38,7 +39,6 @@ const HomeContext = createContext<HomeContextType | undefined>(undefined);
 export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { couple, profile, loading: coupleLoading } = useCouple();
   const queryClient = useQueryClient();
-  const [dDay, setDDay] = useState(0);
 
   const currentUserId = profile?.id || null;
 
@@ -64,13 +64,7 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     queryFn: async () => {
       if (!couple?.id) return null;
       
-      const now = new Date();
-      const kstOffset = 9 * 60 * 60 * 1000;
-      const kstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + kstOffset);
-      const year = kstNow.getFullYear();
-      const month = String(kstNow.getMonth() + 1).padStart(2, '0');
-      const day = String(kstNow.getDate()).padStart(2, '0');
-      const today = `${year}-${month}-${day}`;
+      const today = getKSTDateString();
 
       const { data: question } = await supabase
         .from('questions')
@@ -107,13 +101,7 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     queryFn: async () => {
       if (!couple?.id || !currentUserId) return null;
       
-      const now = new Date();
-      const kstOffset = 9 * 60 * 60 * 1000;
-      const kstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + kstOffset);
-      const year = kstNow.getFullYear();
-      const month = String(kstNow.getMonth() + 1).padStart(2, '0');
-      const day = String(kstNow.getDate()).padStart(2, '0');
-      const today = `${year}-${month}-${day}`;
+      const today = getKSTDateString();
 
       // 1. 먼저 내 그림이 있는지 확인
       const { data: myData, error: myError } = await supabase
@@ -185,24 +173,16 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     staleTime: 1000 * 60 * 5,
   });
 
-  const calculateDDay = useCallback(() => {
-    if (couple?.anniversary_date) {
-      const now = new Date();
-      const kstOffset = 9 * 60 * 60 * 1000;
-      const kstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + kstOffset);
-      kstNow.setHours(0, 0, 0, 0);
+  const dDay = useMemo(() => {
+    if (!couple?.anniversary_date) return 0;
+    const kstNow = getKSTNow();
+    kstNow.setHours(0, 0, 0, 0);
 
-      const start = new Date(couple.anniversary_date);
-      start.setHours(0, 0, 0, 0);
+    const start = new Date(couple.anniversary_date);
+    start.setHours(0, 0, 0, 0);
 
-      const diff = Math.floor((kstNow.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      setDDay(diff);
-    }
+    return Math.floor((kstNow.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   }, [couple?.anniversary_date]);
-
-  useEffect(() => {
-    calculateDDay();
-  }, [calculateDDay]);
 
   const refresh = useCallback(async () => {
     await Promise.all([
@@ -245,22 +225,40 @@ export const HomeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [couple?.id, queryClient]);
 
+  const loading = profilesLoading || dailyLoading || drawingLoading || relayNovelLoading;
+
+  const contextValue = useMemo(() => ({
+    dDay,
+    todayQuestion,
+    partnerProfile,
+    myProfile,
+    myAnswer,
+    partnerAnswer,
+    drawingQuestion,
+    myDrawing,
+    partnerDrawing,
+    ongoingRelayNovel,
+    loading,
+    refresh,
+    currentUserId
+  }), [
+    dDay,
+    todayQuestion,
+    partnerProfile,
+    myProfile,
+    myAnswer,
+    partnerAnswer,
+    drawingQuestion,
+    myDrawing,
+    partnerDrawing,
+    ongoingRelayNovel,
+    loading,
+    refresh,
+    currentUserId
+  ]);
+
   return (
-    <HomeContext.Provider value={{
-      dDay,
-      todayQuestion,
-      partnerProfile,
-      myProfile,
-      myAnswer,
-      partnerAnswer,
-      drawingQuestion,
-      myDrawing,
-      partnerDrawing,
-      ongoingRelayNovel,
-      loading: profilesLoading || dailyLoading || drawingLoading || relayNovelLoading,
-      refresh,
-      currentUserId
-    }}>
+    <HomeContext.Provider value={contextValue}>
       {children}
     </HomeContext.Provider>
   );

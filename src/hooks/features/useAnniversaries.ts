@@ -1,9 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useCouple } from "../";
 import { Schedule } from "../../context/SchedulesContext";
-
-// Module-level cache
-let cachedAnniversarySchedules: Schedule[] | null = null;
+import { formatDateString } from "../../utils/dateUtils";
 
 export const useAnniversaries = () => {
   const { couple } = useCouple();
@@ -39,7 +37,7 @@ export const useAnniversaries = () => {
       const targetDate = new Date(startYear, startMonth, startDay + (days - 1));
       if (targetDate.getFullYear() > endYear) break;
 
-      const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+      const dateStr = formatDateString(targetDate);
       
       schedules.push({
         id: `anniversary-100-${days}-${dateStr}`,
@@ -60,7 +58,7 @@ export const useAnniversaries = () => {
       const targetDate = new Date(startYear + years, startMonth, startDay);
       if (targetDate.getFullYear() > endYear) break;
 
-      const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+      const dateStr = formatDateString(targetDate);
       
       schedules.push({
         id: `anniversary-year-${years}-${dateStr}`,
@@ -84,20 +82,8 @@ export const useAnniversaries = () => {
       return [];
     }
 
-    // If we have it in cache, return it
-    if (cachedAnniversarySchedules) {
-      return cachedAnniversarySchedules;
-    }
-
-    const schedules = calculateAnniversaries(anniversaryDate);
-    cachedAnniversarySchedules = schedules;
-    return schedules;
+    return calculateAnniversaries(anniversaryDate);
   }, [showAnniversaries, anniversaryDate, calculateAnniversaries]);
-
-  // Clear cache when anniversary date changes
-  useEffect(() => {
-    cachedAnniversarySchedules = null;
-  }, [anniversaryDate]);
 
   return {
     anniversarySchedules,

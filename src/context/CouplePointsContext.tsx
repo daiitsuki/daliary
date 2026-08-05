@@ -1,8 +1,9 @@
-import { createContext, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCoupleContext } from './CoupleContext';
 import { CoupleItem } from '../types';
+import { getKSTDateString } from '../utils/dateUtils';
 
 export interface PointLog {
   id: string;
@@ -41,7 +42,7 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
   const { couple, profile, loading: coupleLoading } = useCoupleContext();
   const queryClient = useQueryClient();
 
-  const calculateLevel = (points: number): LevelInfo => {
+  const calculateLevel = useCallback((points: number): LevelInfo => {
     let level = 1;
     let accumulatedExp = 0;
 
@@ -58,7 +59,7 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
         return { level, nextLevelExp: requiredExp, currentExp: points - accumulatedExp, progress: 100 };
       }
     }
-  };
+  }, []);
 
   // React Query for Points Data
   const { data: pointsData, isLoading: pointsLoading } = useQuery({
@@ -109,12 +110,7 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
     queryKey: ['attendance', profile?.id],
     queryFn: async () => {
       if (!profile?.id || !couple) return false;
-      const today = new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'Asia/Seoul',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).format(new Date()).replace(/\. /g, '-').replace(/\./g, '');
+      const today = getKSTDateString();
 
       const { data, error } = await supabase
         .from('attendances')
@@ -147,7 +143,7 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const purchaseItem = async (itemType: string, price: number, description: string) => {
+  const purchaseItem = useCallback(async (itemType: string, price: number, description: string) => {
     const { data, error } = await supabase.rpc('purchase_item', {
       p_item_type: itemType,
       p_price: price,
@@ -162,9 +158,9 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
       queryClient.invalidateQueries({ queryKey: ['couple_items', couple?.id] });
     }
     return result;
-  };
+  }, [couple?.id, queryClient]);
 
-  const useItem = async (itemType: string) => {
+  const useItem = useCallback(async (itemType: string) => {
     const { data, error } = await supabase.rpc('use_item', {
       p_item_type: itemType
     });
@@ -176,13 +172,48 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
       queryClient.invalidateQueries({ queryKey: ['couple_items', couple?.id] });
     }
     return result;
-  };
+  }, [couple?.id, queryClient]);
 
   const totalPoints = pointsData?.total || 0;
   const currentPoints = pointsData?.current || 0;
   const history = pointsData?.history || [];
-  const levelInfo = calculateLevel(totalPoints);
+  const levelInfo = useMemo(() => calculateLevel(totalPoints), [totalPoints, calculateLevel]);
   const isLoading = pointsLoading || attendanceLoading || itemsLoading;
+
+  const refreshPoints = useCallback(async () => { await queryClient.invalidateQueries({ queryKey: ['couple_points'] }) }, [queryClient]);
+  const refreshAttendance = useCallback(async () => { await queryClient.invalidateQueries({ queryKey: ['attendance'] }) }, [queryClient]);
+  const refreshItems = useCallback(async () => { await queryClient.invalidateQueries({ queryKey: ['couple_items'] }) }, [queryClient]);
+  const checkIn = useCallback(async () => await checkInMutation.mutateAsync(), [checkInMutation]);
+
+  const contextValue = useMemo(() => ({ 
+    totalPoints, 
+    currentPoints,
+    history, 
+    items,
+    levelInfo, 
+    hasCheckedIn, 
+    loading: isLoading, 
+    refreshPoints, 
+    refreshAttendance,
+    refreshItems,
+    checkIn,
+    purchaseItem,
+    useItem
+  }), [
+    totalPoints, 
+    currentPoints, 
+    history, 
+    items, 
+    levelInfo, 
+    hasCheckedIn, 
+    isLoading, 
+    refreshPoints, 
+    refreshAttendance, 
+    refreshItems, 
+    checkIn, 
+    purchaseItem, 
+    useItem
+  ]);
 
   // Level up detection and notification
   useEffect(() => {
@@ -245,21 +276,7 @@ export function CouplePointsProvider({ children }: { children: ReactNode }) {
   }, [couple?.id, queryClient]);
 
   return (
-    <CouplePointsContext.Provider value={{ 
-      totalPoints, 
-      currentPoints,
-      history, 
-      items,
-      levelInfo, 
-      hasCheckedIn, 
-      loading: isLoading, 
-      refreshPoints: async () => { await queryClient.invalidateQueries({ queryKey: ['couple_points'] }) }, 
-      refreshAttendance: async () => { await queryClient.invalidateQueries({ queryKey: ['attendance'] }) },
-      refreshItems: async () => { await queryClient.invalidateQueries({ queryKey: ['couple_items'] }) },
-      checkIn: () => checkInMutation.mutateAsync(),
-      purchaseItem,
-      useItem
-    }}>
+    <CouplePointsContext.Provider value={contextValue}>
       {children}
     </CouplePointsContext.Provider>
   );

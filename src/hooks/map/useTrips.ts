@@ -7,6 +7,7 @@ import {
 import { supabase } from "../../lib/supabase";
 import { useCouple } from "../";
 import { Trip, TripPlan } from "../../types";
+import { sendNotification } from "../../utils/notificationUtils";
 
 export const useTrips = () => {
   const { couple } = useCouple();
@@ -121,9 +122,9 @@ export const useTripPlans = (tripId?: string) => {
         .maybeSingle();
 
       if (partner?.id) {
-        await supabase.from("notifications").insert({
-          user_id: partner.id,
-          couple_id: couple.id,
+        await sendNotification({
+          userId: partner.id,
+          coupleId: couple.id,
           type: "trip_schedule_change",
           title: "여행 세부일정 업데이트",
           content: `${profile?.nickname || "사용자"}님이 여행 세부일정을 수정했어요!`,

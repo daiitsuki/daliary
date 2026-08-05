@@ -8,7 +8,8 @@ import imageCompression from "browser-image-compression";
 import { convertToWebP } from "../utils/imageUtils";
 import { Loader2 } from "lucide-react";
 import { Profile as ProfileType } from "../types";
-import { motion, Variants, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { containerVariants, itemVariants } from "../constants/animations";
 import ImageEditorModal from "../components/common/ImageEditorModal";
 
 // Sub-components
@@ -18,24 +19,7 @@ import InventorySection from "../components/profile/InventorySection";
 import DangerZoneSection from "../components/settings/DangerZoneSection";
 import ActivityStatsSection from "../components/profile/ActivityStatsSection";
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" },
-  },
-};
 
 export default function Profile() {
   const navigate = useNavigate();

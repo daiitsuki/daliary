@@ -1,26 +1,19 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Plus, ChevronRight, Library } from "lucide-react";
-import { RelayNovel } from "../../types";
+import { BookOpen, ChevronRight, Library } from "lucide-react";
+
 import RelayNovelModal from "./RelayNovelModal";
 import CompletedRelayNovelsModal from "./CompletedRelayNovelsModal";
 import { useCompletedRelayNovels } from "../../hooks/features/useCompletedRelayNovels";
+import { useHomeData } from "../../hooks";
 
-interface RelayNovelWidgetProps {
-  ongoingRelayNovel: RelayNovel | null;
-  partnerNickname: string;
-  myProfileId: string;
-  partnerId?: string;
-  myNickname?: string;
-}
 
-export default function RelayNovelWidget({
-  ongoingRelayNovel,
-  partnerNickname,
-  myProfileId,
-  partnerId,
-  myNickname,
-}: RelayNovelWidgetProps) {
+export default function RelayNovelWidget() {
+  const { ongoingRelayNovel, partnerProfile, currentUserId, myProfile } = useHomeData();
+  const partnerNickname = partnerProfile?.nickname || "상대방";
+  const myProfileId = currentUserId || "";
+  const partnerId = partnerProfile?.id;
+  const myNickname = myProfile?.nickname || "";
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCompletedModalOpen, setIsCompletedModalOpen] = useState(false);
   const { novels } = useCompletedRelayNovels();

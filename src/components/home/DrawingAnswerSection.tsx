@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../lib/supabase";
-import { DrawingAnswer, Profile } from "../../types";
+
 import { DrawingCanvas } from "./DrawingCanvas";
 import { useToast } from "../../context/ToastContext";
 import BaseModal from "../common/BaseModal";
+import { sendNotification } from "../../utils/notificationUtils";
+import { useHomeData } from "../../hooks";
 
 import {
   Lock,
@@ -20,27 +22,20 @@ import {
   Loader2,
 } from "lucide-react";
 
-interface DrawingAnswerSectionProps {
-  drawingQuestion: string;
-  myDrawing: DrawingAnswer | null;
-  partnerDrawing: DrawingAnswer | null;
-  coupleId: string | undefined;
-  currentUserId: string | null;
-  partnerProfile: Profile | null;
-  myProfile: Profile | null;
-  onComplete: () => Promise<void>;
-}
+interface DrawingAnswerSectionProps {}
 
-export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
-  drawingQuestion,
-  myDrawing,
-  partnerDrawing,
-  coupleId,
-  currentUserId,
-  partnerProfile,
-  myProfile,
-  onComplete,
-}) => {
+export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = () => {
+  const {
+    drawingQuestion,
+    myDrawing,
+    partnerDrawing,
+    couple,
+    currentUserId,
+    partnerProfile,
+    myProfile,
+    refresh: onComplete,
+  } = useHomeData();
+  const coupleId = couple?.id;
   const { showToast } = useToast();
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
@@ -145,9 +140,9 @@ export const DrawingAnswerSection: React.FC<DrawingAnswerSectionProps> = ({
         .maybeSingle();
 
       if (partner) {
-        const { error } = await supabase.from("notifications").insert({
-          user_id: partner.id,
-          couple_id: coupleId,
+        const { error } = await sendNotification({
+          userId: partner.id,
+          coupleId: coupleId,
           type: "question_request",
           title: "답변 요청",
           content: `${myProfile?.nickname || "상대방"}님이 오늘의 드로잉 질문에 답변하라고 요청했어요!`,

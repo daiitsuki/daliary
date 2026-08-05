@@ -16,8 +16,7 @@ import {
   Camera,
 } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
-import imageCompression from "browser-image-compression";
-import { convertToWebP } from "../../../utils/imageUtils";
+import { uploadOptimizedImage } from "../../../utils/imageUtils";
 import { VisitWithPlace } from "../../../context/PlacesContext";
 import { useVisitComments } from "../../../hooks";
 import { useCouple } from "../../../hooks";
@@ -160,23 +159,7 @@ const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
       const oldImageUrl = visit.image_url; // 교체 전 URL 보존
 
       if (selectedFile) {
-        const options = {
-          maxSizeMB: 0.3,
-          maxWidthOrHeight: 1024,
-          useWebWorker: true,
-        };
-        const compressedFile = await imageCompression(selectedFile, options);
-        // WebP 변환 (quality 0.8)
-        const webpBlob = await convertToWebP(compressedFile, 0.8);
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.webp`;
-        const { error: uploadError } = await supabase.storage
-          .from("visit-photos")
-          .upload(fileName, webpBlob, { contentType: 'image/webp' });
-        if (uploadError) throw uploadError;
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("visit-photos").getPublicUrl(fileName);
-        finalImageUrl = publicUrl;
+        finalImageUrl = await uploadOptimizedImage(selectedFile, "visit-photos");
       }
       const success = await onUpdate(visit.id, {
         visited_at: editDate,

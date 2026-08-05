@@ -39,7 +39,7 @@ const PlaceSearch = ({ targetPlace }: PlaceSearchProps) => {
   // 네이버 지도 열기 함수 (장소명만 검색)
   const openNaverMap = (name: string) => {
     const query = encodeURIComponent(name);
-    window.open(`https://map.naver.com/v5/search/${query}`, "_blank");
+    window.open(`https://map.naver.com/p/search/${query}`, "_blank");
   };
 
   // 1. 현재 위치 가져오기

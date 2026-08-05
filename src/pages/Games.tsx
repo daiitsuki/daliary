@@ -1,5 +1,6 @@
 import { useSearchParams } from "react-router-dom";
-import { motion, Variants } from "framer-motion";
+import { motion } from "framer-motion";
+import { containerVariants, itemVariants } from "../constants/animations";
 import {
   Sparkles,
   Check,
@@ -73,22 +74,7 @@ export default function Games() {
     setSearchParams({});
   };
 
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 },
-    },
-  };
 
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 15 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4, ease: "easeOut" },
-    },
-  };
 
   const renderSelectedGame = () => {
     switch (selectedGame) {

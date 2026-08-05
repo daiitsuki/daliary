@@ -1,17 +1,5 @@
 import { motion } from "framer-motion";
-
-const shimmerVariants = {
-  initial: { opacity: 0.5 },
-  animate: { 
-    opacity: 1, 
-    transition: { 
-      repeat: Infinity, 
-      duration: 1.2, 
-      ease: "easeInOut", 
-      repeatType: "reverse" as const 
-    } 
-  }
-};
+import { shimmerVariants } from "../../constants/animations";
 
 export const HomeHeaderSkeleton = () => (
   <div className="px-6 pt-4 pb-2 flex flex-col sticky top-0 z-20">

@@ -7,53 +7,41 @@ import {
   History,
   Send,
   Loader2,
-  Share2,
   Image as ImageIcon,
   ChevronDown,
   ChevronUp,
-  Moon,
+  Share2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import QuestionHistoryModal from "./QuestionHistoryModal";
 import BaseModal from "../common/BaseModal";
 import Textarea from "../common/Textarea";
-import { supabase } from "../../lib/supabase";
-import { useToast } from "../../context/ToastContext";
+import { useHomeData } from "../../hooks";
+import { useDailyQuestionActions } from "../../hooks/features/useDailyQuestionActions";
+import { useShareAnswerImage } from "../../hooks/features/useShareAnswerImage";
 
-interface DailyQuestionSectionProps {
-  todayQuestion: any;
-  myAnswer: any;
-  partnerAnswer: any;
-  inputAnswer: string;
-  setInputAnswer: (val: string) => void;
-  isSubmitting: boolean;
-  onSubmit: () => void;
-  coupleId: string | undefined;
-  currentUserId: string | null;
-  couple?: any;
-  myProfile?: any;
-  partnerProfile?: any;
-}
+interface DailyQuestionSectionProps {}
 
-const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
-  todayQuestion,
-  myAnswer,
-  partnerAnswer,
-  inputAnswer,
-  setInputAnswer,
-  isSubmitting,
-  onSubmit,
-  coupleId,
-  currentUserId,
-  couple,
-  myProfile,
-  partnerProfile,
-}) => {
-  const { showToast } = useToast();
+const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = () => {
+  const {
+    todayQuestion,
+    myAnswer,
+    partnerAnswer,
+    couple,
+    currentUserId,
+    partnerProfile,
+  } = useHomeData();
+  const { submitAnswer, isSubmitting, requestAnswer, isRequesting } = useDailyQuestionActions();
+  const { shareImage, isSharing } = useShareAnswerImage();
+
+  const [inputAnswer, setInputAnswer] = useState("");
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
-  const [isRequesting, setIsRequesting] = useState(false);
+
+  const onSubmit = async () => {
+    const success = await submitAnswer(inputAnswer);
+    if (success) setInputAnswer("");
+  };
 
   const [isExpanded, setIsExpanded] = useState<boolean>(() => {
     try {
@@ -80,243 +68,43 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
   const bothAnswered = !!(myAnswer && partnerAnswer);
   const partnerNickname = partnerProfile?.nickname || "상대방";
 
-  const handleRequestAnswer = async () => {
-    if (!coupleId || !currentUserId || isRequesting) return;
-
-    const cooldownKey = `last_answer_request_${coupleId}_${currentUserId}`;
-    const lastRequestTime = localStorage.getItem(cooldownKey);
-    if (lastRequestTime) {
-      const timeDiff = Date.now() - parseInt(lastRequestTime, 10);
-      if (timeDiff < 5 * 60 * 1000) {
-        showToast("이미 알림을 보냈어요. 잠시 후 다시 시도해주세요.", "error");
-        return;
-      }
-    }
-
-    setIsRequesting(true);
-    try {
-      const { data: partner } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("couple_id", coupleId)
-        .neq("id", currentUserId)
-        .maybeSingle();
-
-      if (partner) {
-        const { error } = await supabase.from("notifications").insert({
-          user_id: partner.id,
-          couple_id: coupleId,
-          type: "question_request",
-          title: "답변 요청",
-          content: `${myProfile?.nickname || "상대방"}님이 오늘의 질문에 답변하라고 요청했어요!`,
-        });
-
-        if (error) throw error;
-
-        localStorage.setItem(cooldownKey, Date.now().toString());
-        showToast("오늘의 질문에 답변하라는 알림을 보냈어요!", "success");
-      }
-    } catch (err) {
-      console.error(err);
-      showToast("알림 보내기에 실패했어요.", "error");
-    } finally {
-      setIsRequesting(false);
-    }
-  };
-
-  const handleShareOption = async (option: "my" | "partner" | "both") => {
+  const handleShareOption = (option: "my" | "partner" | "both") => {
     setIsShareMenuOpen(false);
-    setIsSharing(true);
-    showToast("이미지를 생성 중입니다...", "info");
-
-    try {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) throw new Error("Canvas not supported");
-
-      const width = 800;
-
-      const wrapText = (
-        context: CanvasRenderingContext2D,
-        text: string,
-        maxW: number,
-      ) => {
-        const lines: string[] = [];
-        let currentLine = "";
-        for (let i = 0; i < text.length; i++) {
-          const char = text[i];
-          if (char === "\n") {
-            lines.push(currentLine);
-            currentLine = "";
-            continue;
-          }
-          const testLine = currentLine + char;
-          if (
-            context.measureText(testLine).width > maxW &&
-            currentLine !== ""
-          ) {
-            lines.push(currentLine);
-            currentLine = char;
-          } else {
-            currentLine = testLine;
-          }
-        }
-        if (currentLine) lines.push(currentLine);
-        return lines;
-      };
-
-      ctx.font = "bold 32px sans-serif";
-      const maxWidth = width - 120;
-      const titleLines = wrapText(ctx, `"${todayQuestion.content}"`, maxWidth);
-      const titleHeight = titleLines.length * 44;
-
-      ctx.font = "500 24px sans-serif";
-      const answerMaxWidth = width - 160;
-      let myLines: string[] = [];
-      let partnerLines: string[] = [];
-
-      if (option === "my" || option === "both") {
-        myLines = wrapText(ctx, myAnswer.content, answerMaxWidth);
-      }
-      if (option === "partner" || option === "both") {
-        partnerLines = wrapText(ctx, partnerAnswer.content, answerMaxWidth);
-      }
-
-      const myHeight = myLines.length * 36 + 60;
-      const partnerHeight = partnerLines.length * 36 + 60;
-
-      let totalHeight = 120 + titleHeight + 60;
-      if (option === "both") {
-        totalHeight += myHeight + 80 + partnerHeight;
-      } else if (option === "my") {
-        totalHeight += myHeight;
-      } else {
-        totalHeight += partnerHeight;
-      }
-      totalHeight += 100;
-
-      canvas.width = width;
-      canvas.height = totalHeight;
-
-      ctx.fillStyle = "#fff1f2";
-      ctx.fillRect(0, 0, width, totalHeight);
-
-      ctx.fillStyle = "#ffffff";
-      ctx.shadowColor = "rgba(0,0,0,0.1)";
-      ctx.shadowBlur = 30;
-      ctx.shadowOffsetY = 10;
-
-      const r = 32;
-      const x = 40;
-      const y = 40;
-      const w = width - 80;
-      const h = totalHeight - 80;
-      ctx.beginPath();
-      if (ctx.roundRect) {
-        ctx.roundRect(x, y, w, h, r);
-      } else {
-        ctx.rect(x, y, w, h);
-      }
-      ctx.fill();
-      ctx.shadowColor = "transparent";
-
-      ctx.fillStyle = "#1f2937";
-      ctx.font = "bold 32px sans-serif";
-      ctx.textAlign = "center";
-      titleLines.forEach((line, index) => {
-        ctx.fillText(line, width / 2, 120 + index * 44);
-      });
-
-      let currentY = 120 + titleHeight + 60;
-
-      const drawAnswerBox = (
-        label: string,
-        lines: string[],
-        bgColor: string,
-        textColor: string,
-      ) => {
-        ctx.textAlign = "left";
-        const boxHeight = lines.length * 36 + 60;
-        const boxWidth = answerMaxWidth + 60;
-        const bx = (width - boxWidth) / 2;
-        const by = currentY;
-
-        ctx.fillStyle = "#f43f5e";
-        ctx.font = "bold 20px sans-serif";
-        ctx.fillText(label, bx + 10, by - 15);
-
-        ctx.fillStyle = bgColor;
-        ctx.beginPath();
-        if (ctx.roundRect) {
-          ctx.roundRect(bx, by, boxWidth, boxHeight, 20);
-        } else {
-          ctx.rect(bx, by, boxWidth, boxHeight);
-        }
-        ctx.fill();
-
-        ctx.fillStyle = textColor;
-        ctx.font = "500 24px sans-serif";
-        ctx.textBaseline = "middle";
-
-        const textStartY = by + boxHeight / 2 - ((lines.length - 1) * 36) / 2;
-
-        lines.forEach((line, idx) => {
-          ctx.fillText(line, bx + 30, textStartY + idx * 36);
-        });
-
-        ctx.textBaseline = "alphabetic";
-
-        currentY += boxHeight + 80;
-      };
-
-      if (option === "my" || option === "both") {
-        drawAnswerBox("나의 답변", myLines, "#fff1f2", "#1f2937");
-      }
-      if (option === "partner" || option === "both") {
-        drawAnswerBox(
-          `${partnerNickname}의 답변`,
-          partnerLines,
-          "#f3f4f6",
-          "#374151",
-        );
-      }
-
-      canvas.toBlob(async (blob) => {
-        if (!blob) throw new Error("Blob creation failed");
-        const file = new File([blob], "answer.png", { type: "image/png" });
-
-        if (
-          navigator.share &&
-          navigator.canShare &&
-          navigator.canShare({ files: [file] })
-        ) {
-          try {
-            await navigator.share({
-              title: "달이어리 질문",
-              text: `📝 오늘의 질문: "${todayQuestion.content}"`,
-              files: [file],
-            });
-            showToast("공유되었습니다.", "success");
-          } catch (e) {
-            console.error(e);
-          }
-        } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "answer.png";
-          a.click();
-          URL.revokeObjectURL(url);
-          showToast("기기에 이미지가 저장되었습니다.", "success");
-        }
-        setIsSharing(false);
-      }, "image/png");
-    } catch (err) {
-      console.error(err);
-      showToast("이미지 생성에 실패했습니다.", "error");
-      setIsSharing(false);
-    }
+    shareImage(option);
   };
+
+  const shareOptions = [
+    {
+      id: "my" as const,
+      icon: Smile,
+      label: "내 답변 공유하기",
+      disabled: !myAnswer,
+      colorClass: "text-rose-400",
+      bgClass: "bg-rose-50/50",
+      hoverClass: "hover:bg-rose-100/60",
+      borderClass: "border-rose-100",
+    },
+    {
+      id: "partner" as const,
+      icon: Heart,
+      label: `${partnerNickname}님의 답변 공유하기`,
+      disabled: !partnerAnswer || !bothAnswered,
+      colorClass: "text-gray-400",
+      bgClass: "bg-gray-50",
+      hoverClass: "hover:bg-gray-100/80",
+      borderClass: "border-gray-100",
+    },
+    {
+      id: "both" as const,
+      icon: ImageIcon,
+      label: "두 답변 모두 공유하기",
+      disabled: !bothAnswered,
+      colorClass: "text-indigo-400",
+      bgClass: "bg-indigo-50/50",
+      hoverClass: "hover:bg-indigo-100/60",
+      borderClass: "border-indigo-100",
+    },
+  ];
 
   return (
     <section className="mb-6 px-6">
@@ -446,7 +234,7 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
                                   {partnerNickname}님의 답변을 기다리고 있어요
                                 </p>
                                 <button
-                                  onClick={handleRequestAnswer}
+                                  onClick={requestAnswer}
                                   disabled={isRequesting}
                                   className="flex items-center gap-1.5 rounded-full bg-rose-50/80 px-4 py-2 text-[12px] font-semibold text-rose-400 transition-colors hover:bg-rose-100/80 active:scale-95 disabled:opacity-50"
                                 >
@@ -503,7 +291,7 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
       <QuestionHistoryModal
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
-        coupleId={coupleId}
+        coupleId={couple?.id}
         currentUserId={currentUserId}
         createdAt={couple?.created_at}
         partnerNickname={partnerNickname}
@@ -516,50 +304,23 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = ({
         icon={Share2}
         contentClassName="p-6 pb-8 md:pb-6 flex flex-col gap-3"
       >
-        <button
-          disabled={!myAnswer}
-          onClick={() => handleShareOption("my")}
-          className="flex w-full items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50/50 p-4 transition-all hover:bg-rose-100/60 active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-rose-50/50 disabled:active:scale-100"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
-            <Smile size={20} className="text-rose-400" />
-          </div>
-          <div className="text-left">
-            <p className="text-[15px] font-bold text-gray-800">
-              내 답변 공유하기
-            </p>
-          </div>
-        </button>
-
-        <button
-          disabled={!partnerAnswer || !bothAnswered}
-          onClick={() => handleShareOption("partner")}
-          className="flex w-full items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-all hover:bg-gray-100/80 active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-gray-50 disabled:active:scale-100"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
-            <Heart size={20} className="text-gray-400" />
-          </div>
-          <div className="text-left">
-            <p className="text-[15px] font-bold text-gray-800">
-              {partnerNickname}님의 답변 공유하기
-            </p>
-          </div>
-        </button>
-
-        <button
-          disabled={!bothAnswered}
-          onClick={() => handleShareOption("both")}
-          className="flex w-full items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 transition-all hover:bg-indigo-100/60 active:scale-[0.98] disabled:opacity-40 disabled:hover:bg-indigo-50/50 disabled:active:scale-100"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
-            <ImageIcon size={20} className="text-indigo-400" />
-          </div>
-          <div className="text-left">
-            <p className="text-[15px] font-bold text-gray-800">
-              두 답변 모두 공유하기
-            </p>
-          </div>
-        </button>
+        {shareOptions.map((opt) => (
+          <button
+            key={opt.id}
+            disabled={opt.disabled}
+            onClick={() => handleShareOption(opt.id)}
+            className={`flex w-full items-center gap-3 rounded-2xl border p-4 transition-all active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100 ${opt.borderClass} ${opt.bgClass} ${opt.hoverClass} disabled:hover:${opt.bgClass}`}
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
+              <opt.icon size={20} className={opt.colorClass} />
+            </div>
+            <div className="text-left">
+              <p className="text-[15px] font-bold text-gray-800">
+                {opt.label}
+              </p>
+            </div>
+          </button>
+        ))}
       </BaseModal>
     </section>
   );

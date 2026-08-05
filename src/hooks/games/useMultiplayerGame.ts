@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "../../lib/supabase";
 import { useCouple } from "../";
 import { MultiplayerGame } from "../../types";
+import { sendNotification } from "../../utils/notificationUtils";
 
 export function useMultiplayerGame(gameType: string) {
   const { couple, profile } = useCouple();
@@ -190,9 +191,9 @@ export function useMultiplayerGame(gameType: string) {
       .single();
 
     if (partnerData?.id) {
-      await supabase.from('notifications').insert({
-        user_id: partnerData.id,
-        couple_id: couple.id,
+      await sendNotification({
+        userId: partnerData.id,
+        coupleId: couple.id,
         title,
         content,
         type: 'game_reward',

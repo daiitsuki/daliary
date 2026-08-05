@@ -22,7 +22,8 @@ import {
 import PlanItemModal from "./PlanItemModal";
 import TripMapModal from "./TripMapModal";
 import VisitForm from "../shared/VisitForm";
-import { motion, Variants, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { containerVariants, itemVariants } from "../../../constants/animations";
 import { parseTripTitle } from "../../../utils/tripHelpers";
 import { shareContent, ShareTemplates } from "../../../utils/shareUtils";
 import { useConfirm } from "../../../context/ConfirmContext";
@@ -60,33 +61,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   etc: "text-gray-500 bg-gray-50",
 };
 
-// 홈탭 및 여행 계획과 통일된 애니메이션 설정 적용
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
-  exit: {
-    opacity: 0,
-    transition: { duration: 0.15 },
-  },
-};
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: "easeOut" },
-  },
-  exit: {
-    opacity: 0,
-    transition: { duration: 0.15 },
-  },
-};
 
 export default function TripDetail({ trip, onBack }: TripDetailProps) {
   const { plans, isPlansLoading, deletePlan } = useTripPlans(trip.id);
@@ -148,12 +123,7 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
     }
   };
 
-  const handleOpenNavigation = (e: React.MouseEvent, plan: TripPlan) => {
-    e.stopPropagation();
-    if (!plan.place_name) return;
-    const query = encodeURIComponent(plan.place_name);
-    window.open(`https://map.naver.com/v5/search/${query}`, "_blank");
-  };
+
 
   const handleOpenVisitForm = (e: React.MouseEvent, plan: TripPlan) => {
     e.stopPropagation();
@@ -365,10 +335,12 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
                                 >
                                   <CheckCircle size={14} strokeWidth={2.5} />
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleOpenNavigation(e, plan)}
-                                  className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-white rounded-lg transition-all"
+                                <a
+                                  href={`https://map.naver.com/p/search/${encodeURIComponent(plan.place_name || "")}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-white rounded-lg transition-all flex items-center justify-center"
                                   title="네이버 지도로 이동"
                                 >
                                   <Navigation
@@ -376,7 +348,7 @@ export default function TripDetail({ trip, onBack }: TripDetailProps) {
                                     fill="currentColor"
                                     fillOpacity={0.1}
                                   />
-                                </button>
+                                </a>
                               </>
                             )}
                             <button

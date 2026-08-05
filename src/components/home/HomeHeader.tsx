@@ -4,22 +4,13 @@ import ImageViewerModal from "../common/ImageViewerModal";
 import AnniversaryModal from "../common/AnniversaryModal";
 import MenuDrawer from "../common/MenuDrawer";
 import NotificationHistoryModal from "./NotificationHistoryModal";
-import { useNotifications } from "../../hooks";
-import { Profile, Couple } from "../../types";
+import { useNotifications, useHomeData } from "../../hooks";
 
-interface HomeHeaderProps {
-  myProfile: Profile | null;
-  partnerProfile: Profile | null;
-  dDay: number | string;
-  couple: Couple | null;
-}
 
-const HomeHeader: React.FC<HomeHeaderProps> = ({
-  myProfile,
-  partnerProfile,
-  dDay,
-  couple,
-}) => {
+interface HomeHeaderProps {}
+
+const HomeHeader: React.FC<HomeHeaderProps> = () => {
+  const { myProfile, partnerProfile, dDay, couple } = useHomeData();
   const { notifications } = useNotifications();
   const hasUnread = notifications.some((n) => !n.is_read);
 

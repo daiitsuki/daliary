@@ -1,21 +1,13 @@
 import { useCallback } from "react";
 import { usePlaces } from "../../../context/PlacesContext";
-import { motion, Variants } from "framer-motion";
+import { motion } from "framer-motion";
+import { containerVariants } from "../../../constants/animations";
 import { useSearchParams } from "react-router-dom";
 
 // Map related components
 import DetailedKoreaMap from "./DetailedKoreaMap";
 
-// Animation Variants
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      duration: 0.5
-    },
-  },
-};
+
 
 /**
  * 메인 RegionDashboard 컴포넌트 - 지도 전용 뷰

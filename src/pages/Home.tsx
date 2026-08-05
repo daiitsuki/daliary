@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
-import { motion, Variants, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { containerVariants, itemVariants } from "../constants/animations";
 import {
   Copy,
   Sparkles,
   MessageCircleQuestionMark,
   Palette,
 } from "lucide-react";
-import { supabase } from "../lib/supabase";
 import { useHomeData } from "../hooks";
-import { useCouplePoints } from "../hooks";
 
 // Sub Components
 import HomeHeader from "../components/home/HomeHeader";
@@ -29,26 +28,12 @@ import {
 export default function Home() {
   const {
     couple,
-    currentUserId,
     loading,
-    dDay,
-    todayQuestion,
     partnerProfile,
-    myProfile,
-    myAnswer,
-    partnerAnswer,
-    drawingQuestion,
-    myDrawing,
-    partnerDrawing,
-    ongoingRelayNovel,
-    refresh,
   } = useHomeData();
 
-  const { refresh: refreshPoints } = useCouplePoints();
   const { showToast } = useToast();
 
-  const [inputAnswer, setInputAnswer] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [dailyTab, setDailyTab] = useState<"question" | "drawing">(() => {
     const saved = localStorage.getItem("dailyTab");
     return saved === "question" || saved === "drawing" ? saved : "question";
@@ -58,32 +43,6 @@ export default function Home() {
     localStorage.setItem("dailyTab", dailyTab);
   }, [dailyTab]);
 
-  const handleAnswerSubmit = async () => {
-    if (!inputAnswer.trim() || !couple || !currentUserId || !todayQuestion)
-      return;
-
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase.from("answers").insert({
-        couple_id: couple.id,
-        question_id: todayQuestion.id,
-        writer_id: currentUserId,
-        content: inputAnswer,
-      });
-      if (error) throw error;
-
-      setInputAnswer("");
-      // 데이터 즉시 갱신
-      await refresh();
-      refreshPoints();
-    } catch (err) {
-      console.error(err);
-      showToast("답변 저장에 실패했어요.", "error");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const copyInviteCode = () => {
     if (couple?.invite_code) {
       navigator.clipboard.writeText(couple.invite_code);
@@ -91,37 +50,14 @@ export default function Home() {
     }
   };
 
-  // Stagger Animation Variants
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
 
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5, ease: "easeOut" },
-    },
-  };
 
   return (
     <div className="custom-scrollbar relative flex-1 overflow-y-auto bg-[#FDFDFE] pb-24 text-gray-800">
       {loading ? (
         <HomeHeaderSkeleton />
       ) : (
-        <HomeHeader
-          myProfile={myProfile}
-          partnerProfile={partnerProfile}
-          dDay={dDay}
-          couple={couple}
-        />
+        <HomeHeader />
       )}
 
       <motion.div
@@ -216,31 +152,9 @@ export default function Home() {
                     transition={{ duration: 0.4, ease: "easeOut" }}
                   >
                     {dailyTab === "question" ? (
-                      <DailyQuestionSection
-                        todayQuestion={todayQuestion}
-                        myAnswer={myAnswer}
-                        partnerAnswer={partnerAnswer}
-                        inputAnswer={inputAnswer}
-                        setInputAnswer={setInputAnswer}
-                        isSubmitting={isSubmitting}
-                        onSubmit={handleAnswerSubmit}
-                        coupleId={couple?.id}
-                        currentUserId={currentUserId}
-                        couple={couple}
-                        myProfile={myProfile}
-                        partnerProfile={partnerProfile}
-                      />
+                      <DailyQuestionSection />
                     ) : (
-                      <DrawingAnswerSection
-                        drawingQuestion={drawingQuestion}
-                        myDrawing={myDrawing}
-                        partnerDrawing={partnerDrawing}
-                        coupleId={couple?.id}
-                        currentUserId={currentUserId}
-                        partnerProfile={partnerProfile}
-                        myProfile={myProfile}
-                        onComplete={refresh}
-                      />
+                      <DrawingAnswerSection />
                     )}
                   </motion.div>
                 </div>
@@ -252,15 +166,7 @@ export default function Home() {
             {loading ? (
               <RelayNovelWidgetSkeleton />
             ) : (
-              partnerProfile && (
-                <RelayNovelWidget
-                  ongoingRelayNovel={ongoingRelayNovel}
-                  partnerNickname={partnerProfile.nickname || "상대방"}
-                  myProfileId={currentUserId || ""}
-                  partnerId={partnerProfile.id}
-                  myNickname={myProfile?.nickname || ""}
-                />
-              )
+              partnerProfile && <RelayNovelWidget />
             )}
           </motion.div>
 

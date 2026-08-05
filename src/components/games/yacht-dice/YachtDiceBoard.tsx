@@ -105,7 +105,7 @@ export default function YachtDiceBoard({
       {/* Dice Container */}
       <div className="flex w-full justify-center gap-3">
         <AnimatePresence mode="popLayout">
-          {dice.map((d, i) => (
+          {dice.map((_, i) => (
             <motion.button
               key={i}
               initial={{ scale: 0.8, opacity: 0 }}

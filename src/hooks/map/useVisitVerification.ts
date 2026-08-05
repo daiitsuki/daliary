@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { supabase } from "../../lib/supabase";
-import imageCompression from 'browser-image-compression';
-import { convertToWebP } from "../../utils/imageUtils";
+import { uploadOptimizedImage } from '../../utils/imageUtils';
 
 interface VerifyVisitParams {
   placeId: string;
@@ -14,37 +13,6 @@ interface VerifyVisitParams {
 export const useVisitVerification = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const uploadImage = async (file: File) => {
-    try {
-      // 1단계: 리사이즈 / 용량 압축
-      const options = {
-        maxSizeMB: 0.3,
-        maxWidthOrHeight: 1024,
-        useWebWorker: true,
-      };
-      const compressedFile = await imageCompression(file, options);
-
-      // 2단계: WebP 변환 (quality 0.8)
-      const webpBlob = await convertToWebP(compressedFile, 0.8);
-
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.webp`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('visit-photos')
-        .upload(fileName, webpBlob, { contentType: 'image/webp' });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('visit-photos')
-        .getPublicUrl(fileName);
-
-      return publicUrl;
-    } catch (err: any) {
-      throw new Error(`이미지 업로드 실패: ${err.message}`);
-    }
-  };
 
   const verifyVisit = async ({ placeId, date, file, region, subRegion }: VerifyVisitParams) => {
     setIsSubmitting(true);
@@ -63,7 +31,7 @@ export const useVisitVerification = () => {
 
       let imageUrl = null;
       if (file) {
-        imageUrl = await uploadImage(file);
+        imageUrl = await uploadOptimizedImage(file, 'visit-photos');
       }
 
       // Format date to YYYY-MM-DD for SQL date type

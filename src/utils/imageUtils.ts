@@ -1,3 +1,6 @@
+import imageCompression from 'browser-image-compression';
+import { supabase } from '../lib/supabase';
+
 /**
  * Canvas API를 사용해 이미지 Blob을 WebP 형식으로 변환합니다.
  * browser-image-compression으로 리사이즈/용량 압축 후 이 함수로 WebP 변환하는
@@ -48,3 +51,41 @@ export const convertToWebP = (blob: Blob, quality = 0.8): Promise<Blob> => {
     img.src = objectUrl;
   });
 };
+
+/**
+ * 파일을 리사이즈/압축하고 WebP로 변환한 뒤 Supabase에 업로드합니다.
+ * @param file 원본 이미지 파일
+ * @param bucket 업로드할 스토리지 버킷 이름 (기본값: 'visit-photos')
+ * @returns 업로드된 이미지의 publicUrl
+ */
+export const uploadOptimizedImage = async (file: File, bucket: string = 'visit-photos') => {
+  try {
+    // 1. Resize and compress
+    const options = {
+      maxSizeMB: 0.3,
+      maxWidthOrHeight: 1024,
+      useWebWorker: true,
+    };
+    const compressedFile = await imageCompression(file, options);
+
+    // 2. Convert to WebP (quality 0.8)
+    const webpBlob = await convertToWebP(compressedFile, 0.8);
+
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.webp`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, webpBlob, { contentType: 'image/webp' });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  } catch (err: any) {
+    throw new Error(`이미지 업로드 실패: ${err.message}`);
+  }
+};
+

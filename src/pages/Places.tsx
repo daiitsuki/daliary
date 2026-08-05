@@ -7,7 +7,8 @@ import TravelPlans from '../components/map/plans/TravelPlans';
 import MemoryFeed from '../components/map/memory/MemoryFeed';
 import { Search, Map as MapIcon, Star, CalendarDays, Camera, Loader2 } from 'lucide-react';
 import { Place } from '../context/PlacesContext';
-import { motion, Variants } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { containerVariants, itemVariants } from '../constants/animations';
 import { useKakaoLoader } from "react-kakao-maps-sdk";
 
 const LAST_VIEWED_TAB_KEY = 'daliary_last_map_tab';
@@ -122,24 +123,7 @@ export default function Places() {
     localStorage.setItem(LAST_VIEWED_TAB_KEY, 'search');
   };
 
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
 
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5, ease: "easeOut" },
-    },
-  };
 
   if (!activeTab) return null; // 초기 탭 설정 중에는 렌더링 방지
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { Couple, Profile } from '../types';
@@ -142,7 +142,7 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [queryClient]);
 
-  const generateInviteCode = async () => {
+  const generateInviteCode = useCallback(async () => {
     try {
       if (couple) {
         throw new Error('이미 연결된 커플(초대 코드)이 있습니다. 설정에서 연결 해제 후 다시 시도해주세요.');
@@ -169,9 +169,9 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       setError(err.message);
       throw err;
     }
-  };
+  }, [couple, queryClient]);
 
-  const joinCouple = async (code: string) => {
+  const joinCouple = useCallback(async (code: string) => {
     try {
       setError(null);
       const { data: { user } } = await supabase.auth.getUser();
@@ -194,9 +194,9 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       setError(err.message);
       throw err;
     }
-  };
+  }, [queryClient]);
 
-  const disconnect = async () => {
+  const disconnect = useCallback(async () => {
     // async 작업 전에 profile.id를 미리 캡처 (RPC 완료 후 Realtime으로 profile이 변경될 수 있음)
     const currentProfileId = profile?.id;
 
@@ -233,7 +233,7 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       setError(err.message);
       throw err;
     }
-  };
+  }, [profile?.id, queryClient]);
 
   // Realtime Subscription for Profile changes (to detect linkage/unlinkage)
   useEffect(() => {
@@ -267,26 +267,40 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
     };
   }, [profile?.id, profile?.couple_id, refetch]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut({ scope: 'local' });
     queryClient.clear();
     window.location.href = '/login';
-  };
+  }, [queryClient]);
+
+  const contextValue = useMemo(() => ({ 
+    couple, 
+    profile, 
+    notificationSettings,
+    isCoupleFormed, 
+    loading: queryLoading, 
+    error, 
+    fetchCoupleInfo, 
+    generateInviteCode, 
+    joinCouple, 
+    disconnect, 
+    signOut 
+  }), [
+    couple, 
+    profile, 
+    notificationSettings,
+    isCoupleFormed, 
+    queryLoading, 
+    error, 
+    fetchCoupleInfo, 
+    generateInviteCode, 
+    joinCouple, 
+    disconnect, 
+    signOut
+  ]);
 
   return (
-    <CoupleContext.Provider value={{ 
-      couple, 
-      profile, 
-      notificationSettings,
-      isCoupleFormed, 
-      loading: queryLoading, 
-      error, 
-      fetchCoupleInfo, 
-      generateInviteCode, 
-      joinCouple, 
-      disconnect, 
-      signOut 
-    }}>
+    <CoupleContext.Provider value={contextValue}>
       {children}
     </CoupleContext.Provider>
   );

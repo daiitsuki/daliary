@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { containerVariants, itemVariants } from "../constants/animations";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
 import { useSchedules, Schedule, ScheduleInput } from "../hooks";
 import { useHolidays } from "../hooks";
@@ -16,24 +17,7 @@ import TimetableView from "../components/timetable/TimetableView";
 import { TimetableProvider } from "../context/TimetableContext";
 import { useToast } from "../context/ToastContext";
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" },
-  },
-};
 
 type CalendarTab = "calendar" | "timetable";
 

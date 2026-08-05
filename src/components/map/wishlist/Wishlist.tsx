@@ -3,38 +3,14 @@ import { usePlaces, Place } from "../../../context/PlacesContext";
 import { useConfirm } from "../../../context/ConfirmContext";
 import { Search } from "lucide-react";
 import VisitForm from "../shared/VisitForm";
-import { motion, Variants, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { containerVariants, itemVariants } from "../../../constants/animations";
 import { getRegionFromAddress } from "../../../lib/address";
 import WishlistCard from "./WishlistCard";
 import Select from "../../common/Select";
 import { useSwipe } from "../../../hooks";
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
-  exit: {
-    opacity: 0,
-    transition: { duration: 0.15 },
-  },
-};
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: "easeOut" },
-  },
-  exit: {
-    opacity: 0,
-    transition: { duration: 0.15 },
-  },
-};
 
 const CATEGORY_TAB_STYLES: Record<string, string> = {
   전체: "bg-rose-500 text-white shadow-rose-100",
