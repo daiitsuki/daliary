@@ -10,6 +10,26 @@ declare global {
         setCenter(latlng: LatLng): void;
         getCenter(): LatLng;
         relayout(): void;
+        setBounds(bounds: LatLngBounds, paddingTop?: number, paddingRight?: number, paddingBottom?: number, paddingLeft?: number): void;
+        getBounds(): LatLngBounds;
+        setLevel(level: number, options?: any): void;
+        getLevel(): number;
+        getProjection(): MapProjection;
+      }
+      class Point {
+        constructor(x: number, y: number);
+        x: number;
+        y: number;
+      }
+      interface MapProjection {
+        pointFromCoords(latlng: LatLng): Point;
+        coordsFromPoint(point: Point): LatLng;
+      }
+      class LatLngBounds {
+        constructor();
+        extend(latlng: LatLng): void;
+        getSouthWest(): LatLng;
+        getNorthEast(): LatLng;
       }
       class LatLng {
         constructor(lat: number, lng: number);

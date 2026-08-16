@@ -372,4 +372,9 @@ export const changelog: ChangelogEntry[] = [
       "다양한 오류를 수정했어요.",
     ],
   },
+  {
+    version: "1.1.10",
+    date: "2026-08-16",
+    changes: ["가고싶은 곳을 한눈에 확인할 수 있는 기능이 추가되었어요."],
+  },
 ];
