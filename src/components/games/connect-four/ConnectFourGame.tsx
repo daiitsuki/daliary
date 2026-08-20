@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, Users } from "lucide-react";
+import { ChevronLeft, Users, Flag } from "lucide-react";
 import {
   useConnectFour,
   ConnectFourState,
@@ -282,15 +282,16 @@ export default function ConnectFourGame({ onBack }: ConnectFourGameProps) {
 
             {/* Surrender Button & Reaction Picker */}
             {game.status === "playing" && (
-              <div className="flex flex-col gap-4 mt-2">
+              <div className="flex items-center justify-center gap-2.5 mt-4">
                 <ReactionPicker onSelect={sendReaction} inline />
-                <Button
+                <div className="w-px h-10 sm:h-5 bg-gray-200 mx-1" />
+                <button
                   onClick={handleSurrender}
-                  variant="danger-ghost"
-                  size="sm"
+                  className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-white shadow-sm border border-gray-100 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-95 text-rose-500 hover:bg-rose-50"
+                  title="기권하기"
                 >
-                  기권하기
-                </Button>
+                  <Flag size={20} />
+                </button>
               </div>
             )}
 

@@ -28,12 +28,12 @@ export default function ReactionPicker({ onSelect, className = '', inline = fals
 
   if (inline) {
     return (
-      <div className={`flex flex-wrap items-center justify-center gap-2 rounded-3xl bg-white p-3 shadow-sm border border-gray-100 ${className}`}>
+      <div className={`grid grid-cols-3 sm:flex sm:flex-wrap items-center justify-center gap-2.5 ${className}`}>
         {REACTIONS.map((reaction) => (
           <button
             key={reaction.name}
             onClick={() => handleSelect(reaction.name)}
-            className={`flex h-12 w-12 items-center justify-center rounded-full transition-all active:scale-90 ${reaction.color}`}
+            className={`flex h-[42px] w-[42px] items-center justify-center rounded-full bg-white shadow-sm border border-gray-100 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-95 ${reaction.color}`}
           >
             {reaction.icon}
           </button>

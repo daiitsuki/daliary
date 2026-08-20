@@ -14,6 +14,7 @@ import {
   Users,
   Circle,
   Dices,
+  Hexagon,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
@@ -34,6 +35,9 @@ const OthelloGame = lazy(
 );
 const YachtDiceGame = lazy(
   () => import("../components/games/yacht-dice/YachtDiceGame"),
+);
+const AbaloneGame = lazy(
+  () => import("../components/games/abalone/AbaloneGame"),
 );
 import { useAllGameScores } from "../hooks";
 
@@ -74,8 +78,6 @@ export default function Games() {
     setSearchParams({});
   };
 
-
-
   const renderSelectedGame = () => {
     switch (selectedGame) {
       case "2048":
@@ -94,6 +96,8 @@ export default function Games() {
         return <OthelloGame onBack={handleBack} />;
       case "yacht-dice":
         return <YachtDiceGame onBack={handleBack} />;
+      case "abalone":
+        return <AbaloneGame onBack={handleBack} />;
       default:
         return null;
     }
@@ -175,7 +179,7 @@ export default function Games() {
     },
     {
       id: "othello",
-      title: "오셀로 (Othello)",
+      title: "오셀로",
       desc: "내 색깔로 보드판을 가득 채워라!",
       icon: Circle,
       color: "bg-sky-50 text-sky-500 border-sky-100/50",
@@ -186,6 +190,14 @@ export default function Games() {
       desc: "5개의 주사위로 족보를 완성하세요!",
       icon: Dices,
       color: "bg-indigo-50 text-indigo-500 border-indigo-100/50",
+    },
+    {
+      id: "abalone",
+      title: "아발론",
+      desc: "구슬을 보드 밖으로 밀어내세요!",
+      icon: Hexagon,
+      color: "bg-purple-50 text-purple-500 border-purple-100/50",
+      isNew: true,
     },
   ];
 
@@ -323,10 +335,15 @@ export default function Games() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="mb-0.5 flex items-center gap-2">
+                    <div className="mb-0.5 flex items-center gap-1.5">
                       <h3 className="text-[14px] font-black text-gray-800">
                         {game.title}
                       </h3>
+                      {(game as any).isNew && (
+                        <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-500 text-[8px] font-black text-white">
+                          N
+                        </span>
+                      )}
                     </div>
                     <p className="truncate text-[11px] font-bold text-gray-400">
                       {game.desc}

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, Dices } from "lucide-react";
+import { ChevronLeft, Dices, Flag } from "lucide-react";
 import { useYachtDice, YachtDiceState } from "../../../hooks";
 import { useHomeData } from "../../../hooks";
 import Button from "../../common/Button";
@@ -291,15 +291,16 @@ export default function YachtDiceGame({ onBack }: YachtDiceGameProps) {
             )}
 
             {game.status === "playing" && (
-              <div className="flex flex-col gap-2 mt-0 mb-2">
+              <div className="flex items-center justify-center gap-2.5 mt-4">
                 <ReactionPicker onSelect={sendReaction} inline />
-                <Button
+                <div className="w-px h-10 sm:h-5 bg-gray-200 mx-1" />
+                <button
                   onClick={handleSurrender}
-                  variant="danger-ghost"
-                  size="sm"
+                  className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-white shadow-sm border border-gray-100 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-95 text-rose-500 hover:bg-rose-50"
+                  title="기권하기"
                 >
-                  기권하기
-                </Button>
+                  <Flag size={20} />
+                </button>
               </div>
             )}
 
