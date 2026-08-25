@@ -17,8 +17,6 @@ import TimetableView from "../components/timetable/TimetableView";
 import { TimetableProvider } from "../context/TimetableContext";
 import { useToast } from "../context/ToastContext";
 
-
-
 type CalendarTab = "calendar" | "timetable";
 
 const Calendar = () => {
@@ -276,10 +274,10 @@ const Calendar = () => {
   };
 
   return (
-    <div className="flex-1 overflow-hidden custom-scrollbar bg-gray-50/30 pb-24 lg:pb-0 flex flex-col lg:h-full">
+    <div className="custom-scrollbar flex flex-1 flex-col overflow-hidden bg-gray-50/30 pb-24 lg:h-full lg:pb-24">
       {/* 탭 전환 UI */}
-      <div className="flex justify-center shrink-0 px-4 py-4 bg-white sticky top-0 z-30 backdrop-blur-md">
-        <div className="flex items-center w-full max-w-[280px] bg-gray-100/80 rounded-2xl p-1 relative">
+      <div className="sticky top-0 z-30 flex shrink-0 justify-center bg-white px-4 pt-4 pb-2 backdrop-blur-md">
+        <div className="relative flex w-full max-w-[280px] items-center rounded-2xl bg-gray-100/80 p-1">
           {[
             {
               id: "calendar" as CalendarTab,
@@ -295,19 +293,18 @@ const Calendar = () => {
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
                 whileTap={{ scale: 0.95 }}
-                className={`flex-1 relative flex items-center justify-center gap-1.5 py-2.5 rounded-xl z-10 transition-colors outline-none
-                  ${isActive ? "text-rose-500" : "text-gray-400 hover:text-gray-600"}`}
+                className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 transition-colors outline-none ${isActive ? "text-rose-500" : "text-gray-400 hover:text-gray-600"}`}
               >
                 {isActive && (
                   <motion.div
                     layoutId="calendarTabPill"
-                    className="absolute inset-0 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-gray-100"
+                    className="absolute inset-0 rounded-xl border border-gray-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
                 <span className="relative z-10 flex items-center justify-center gap-1.5">
                   <Icon size={14} strokeWidth={2.5} />
-                  <span className="text-xs font-black leading-none pt-0.5">
+                  <span className="pt-0.5 text-xs leading-none font-black">
                     {tab.label}
                   </span>
                 </span>
@@ -326,13 +323,13 @@ const Calendar = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.25 }}
-            className="flex-1 overflow-y-auto lg:overflow-hidden lg:flex lg:flex-col"
+            className="flex-1 overflow-y-auto lg:flex lg:flex-col lg:overflow-hidden"
           >
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="w-full max-w-[1600px] mx-auto px-4 py-3 lg:h-full lg:flex lg:flex-col"
+              className="mx-auto w-full max-w-[1600px] px-4 py-3 lg:flex lg:h-full lg:flex-col"
             >
               <motion.div variants={itemVariants}>
                 <CalendarHeader
@@ -347,10 +344,10 @@ const Calendar = () => {
                 />
               </motion.div>
 
-              <div className="flex flex-col lg:flex-row gap-8 items-start mt-3 lg:flex-1 lg:min-h-0">
+              <div className="mt-3 flex flex-col items-start gap-8 lg:min-h-0 lg:flex-1 lg:flex-row">
                 <motion.div
                   variants={itemVariants}
-                  className="w-full lg:flex-1 lg:h-full"
+                  className="w-full lg:h-full lg:flex-1"
                 >
                   <CalendarGrid
                     currentDate={currentDate}
@@ -367,7 +364,7 @@ const Calendar = () => {
 
                 <motion.div
                   variants={itemVariants}
-                  className="w-full lg:w-[380px] shrink-0 lg:h-full"
+                  className="w-full shrink-0 lg:h-full lg:w-[380px]"
                 >
                   <ScheduleList
                     schedules={visibleSchedules}
@@ -403,7 +400,7 @@ const Calendar = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.25 }}
-            className="flex-1 overflow-hidden flex flex-col px-4 py-4 min-h-0"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4"
           >
             <TimetableView />
           </motion.div>

@@ -31,7 +31,8 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = () => {
     currentUserId,
     partnerProfile,
   } = useHomeData();
-  const { submitAnswer, isSubmitting, requestAnswer, isRequesting } = useDailyQuestionActions();
+  const { submitAnswer, isSubmitting, requestAnswer, isRequesting } =
+    useDailyQuestionActions();
   const { shareImage, isSharing } = useShareAnswerImage();
 
   const [inputAnswer, setInputAnswer] = useState("");
@@ -136,7 +137,7 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = () => {
           >
             <div className="relative z-10">
               <div
-                className="group/header mb-2 flex cursor-pointer items-start justify-between gap-3 px-1 select-none"
+                className="group/header flex cursor-pointer items-start justify-between gap-3 px-1 select-none"
                 onClick={() => setIsExpanded(!isExpanded)}
               >
                 <div className="mt-1 flex gap-3 pr-2">
@@ -315,9 +316,7 @@ const DailyQuestionSection: React.FC<DailyQuestionSectionProps> = () => {
               <opt.icon size={20} className={opt.colorClass} />
             </div>
             <div className="text-left">
-              <p className="text-[15px] font-bold text-gray-800">
-                {opt.label}
-              </p>
+              <p className="text-[15px] font-bold text-gray-800">{opt.label}</p>
             </div>
           </button>
         ))}

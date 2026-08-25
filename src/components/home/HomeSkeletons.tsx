@@ -88,14 +88,20 @@ export const RelayNovelWidgetSkeleton = () => (
 );
 
 export const QuickLinksSkeleton = () => (
-  <motion.div variants={shimmerVariants} initial="initial" animate="animate" className="px-8 pb-12 pt-4">
-    <div className="flex justify-between items-center px-2">
-      {[1, 2, 3, 4].map(i => (
-        <div key={i} className="flex flex-col items-center gap-3">
-          <div className="h-[52px] w-[52px] rounded-full bg-gray-100" />
-          <div className="h-2 w-10 bg-gray-100 rounded-full" />
-        </div>
-      ))}
+  <motion.div variants={shimmerVariants} initial="initial" animate="animate" className="px-6 mb-6">
+    <div className="relative bg-white rounded-[32px] py-5 shadow-sm border border-gray-50 overflow-hidden">
+      <div className="flex flex-row overflow-hidden gap-4 sm:px-4 sm:justify-center">
+        <div className="flex-shrink-0 w-4 sm:hidden" />
+        {[1, 2, 3, 4, 5].map(i => (
+          <div key={i} className="flex-shrink-0 flex flex-col items-center w-14">
+            <div className="w-14 h-14 rounded-[20px] bg-gray-100 mb-2" />
+            <div className="h-[11px] w-10 bg-gray-100 rounded-full" />
+          </div>
+        ))}
+        <div className="flex-shrink-0 w-4 sm:hidden" />
+      </div>
+      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white via-white/80 to-transparent sm:hidden" />
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white via-white/80 to-transparent sm:hidden" />
     </div>
   </motion.div>
 );

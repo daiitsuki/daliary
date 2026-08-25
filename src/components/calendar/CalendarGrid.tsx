@@ -182,20 +182,20 @@ const WeekRow = memo(
             <div
               key={`bg-${dStr}`}
               onClick={() => onDayClick(day, month, year)}
-              className={`relative h-24 sm:h-28 cursor-pointer transition-all group border-r border-b border-gray-50/30 ${
-                !currentMonth ? "bg-gray-50/10 text-opacity-30" : ""
+              className={`group relative h-24 cursor-pointer border-r border-b border-gray-50/30 transition-all sm:h-28 ${
+                !currentMonth ? "text-opacity-30 bg-gray-50/10" : ""
               } ${isActive ? "bg-rose-50/20" : ""}`}
             >
               {/* Day Number */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
+              <div className="absolute top-2 left-1/2 z-10 -translate-x-1/2">
                 <span
-                  className={`text-[12px] sm:text-[13px] font-black transition-all flex items-center justify-center w-6 h-6 rounded-full ${
+                  className={`flex h-6 w-6 items-center justify-center rounded-full text-[12px] font-black transition-all sm:text-[13px] ${
                     isToday
                       ? isActive
-                        ? "bg-rose-500 text-white scale-110 ring-2 ring-rose-500 ring-offset-2 shadow-md"
+                        ? "scale-110 bg-rose-500 text-white shadow-md ring-2 ring-rose-500 ring-offset-2"
                         : "bg-rose-500 text-white shadow-sm"
                       : isActive
-                        ? "text-rose-500 scale-110 bg-white shadow-md ring-2 ring-rose-400"
+                        ? "scale-110 bg-white text-rose-500 shadow-md ring-2 ring-rose-400"
                         : !currentMonth
                           ? "text-gray-300"
                           : isHoliday
@@ -212,7 +212,7 @@ const WeekRow = memo(
 
         {/* Foreground Layer: Schedule Bars */}
         {/* We use a container that sits on top of the grid but respects the column widths */}
-        <div className="absolute inset-0 top-9 pointer-events-none px-0.5">
+        <div className="pointer-events-none absolute inset-0 top-9 px-0.5">
           {/* Render visible items */}
           {visibleItems.map((item) => {
             // Skip if lane is too high to prevent overflow
@@ -221,7 +221,7 @@ const WeekRow = memo(
             return (
               <div
                 key={`${item.id}-${weekStartStr}`}
-                className="absolute h-4 rounded-md shadow-sm flex items-center px-1 overflow-hidden"
+                className="absolute flex h-4 items-center overflow-hidden rounded-md px-1 shadow-sm"
                 style={{
                   backgroundColor: item.color,
                   left: `${(item.startCol / 7) * 100}%`,
@@ -236,7 +236,7 @@ const WeekRow = memo(
                   borderBottomRightRadius: item.isEnd ? "4px" : "0",
                 }}
               >
-                <span className="text-[9px] font-bold text-white truncate w-full leading-none drop-shadow-sm">
+                <span className="w-full truncate text-[9px] leading-none font-bold text-white drop-shadow-sm">
                   {item.title}
                 </span>
               </div>
@@ -306,13 +306,13 @@ const CalendarGrid = ({
   }, [year, month]);
 
   return (
-    <div className="bg-white rounded-[24px] sm:rounded-[32px] pt-6 px-1.5 pb-1.5 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 relative overflow-hidden">
+    <div className="relative flex h-full flex-col overflow-hidden rounded-[24px] border border-gray-100/50 bg-white px-1.5 pt-3 pb-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-[32px] sm:p-5 sm:pt-3">
       {/* Header Days */}
-      <div className="grid grid-cols-7 mb-2 border-b border-gray-50/50 pb-3">
+      <div className="grid grid-cols-7 border-b border-gray-50/50 sm:pb-3">
         {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
           <div
             key={d}
-            className={`text-center text-[11px] sm:text-xs font-black uppercase tracking-[0.2em] ${
+            className={`text-center text-[11px] font-black tracking-[0.2em] uppercase sm:text-xs ${
               i === 0
                 ? "text-rose-400/80"
                 : i === 6
@@ -325,7 +325,7 @@ const CalendarGrid = ({
         ))}
       </div>
 
-      <div className="relative">
+      <div className="custom-scrollbar relative flex-1 overflow-x-hidden overflow-y-auto lg:-mr-2 lg:pr-2">
         <AnimatePresence mode="popLayout" initial={false} custom={direction}>
           <motion.div
             key={`${year}-${month}`}
@@ -349,7 +349,7 @@ const CalendarGrid = ({
                 onMonthChange(1);
               }
             }}
-            className="flex flex-col transform-gpu touch-pan-y"
+            className="flex transform-gpu touch-pan-y flex-col"
           >
             {weeks.map((weekDays, i) => (
               <WeekRow
@@ -371,7 +371,7 @@ const CalendarGrid = ({
         whileHover={{ scale: 1.05, y: -2 }}
         whileTap={{ scale: 0.95 }}
         onClick={onAddSchedule}
-        className="absolute bottom-5 right-5 w-11 h-11 flex items-center justify-center bg-rose-500 text-white rounded-2xl shadow-[0_8px_25px_rgba(244,63,94,0.3)] hover:bg-rose-600 transition-all z-[20] border border-rose-400/20"
+        className="absolute right-5 bottom-5 z-[20] flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-400/20 bg-rose-500 text-white shadow-[0_8px_25px_rgba(244,63,94,0.3)] transition-all hover:bg-rose-600"
       >
         <Plus size={20} strokeWidth={3} />
       </motion.button>

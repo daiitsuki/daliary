@@ -136,8 +136,11 @@ export default function AbaloneBoard({
   }
 
   const getPos = (q: number, r: number) => {
-    const x = HEX_WIDTH * (q + r / 2);
-    const y = Y_OFFSET * r;
+    const isRotated = playerToken === 2;
+    const effectiveQ = isRotated ? -q : q;
+    const effectiveR = isRotated ? -r : r;
+    const x = HEX_WIDTH * (effectiveQ + effectiveR / 2);
+    const y = Y_OFFSET * effectiveR;
     return { x, y };
   };
 
@@ -148,7 +151,8 @@ export default function AbaloneBoard({
     // 3: Left (180deg)
     // 4: Top Left (240deg)
     // 5: Top Right (300deg)
-    return dirIndex * 60;
+    const baseRotation = dirIndex * 60;
+    return playerToken === 2 ? baseRotation + 180 : baseRotation;
   };
 
   return (
@@ -196,9 +200,12 @@ export default function AbaloneBoard({
                     if (!dir.q && !dir.r) {
                       return { opacity: 0, scale: 0.5 };
                     }
+                    const isRotated = playerToken === 2;
+                    const effDirQ = isRotated ? -dir.q : dir.q;
+                    const effDirR = isRotated ? -dir.r : dir.r;
                     // Move 1 hex in the pushed direction and fall down
-                    const outX = custom.x + HEX_WIDTH * (dir.q + dir.r / 2);
-                    const outY = custom.y + Y_OFFSET * dir.r;
+                    const outX = custom.x + HEX_WIDTH * (effDirQ + effDirR / 2);
+                    const outY = custom.y + Y_OFFSET * effDirR;
                     return {
                       x: outX,
                       y: outY + 30, // Drop down slightly

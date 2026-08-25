@@ -15,6 +15,8 @@ import {
   Circle,
   Dices,
   Hexagon,
+  Gamepad2,
+  Grid2X2,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
@@ -174,22 +176,22 @@ export default function Games() {
       id: "connect-four",
       title: "사목",
       desc: "4개의 돌을 이어보세요!",
-      icon: Users,
-      color: "bg-blue-50 text-blue-500 border-blue-100/50",
+      icon: Grid2X2,
+      color: "bg-amber-50 text-amber-500 border-amber-100/50",
     },
     {
       id: "othello",
       title: "오셀로",
       desc: "내 색깔로 보드판을 가득 채워라!",
       icon: Circle,
-      color: "bg-sky-50 text-sky-500 border-sky-100/50",
+      color: "bg-emerald-50 text-emerald-500 border-emerald-100/50",
     },
     {
       id: "yacht-dice",
       title: "요트다이스",
       desc: "5개의 주사위로 족보를 완성하세요!",
       icon: Dices,
-      color: "bg-indigo-50 text-indigo-500 border-indigo-100/50",
+      color: "bg-sky-50 text-sky-500 border-sky-100/50",
     },
     {
       id: "abalone",
@@ -210,182 +212,153 @@ export default function Games() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="mx-auto max-w-xl space-y-4 px-6 pt-2"
+        className="mx-auto max-w-xl space-y-6 px-6 pt-2"
       >
-        {/* Daily Mission Summary Card */}
+        {/* 1. Multiplayer Section (Hero) */}
         <motion.div variants={itemVariants}>
-          <div className="relative flex items-center justify-between overflow-hidden rounded-[32px] border border-rose-50/50 bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.03)]">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-1.5">
-                <Trophy className="fill-amber-400 text-amber-400" size={14} />
-                <span className="text-[11px] font-black tracking-widest text-amber-500 uppercase">
-                  Daily Mission
-                </span>
-              </div>
-              <p className="text-[13px] font-bold text-gray-600">
-                게임 <span className="text-rose-500">2개</span> 달성 시{" "}
-                <span className="text-gray-900">300 PT</span> 획득
-              </p>
-            </div>
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="flex items-center gap-2 text-[16px] font-black text-gray-800">
+              <Gamepad2 className="text-gray-400" size={20} /> 둘이서 함께
+            </h2>
+          </div>
 
-            <div className="flex items-center gap-2">
-              {[1, 2].map((i) => (
+          <div className="grid grid-cols-2 gap-3">
+            {multiplayerGames.map((game) => (
+              <button
+                key={game.id}
+                onClick={() => handleSelectGame(game.id)}
+                className="group relative flex flex-col items-center justify-center rounded-[24px] border border-gray-100/50 bg-gray-50/50 p-4 transition-all hover:scale-[1.02] hover:bg-white hover:shadow-sm active:scale-[0.98]"
+              >
                 <div
-                  key={i}
-                  className={`flex h-9 w-9 items-center justify-center rounded-2xl border-2 transition-all ${
-                    currentRewardedCount >= i
-                      ? "border-rose-500 bg-rose-500 text-white shadow-sm shadow-rose-200"
-                      : "border-gray-100 bg-gray-50 text-gray-200"
-                  }`}
+                  className={`mb-3 flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[20px] border ${game.color} shadow-sm transition-transform group-hover:scale-105`}
                 >
-                  <Check size={18} strokeWidth={4} />
+                  <game.icon size={26} strokeWidth={2} />
                 </div>
-              ))}
-            </div>
+
+                <div className="flex w-full flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="truncate text-[14px] font-black text-gray-800">
+                      {game.title}
+                    </h3>
+                    {(game as any).isNew && (
+                      <span className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded-full bg-rose-500 text-[8px] font-black text-white">
+                        N
+                      </span>
+                    )}
+                  </div>
+                  <p className="line-clamp-1 w-full text-center text-[10px] font-bold text-gray-400">
+                    {game.desc}
+                  </p>
+                </div>
+              </button>
+            ))}
           </div>
         </motion.div>
 
-        {/* All Games Widget Container */}
-        <motion.div variants={itemVariants} className="pt-2">
-          <div className="relative overflow-hidden rounded-[32px] border border-rose-50/50 bg-white p-6 shadow-[0_10px_40px_rgba(0,0,0,0.03)]">
-            {/* Daily Mission Section */}
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-[13px] font-black tracking-widest text-gray-400 uppercase">
-                <Star size={12} className="text-rose-300" /> Daily Mission
+        {/* 2. Daily Mission & Bonus Game */}
+        <motion.div variants={itemVariants}>
+          <div className="relative overflow-hidden rounded-[32px] border border-gray-100/50 bg-white py-6 shadow-[0_10px_40px_rgba(0,0,0,0.03)]">
+            <div className="mb-2 flex items-center justify-between px-6">
+              <h2 className="flex items-center gap-2 text-[14px] font-black tracking-widest text-gray-800 uppercase">
+                <Trophy className="fill-amber-400 text-amber-400" size={16} />{" "}
+                Daily Mission
               </h2>
-              {isLimitReached && (
+              {isLimitReached ? (
                 <span className="rounded-full border border-rose-100/50 bg-rose-50 px-2.5 py-1 text-[10px] font-black text-rose-400">
                   오늘의 보상 완료
                 </span>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  {[1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all ${
+                        currentRewardedCount >= i
+                          ? "border-rose-500 bg-rose-500 text-white shadow-sm shadow-rose-200"
+                          : "border-gray-100 bg-gray-50 text-gray-200"
+                      }`}
+                    >
+                      <Check size={12} strokeWidth={4} />
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
-            <div className="mb-8 grid grid-cols-2 gap-3">
-              {gameList.map((game) => (
-                <button
-                  key={game.id}
-                  onClick={() => handleSelectGame(game.id)}
-                  className="group relative flex flex-col items-center justify-center rounded-[24px] border border-gray-100/50 bg-gray-50/50 p-4 transition-all hover:scale-[1.02] hover:bg-gray-50 hover:shadow-sm active:scale-[0.98]"
-                >
-                  <div
-                    className={`mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border ${game.color} shadow-sm transition-transform group-hover:scale-105`}
+            <p className="mb-5 px-6 text-[12px] font-bold text-gray-500">
+              혼자 하는 게임으로{" "}
+              <span className="text-rose-500">최대 300 PT</span> 획득
+            </p>
+
+            <div className="relative mb-5 w-full [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)] sm:[mask-image:none] sm:[-webkit-mask-image:none]">
+              <div className="no-scrollbar flex w-full flex-row gap-3 overflow-x-auto px-6 sm:px-6">
+                {gameList.map((game) => (
+                  <button
+                    key={game.id}
+                    onClick={() => handleSelectGame(game.id)}
+                    className="group relative flex w-[130px] flex-shrink-0 flex-col items-center justify-center rounded-[24px] border border-gray-100/50 bg-gray-50/50 p-4 transition-all hover:scale-[1.02] hover:bg-gray-50 hover:shadow-sm active:scale-[0.98] sm:w-auto sm:flex-1"
                   >
-                    {game.isTextIcon ? (
-                      <span className="text-[13px] font-black">
-                        {game.icon}
-                      </span>
-                    ) : typeof game.icon === "string" ? (
-                      <span className="text-xl">{game.icon}</span>
-                    ) : (
-                      <game.icon size={20} />
-                    )}
-                  </div>
-
-                  <div className="mb-1 flex w-full items-center justify-center gap-1.5">
-                    <h3 className="truncate text-[13px] font-black text-gray-800">
-                      {game.title}
-                    </h3>
-                    {game.rewarded && (
-                      <div className="shrink-0 rounded-full bg-green-50 p-0.5 text-green-500">
-                        <Check size={8} strokeWidth={4} />
-                      </div>
-                    )}
-                  </div>
-                  <p className="mb-3 line-clamp-1 text-center text-[10px] font-bold text-gray-400">
-                    {game.desc}
-                  </p>
-
-                  {game.rewarded ? (
-                    <span className="rounded-lg bg-rose-50 px-2 py-0.5 text-[9px] font-black text-rose-400">
-                      DONE
-                    </span>
-                  ) : !isLimitReached ? (
-                    <div className="flex items-center gap-1 rounded-lg bg-amber-50/50 px-2 py-0.5 text-[9px] font-black text-amber-500">
-                      <Sparkles size={8} fill="currentColor" />
-                      <span>150PT</span>
-                    </div>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Divider */}
-            <div className="mb-6 h-px w-full bg-gray-50"></div>
-
-            {/* Multiplayer Section */}
-            <div className="mb-4 flex items-center">
-              <h2 className="flex items-center gap-2 text-[13px] font-black tracking-widest text-gray-400 uppercase">
-                <Users size={12} className="text-blue-300" /> 실시간 대결
-              </h2>
-            </div>
-
-            <div className="mb-6 grid grid-cols-1 gap-3">
-              {multiplayerGames.map((game) => (
-                <button
-                  key={game.id}
-                  onClick={() => handleSelectGame(game.id)}
-                  className="group relative flex w-full items-center gap-4 overflow-hidden rounded-[24px] border border-gray-100/50 bg-gray-50/50 p-4 text-left transition-all hover:scale-[1.01] hover:bg-gray-50 hover:shadow-sm active:scale-[0.98]"
-                >
-                  <div
-                    className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border ${game.color} shadow-sm transition-transform group-hover:scale-105`}
-                  >
-                    <game.icon size={20} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-0.5 flex items-center gap-1.5">
-                      <h3 className="text-[14px] font-black text-gray-800">
-                        {game.title}
-                      </h3>
-                      {(game as any).isNew && (
-                        <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-500 text-[8px] font-black text-white">
-                          N
+                    <div
+                      className={`mb-3 flex h-10 w-10 items-center justify-center rounded-[16px] border ${game.color} shadow-sm transition-transform group-hover:scale-105`}
+                    >
+                      {game.isTextIcon ? (
+                        <span className="text-[11px] font-black">
+                          {game.icon}
                         </span>
+                      ) : typeof game.icon === "string" ? (
+                        <span className="text-[17px]">{game.icon}</span>
+                      ) : (
+                        <game.icon size={18} />
                       )}
                     </div>
-                    <p className="truncate text-[11px] font-bold text-gray-400">
-                      {game.desc}
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-300 shadow-sm transition-colors group-hover:text-blue-500">
-                      <ChevronRight size={16} strokeWidth={3} />
+                    <div className="mb-1 flex w-full items-center justify-center gap-1.5">
+                      <h3 className="truncate text-[12px] font-black text-gray-800">
+                        {game.title}
+                      </h3>
+                      {game.rewarded && (
+                        <div className="shrink-0 rounded-full bg-green-50 p-0.5 text-green-500">
+                          <Check size={8} strokeWidth={4} />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </button>
-              ))}
+
+                    {game.rewarded ? (
+                      <span className="rounded-lg bg-rose-50 px-2 py-0.5 text-[9px] font-black text-rose-400">
+                        DONE
+                      </span>
+                    ) : !isLimitReached ? (
+                      <div className="flex items-center gap-1 rounded-lg bg-amber-50/50 px-2 py-0.5 text-[9px] font-black text-amber-500">
+                        <Sparkles size={8} fill="currentColor" />
+                        <span>150PT</span>
+                      </div>
+                    ) : (
+                      <div className="h-5"></div>
+                    )}
+                  </button>
+                ))}
+                {/* Spacer for mobile right padding to ensure content doesn't stick to edge */}
+                <div className="w-3 flex-shrink-0 sm:hidden" />
+              </div>
             </div>
 
-            {/* Divider */}
-            <div className="mb-6 h-px w-full bg-gray-50"></div>
-
-            {/* Special Challenge Section */}
-            <div className="mb-4 flex items-center">
-              <h2 className="flex items-center gap-2 text-[13px] font-black tracking-widest text-gray-400 uppercase">
-                <Sparkles size={12} className="text-amber-300" /> Special
-                Challenge
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3">
+            {/* Bonus Game (Formerly Special Challenge) Appended */}
+            <div className="mx-6 border-t border-gray-50 pt-5">
               {specialGames.map((game) => (
                 <button
                   key={game.id}
                   onClick={() => handleSelectGame(game.id)}
-                  className="group relative flex w-full items-center gap-4 overflow-hidden rounded-[24px] border border-gray-100/50 bg-gray-50/50 p-4 text-left transition-all hover:scale-[1.01] hover:bg-gray-50 hover:shadow-sm active:scale-[0.98]"
+                  className="group relative flex w-full items-center gap-3 rounded-[20px] bg-gray-50/50 p-3 text-left transition-all hover:bg-gray-50 hover:shadow-sm active:scale-[0.98]"
                 >
                   <div
-                    className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border ${game.color} shadow-sm transition-transform group-hover:scale-105`}
+                    className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[14px] border ${game.color}`}
                   >
-                    <game.icon size={20} />
+                    <game.icon size={18} strokeWidth={2.5} />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="mb-0.5 flex items-center gap-2">
-                      <h3 className="text-[14px] font-black text-gray-800">
+                    <div className="mb-0.5 flex items-center gap-1.5">
+                      <h3 className="text-[13px] font-black text-gray-800">
                         {game.title}
                       </h3>
                       {game.ticket && (
@@ -400,13 +373,15 @@ export default function Games() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-[10px] font-black tracking-wider text-amber-500">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-[9px] font-black tracking-wider text-amber-500">
                       {game.rewardInfo}
                     </div>
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-300 shadow-sm transition-colors group-hover:text-amber-500">
-                      <ChevronRight size={16} strokeWidth={3} />
-                    </div>
+                    <ChevronRight
+                      size={16}
+                      strokeWidth={3}
+                      className="text-gray-300"
+                    />
                   </div>
                 </button>
               ))}
