@@ -24,7 +24,6 @@ export default defineConfig({
             if (id.includes("react-kakao-maps-sdk") || id.includes("kakao"))
               return "vendor-maps";
             if (id.includes("@supabase")) return "vendor-supabase";
-            return "vendor";
           }
         },
       },
