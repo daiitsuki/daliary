@@ -382,4 +382,12 @@ export const changelog: ChangelogEntry[] = [
     date: "2026-08-20",
     changes: ["아발론 게임이 추가되었어요."],
   },
+  {
+    version: "1.1.12",
+    date: "2026-09-10",
+    changes: [
+      "여행 지도 보기 방식이 추가되었어요.",
+      "설정을 통해 기존 방식으로도 변경할 수 있어요.",
+    ],
+  },
 ];

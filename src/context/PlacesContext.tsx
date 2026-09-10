@@ -31,6 +31,8 @@ interface PlacesContextType {
   wishlist: Place[];
   stats: Record<string, number>;
   subRegionStats: Record<string, Record<string, number>>;
+  regionPhotos: Record<string, string>;
+  subRegionPhotos: Record<string, Record<string, string>>;
   loading: boolean;
   refresh: () => Promise<void>;
   deleteWishlistPlace: (id: string) => Promise<boolean>;
@@ -55,7 +57,7 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { data: placesData, isLoading: loading, refetch } = useQuery({
     queryKey: ['places_data', couple?.id],
     queryFn: async () => {
-      if (!couple?.id) return { visits: [], wishlist: [], stats: {}, subRegionStats: {} };
+      if (!couple?.id) return { visits: [], wishlist: [], stats: {}, subRegionStats: {}, regionPhotos: {}, subRegionPhotos: {} };
 
       const counts: Record<string, number> = {};
       const subCounts: Record<string, Record<string, number>> = {};
@@ -65,17 +67,21 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
 
       const [visitsRes, wishlistRes] = await Promise.all([
-        supabase.from('visits').select('*, places!inner(name, address, couple_id), visit_comments(count)').eq('places.couple_id', couple.id).order('visited_at', { ascending: false }),
+        supabase.from('visits').select('*, places!inner(name, address, couple_id), visit_comments(count)').eq('places.couple_id', couple.id).order('visited_at', { ascending: false }).order('created_at', { ascending: false }),
         supabase.from('places').select('id, name, address, lat, lng, status, created_at, category').eq('couple_id', couple.id).eq('status', 'wishlist').order('created_at', { ascending: false })
       ]);
 
       const visits = (visitsRes.data || []) as any[];
       const wishlist = (wishlistRes.data || []) as Place[];
 
+      const regionPhotos: Record<string, string> = {};
+      const subRegionPhotos: Record<string, Record<string, string>> = {};
+
+      // visits는 visited_at 내림차순 정렬이므로 처음 만나는 image_url이 가장 최근 것
       visits.forEach(v => {
         if (v.region && counts.hasOwnProperty(v.region)) {
           counts[v.region]++;
-          
+
           if (v.sub_region) {
             if (!subCounts[v.region][v.sub_region]) {
               subCounts[v.region][v.sub_region] = 0;
@@ -83,9 +89,19 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             subCounts[v.region][v.sub_region]++;
           }
         }
+
+        if (v.image_url && v.image_url.startsWith('http') && v.region) {
+          if (!regionPhotos[v.region]) {
+            regionPhotos[v.region] = v.image_url;
+          }
+          if (v.sub_region && (!subRegionPhotos[v.region] || !subRegionPhotos[v.region][v.sub_region])) {
+            subRegionPhotos[v.region] = subRegionPhotos[v.region] || {};
+            subRegionPhotos[v.region][v.sub_region] = v.image_url;
+          }
+        }
       });
 
-      return { visits, wishlist, stats: counts, subRegionStats: subCounts };
+      return { visits, wishlist, stats: counts, subRegionStats: subCounts, regionPhotos, subRegionPhotos };
     },
     enabled: !!couple?.id && !coupleLoading,
   });
@@ -154,10 +170,12 @@ export const PlacesProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const wishlist = placesData?.wishlist || [];
   const stats = placesData?.stats || {};
   const subRegionStats = placesData?.subRegionStats || {};
+  const regionPhotos = placesData?.regionPhotos || {};
+  const subRegionPhotos = placesData?.subRegionPhotos || {};
 
   return (
     <PlacesContext.Provider value={{ 
-      visits, wishlist, stats, subRegionStats, loading, 
+      visits, wishlist, stats, subRegionStats, regionPhotos, subRegionPhotos, loading, 
       refresh: async () => {
         await refetch();
         queryClient.invalidateQueries({ queryKey: ['memory_feed', couple?.id] });
