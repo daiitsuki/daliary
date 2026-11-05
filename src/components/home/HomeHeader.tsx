@@ -1,18 +1,61 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Heart, UserPlus, User, Menu, Bell } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import ImageViewerModal from "../common/ImageViewerModal";
 import AnniversaryModal from "../common/AnniversaryModal";
 import MenuDrawer from "../common/MenuDrawer";
 import NotificationHistoryModal from "./NotificationHistoryModal";
-import { useNotifications, useHomeData } from "../../hooks";
-
+import { useNotifications, useHomeData, useCouple } from "../../hooks";
+import { supabase } from "../../lib/supabase";
+import { getKSTTodayDow, timeToMinutes } from "../../utils/timetableUtils";
 
 interface HomeHeaderProps {}
 
-const HomeHeader: React.FC<HomeHeaderProps> = () => {
+export default function HomeHeader({}: HomeHeaderProps) {
   const { myProfile, partnerProfile, dDay, couple } = useHomeData();
+  const { profile } = useCouple();
   const { notifications } = useNotifications();
+  const navigate = useNavigate();
   const hasUnread = notifications.some((n) => !n.is_read);
+
+  // 현재 요일 시간표 조회
+  const todayDow = getKSTTodayDow();
+  const { data: blocks = [] } = useQuery({
+    queryKey: ["timetable_blocks_today", couple?.id, todayDow],
+    queryFn: async () => {
+      if (!couple?.id) return [];
+      const { data, error } = await supabase
+        .from("timetable_blocks")
+        .select("id, writer_id, title, start_time, end_time")
+        .eq("couple_id", couple.id)
+        .eq("day_of_week", todayDow);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!couple?.id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const now = new Date();
+  const kst = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+  const currentMinutes = kst.getHours() * 60 + kst.getMinutes();
+
+  const myBlocks = blocks.filter((b) => b.writer_id === profile?.id);
+  const partnerBlocks = blocks.filter((b) => b.writer_id !== profile?.id);
+
+  const getCurrentBlockTitle = (userBlocks: any[]) => {
+    const current = userBlocks.find((b) => {
+      const start = timeToMinutes(b.start_time);
+      const end = timeToMinutes(b.end_time);
+      return currentMinutes >= start && currentMinutes < end;
+    });
+    return current ? current.title : null;
+  };
+
+  const myCurrentSchedule = getCurrentBlockTitle(myBlocks);
+  const partnerCurrentSchedule = getCurrentBlockTitle(partnerBlocks);
 
   const [viewerState, setViewerState] = useState<{
     isOpen: boolean;
@@ -99,20 +142,29 @@ const HomeHeader: React.FC<HomeHeaderProps> = () => {
                 <User size={20} className="text-gray-200" />
               )}
             </div>
-            <span className="text-[11px] mt-1.5 text-gray-400 font-bold tracking-tight">
+            <span className="text-[11px] mt-1.5 text-gray-700 font-bold tracking-tight">
               {myProfile?.nickname || "나"}
             </span>
+            {myCurrentSchedule && (
+              <button
+                type="button"
+                onClick={() => navigate("/calendar?tab=timetable")}
+                className="mt-1 px-2 py-0.5 rounded-md bg-gray-100/80 text-[10px] font-medium text-gray-600 max-w-[84px] truncate hover:bg-gray-200/80 transition-colors"
+              >
+                {myCurrentSchedule}
+              </button>
+            )}
           </div>
 
           {/* D-Day */}
-          <div className="flex flex-col items-center px-4">
+          <div className="flex flex-col items-center px-2">
             <div
               onClick={() => setIsAnniversaryModalOpen(true)}
-              className="bg-rose-50/50 px-3.5 py-1.5 rounded-full flex items-center gap-1.5 border border-rose-100/30 cursor-pointer transition-transform active:scale-95 hover:bg-rose-100/40"
+              className="bg-rose-50/70 px-4 py-1.5 rounded-full flex items-center gap-1.5 border border-rose-100/50 cursor-pointer transition-transform active:scale-95 hover:bg-rose-100/50 shadow-2xs"
             >
-              <Heart className="text-rose-400 fill-rose-400" size={12} />
-              <span className="text-rose-500 font-bold text-[13px] tabular-nums">
-                {couple ? `${dDay}` : "D-Day"}
+              <Heart className="text-rose-400 fill-rose-400" size={13} />
+              <span className="text-rose-500 font-black text-[13px] tabular-nums">
+                {couple ? `D+${dDay}` : "D-Day"}
               </span>
             </div>
           </div>
@@ -124,7 +176,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = () => {
                 onClick={() =>
                   openViewer(
                     partnerProfile?.avatar_url,
-                    partnerProfile?.nickname || "상대방",
+                    partnerProfile?.nickname || "파트너",
                   )
                 }
                 className={`w-12 h-12 rounded-full bg-white border border-gray-100 overflow-hidden shadow-sm transition-transform active:scale-95 flex items-center justify-center ${partnerProfile?.avatar_url ? "cursor-pointer" : ""}`}
@@ -150,16 +202,24 @@ const HomeHeader: React.FC<HomeHeaderProps> = () => {
             </div>
 
             <div className="flex flex-col items-center mt-1.5">
-              <span className="text-[11px] text-gray-400 font-bold tracking-tight leading-none">
-                {partnerProfile?.nickname || "상대방"}
+              <span className="text-[11px] text-gray-700 font-bold tracking-tight leading-none">
+                {partnerProfile?.nickname || "파트너"}
               </span>
-              {activeStatus && (
+              {partnerCurrentSchedule ? (
+                <button
+                  type="button"
+                  onClick={() => navigate("/calendar?tab=timetable")}
+                  className="mt-1 px-2 py-0.5 rounded-md bg-gray-100/80 text-[10px] font-medium text-gray-600 max-w-[84px] truncate hover:bg-gray-200/80 transition-colors"
+                >
+                  {partnerCurrentSchedule}
+                </button>
+              ) : activeStatus ? (
                 <span
-                  className={`text-[9px] font-bold mt-0.5 ${activeStatus === "접속중" ? "text-green-500" : "text-gray-300"}`}
+                  className={`text-[9px] font-bold mt-1 ${activeStatus === "접속중" ? "text-green-500" : "text-gray-400"}`}
                 >
                   {activeStatus}
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -190,6 +250,4 @@ const HomeHeader: React.FC<HomeHeaderProps> = () => {
       />
     </header>
   );
-};
-
-export default HomeHeader;
+}

@@ -1,13 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useCouple } from "../../hooks";
 import { Loader2 } from 'lucide-react';
-import {
-  HomeHeaderSkeleton,
-  HeartGaugeSkeleton,
-  DailyTabSkeleton,
-  RelayNovelWidgetSkeleton,
-  QuickLinksSkeleton,
-} from "../home/HomeSkeletons";
+import { HomeHeaderSkeleton } from "../home/HomeSkeletons";
 
 export default function ProtectedRoute() {
   const { couple, loading, profile } = useCouple();
@@ -21,15 +15,12 @@ export default function ProtectedRoute() {
     if (isHome) {
       return (
         <div className="custom-scrollbar relative flex-1 overflow-y-auto bg-[#FDFDFE] pb-24 h-full w-full">
-           <HomeHeaderSkeleton />
-           <div className="mx-auto max-w-xl space-y-0">
-             <HeartGaugeSkeleton />
-             <div className="px-6 pb-8 pt-4">
-               <DailyTabSkeleton />
-             </div>
-             <RelayNovelWidgetSkeleton />
-             <QuickLinksSkeleton />
-           </div>
+          <HomeHeaderSkeleton />
+          <div className="mx-auto max-w-xl space-y-4 px-6 pt-2">
+            <div className="h-24 w-full rounded-[24px] bg-white shadow-xs border border-gray-100 animate-pulse" />
+            <div className="h-44 w-full rounded-[24px] bg-white shadow-xs border border-gray-100 animate-pulse" />
+            <div className="h-28 w-full rounded-[24px] bg-white shadow-xs border border-gray-100 animate-pulse" />
+          </div>
         </div>
       );
     }

@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Settings, Heart, PiggyBank } from "lucide-react";
+import { X, User, Settings, Heart, PiggyBank, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Profile } from "../../types";
 
 import { changelog } from "../../data/changelog";
 import ChangelogModal from "./ChangelogModal";
+import RelayNovelModal from "../home/RelayNovelModal";
+import PointHistoryModal from "../home/PointHistoryModal";
 import { useCouple } from "../../hooks";
 import { useCouplePoints } from "../../hooks";
 import { useHomeContext } from "../../context/HomeContext";
@@ -25,9 +27,11 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
+  const [isRelayNovelOpen, setIsRelayNovelOpen] = useState(false);
+  const [isPointModalOpen, setIsPointModalOpen] = useState(false);
   const { couple } = useCouple();
-  const { currentPoints } = useCouplePoints();
-  const { partnerProfile } = useHomeContext();
+  const { currentPoints, history, levelInfo } = useCouplePoints();
+  const { partnerProfile, ongoingRelayNovel } = useHomeContext();
 
   // changelog 배열의 마지막 항목(최신) 버전을 가져옵니다.
   const latestVersion = changelog[changelog.length - 1]?.version || "1.0.0";
@@ -92,14 +96,33 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
   // 간소화된 메뉴 리스트
   const menuItems = [
-    { icon: <User size={20} />, label: "내 정보", path: "/profile" },
-    { icon: <Settings size={20} />, label: "설정", path: "/settings" },
+    {
+      icon: <BookOpen size={20} />,
+      label: "릴레이 소설",
+      onClick: () => {
+        onClose();
+        setTimeout(() => {
+          setIsRelayNovelOpen(true);
+        }, 150);
+      },
+    },
+    {
+      icon: <User size={20} />,
+      label: "내 정보",
+      onClick: () => {
+        navigate("/profile");
+        onClose();
+      },
+    },
+    {
+      icon: <Settings size={20} />,
+      label: "설정",
+      onClick: () => {
+        navigate("/settings");
+        onClose();
+      },
+    },
   ];
-
-  const handleNavigate = (path: string) => {
-    navigate(path);
-    onClose();
-  };
 
   const drawerContent = (
     <AnimatePresence>
@@ -179,18 +202,25 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
                       </div>
                     </div>
                   )}
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-rose-100/50 bg-white shadow-sm">
-                      <PiggyBank size={18} className="text-rose-400" />
+                  {/* Residual Points & Level */}
+                  <div
+                    onClick={() => setIsPointModalOpen(true)}
+                    className="flex items-center justify-between cursor-pointer rounded-2xl hover:bg-rose-50/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-rose-100/50 bg-white shadow-sm">
+                        <PiggyBank size={18} className="text-rose-400" />
+                      </div>
+                      <div className="flex min-w-0 flex-col">
+                        <span className="mb-0.5 text-[10px] font-bold tracking-tight text-gray-400">
+                          {levelInfo ? `Lv.${levelInfo.level} (${Math.round(levelInfo.progress)}%)` : "포인트"}
+                        </span>
+                        <span className="text-[14px] font-black text-gray-700 tabular-nums">
+                          {currentPoints.toLocaleString()} P
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex min-w-0 flex-col">
-                      <span className="mb-0.5 text-[10px] font-bold tracking-tight text-gray-400">
-                        잔여 포인트
-                      </span>
-                      <span className="text-[14px] font-black text-gray-700 tabular-nums">
-                        {currentPoints.toLocaleString()} P
-                      </span>
-                    </div>
+                    <span className="text-[11px] font-bold text-rose-400 pr-1">상점</span>
                   </div>
                 </div>
               )}
@@ -201,7 +231,7 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
               {menuItems.map((item, idx) => (
                 <button
                   key={idx}
-                  onClick={() => handleNavigate(item.path)}
+                  onClick={item.onClick}
                   className="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-gray-600 transition-all hover:bg-rose-50 hover:text-rose-500 active:scale-[0.98]"
                 >
                   <span className="text-rose-400">{item.icon}</span>
@@ -236,6 +266,22 @@ const MenuDrawer: React.FC<MenuDrawerProps> = ({
       <ChangelogModal
         isOpen={isChangelogOpen}
         onClose={() => setIsChangelogOpen(false)}
+      />
+      <RelayNovelModal
+        isOpen={isRelayNovelOpen}
+        onClose={() => setIsRelayNovelOpen(false)}
+        novelId={ongoingRelayNovel?.id}
+        partnerNickname={partnerProfile?.nickname || "상대방"}
+        myProfileId={myProfile?.id || ""}
+        partnerId={partnerProfile?.id}
+        myNickname={myProfile?.nickname || ""}
+      />
+      <PointHistoryModal
+        isOpen={isPointModalOpen}
+        onClose={() => setIsPointModalOpen(false)}
+        currentPoints={currentPoints}
+        history={history}
+        initialTab="shop"
       />
     </>
   );

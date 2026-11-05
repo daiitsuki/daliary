@@ -14,10 +14,6 @@ import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import {
   HomeHeaderSkeleton,
-  HeartGaugeSkeleton,
-  DailyTabSkeleton,
-  RelayNovelWidgetSkeleton,
-  QuickLinksSkeleton,
 } from "./components/home/HomeSkeletons";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -84,13 +80,10 @@ function App() {
                                 {window.location.pathname === '/' || window.location.pathname === '/home' ? (
                                   <div className="custom-scrollbar relative flex-1 overflow-y-auto pb-24 h-full w-full">
                                     <HomeHeaderSkeleton />
-                                    <div className="mx-auto max-w-xl space-y-0">
-                                      <HeartGaugeSkeleton />
-                                      <div className="px-6 pb-8 pt-4">
-                                        <DailyTabSkeleton />
-                                      </div>
-                                      <RelayNovelWidgetSkeleton />
-                                      <QuickLinksSkeleton />
+                                    <div className="mx-auto max-w-xl space-y-4 px-6 pt-2">
+                                      <div className="h-24 w-full rounded-[24px] bg-white shadow-xs border border-gray-100 animate-pulse" />
+                                      <div className="h-44 w-full rounded-[24px] bg-white shadow-xs border border-gray-100 animate-pulse" />
+                                      <div className="h-28 w-full rounded-[24px] bg-white shadow-xs border border-gray-100 animate-pulse" />
                                     </div>
                                   </div>
                                 ) : (

@@ -390,4 +390,9 @@ export const changelog: ChangelogEntry[] = [
       "설정을 통해 기존 방식으로도 변경할 수 있어요.",
     ],
   },
+  {
+    version: "1.1.13",
+    date: "2026-11-06",
+    changes: ["달이어리의 홈 화면이 개선되었어요."],
+  },
 ];
