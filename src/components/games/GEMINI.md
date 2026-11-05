@@ -1,17 +1,11 @@
-# Games Implementation Standard
+# Games Architecture (`src/components/games/`)
 
-## 1. Game Score Management
-- **Table**: `game_scores`
-- **Fields**: `user_id`, `couple_id`, `game_type`, `high_score`, `last_reward_date`
-- **Logic**: Maximum **2 games** per day for point rewards.
+## 1. Single-Player Mission Games (`2048`, `watermelon`, `brick_breaker`, `stack`)
+- Managed via `useGameScore(gameType)` and `useAllGameScores()` in `src/hooks/games/useGameScore.ts`.
+- Score submission and daily reward checks are processed atomically via the `record_game_result` RPC (`game_scores` table).
+- **Daily Limit**: Up to **2 mission games per day** (KST) grant point rewards (150 PT each).
+- **Bonus Game (`BlindTimerGame`)**: Uses a separate ticket-based flow (`blind_timer_ticket` item + `start_blind_timer_game` RPC).
 
-## 2. Game Specifics
-- **2048**: Rose/Amber gradient, 2048 tile = 150 PT reward.
-- **Blind Timer**: Target time 15-20s, requires `blind_timer_ticket` (100 PT).
-- **Watermelon**: `matter-js` physics, merge fruits to create Watermelon (150 PT).
-- **Brick Breaker**: Reach Stage 100 for 150 PT reward.
-- **Stack Tower**: 30+ floors or 5x perfect combo for 150 PT reward.
-
-## 3. Implementation Pattern
-- Use `useGameScore(gameType)` hook.
-- Use `record_game_result` RPC for atomic score/reward processing.
+## 2. Real-Time Multiplayer Games (`connect-four`, `othello`, `yacht-dice`, `abalone`)
+- Managed via `useMultiplayerGame(gameType)` in `src/hooks/games/useMultiplayerGame.ts` + game-specific hooks (`useConnectFour`, `useOthello`, `useYachtDice`, `useAbalone`).
+- **Permanent Room Pattern**: Each couple reuses a single persistent row per `game_type` in the `multiplayer_games` table (`waiting` → `playing` → `finished`), synchronized via Supabase Realtime (`postgres_changes`).

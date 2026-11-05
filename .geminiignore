@@ -20,8 +20,10 @@ src/assets/*.svg
 public/*.png
 public/*.ico
 
-# OS/IDE noise
+# OS/IDE/CLI noise
 *.Identifier
 .DS_Store
 .vscode/
 .idea/
+.gemini/
+.antigravitycli/
